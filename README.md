@@ -1,2 +1,1 @@
-# wphubpro-bridge
-Bridge for WPHub PRO
+# wp-plugin-boilerplate
