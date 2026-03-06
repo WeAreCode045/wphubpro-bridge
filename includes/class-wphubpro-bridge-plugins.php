@@ -64,13 +64,43 @@ class WPHubPro_Bridge_Plugins {
 	 * @return mixed
 	 */
 	public function manage_plugin( $request ) {
-		$site_url  = get_site_url();
-		$action    = $request->get_param( 'action' );
-		$endpoint  = 'plugins/manage/' . ( $action === 'delete' ? 'uninstall' : $action );
-		$req_data  = array(
+		$site_url = get_site_url();
+		$action   = $request->get_param( 'action' );
+		$endpoint = 'plugins/manage/' . ( $action === 'delete' ? 'uninstall' : $action );
+
+		$plugin = $request->get_param( 'plugin' );
+		$slug   = $request->get_param( 'slug' );
+		// Body may arrive as query param "body" (e.g. from Appwrite proxy) instead of POST body.
+		if ( empty( $plugin ) || empty( $slug ) ) {
+			$body_raw = $request->get_param( 'body' );
+			if ( is_string( $body_raw ) ) {
+				$decoded = json_decode( $body_raw, true );
+				if ( is_array( $decoded ) ) {
+					if ( empty( $plugin ) && ! empty( $decoded['plugin'] ) ) {
+						$plugin = sanitize_text_field( $decoded['plugin'] );
+					}
+					if ( empty( $slug ) && ! empty( $decoded['slug'] ) ) {
+						$slug = sanitize_text_field( $decoded['slug'] );
+					}
+				}
+			}
+			if ( ( empty( $plugin ) || empty( $slug ) ) && ! empty( $request->get_body() ) ) {
+				$decoded = json_decode( $request->get_body(), true );
+				if ( is_array( $decoded ) ) {
+					if ( empty( $plugin ) && ! empty( $decoded['plugin'] ) ) {
+						$plugin = sanitize_text_field( $decoded['plugin'] );
+					}
+					if ( empty( $slug ) && ! empty( $decoded['slug'] ) ) {
+						$slug = sanitize_text_field( $decoded['slug'] );
+					}
+				}
+			}
+		}
+
+		$req_data = array(
 			'action' => $action,
-			'plugin' => $request->get_param( 'plugin' ),
-			'slug'   => $request->get_param( 'slug' ),
+			'plugin' => $plugin,
+			'slug'   => $slug,
 		);
 
 		// Debug: log alle binnenkomende plugin-actions
