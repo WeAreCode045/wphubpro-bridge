@@ -65,15 +65,16 @@ class WPHubPro_Bridge_Plugins {
 	 */
 	public function manage_plugin( $request ) {
 		$site_url  = get_site_url();
-		$endpoint  = 'plugins/manage';
+		$action    = $request->get_param( 'action' );
+		$endpoint  = 'plugins/manage/' . ( $action === 'delete' ? 'uninstall' : $action );
 		$req_data  = array(
-			'action' => $request->get_param( 'action' ),
+			'action' => $action,
 			'plugin' => $request->get_param( 'plugin' ),
 			'slug'   => $request->get_param( 'slug' ),
 		);
 
 		// Debug: log alle binnenkomende plugin-actions
-		error_log( '[WPHubPro Bridge] plugins/manage INCOMING: ' . wp_json_encode( array(
+		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array(
 			'get_params'   => $req_data,
 			'body_params'  => $request->get_body_params(),
 			'query_params' => $request->get_query_params(),

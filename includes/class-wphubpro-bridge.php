@@ -123,26 +123,43 @@ class WPHubPro_Bridge {
 			'callback'            => array( $this->plugins, 'get_plugins_list' ),
 			'permission_callback' => $validate,
 		) );
-		register_rest_route( $namespace, '/plugins/manage', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'manage_plugin' ),
-			'permission_callback' => $validate,
-			'args'                => array(
-				'action' => array(
-					'required'          => true,
-					'type'              => 'string',
-					'enum'              => array( 'activate', 'deactivate', 'delete', 'update', 'install' ),
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'plugin' => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'slug'   => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
+		$plugin_args = array(
+			'plugin' => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
 			),
+			'slug'   => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+
+		register_rest_route( $namespace, '/plugins/manage/activate', array(
+			'methods'             => 'POST',
+			'callback'            => function ( $request ) {
+				$request->set_param( 'action', 'activate' );
+				return $this->plugins->manage_plugin( $request );
+			},
+			'permission_callback' => $validate,
+			'args'                => $plugin_args,
+		) );
+		register_rest_route( $namespace, '/plugins/manage/deactivate', array(
+			'methods'             => 'POST',
+			'callback'            => function ( $request ) {
+				$request->set_param( 'action', 'deactivate' );
+				return $this->plugins->manage_plugin( $request );
+			},
+			'permission_callback' => $validate,
+			'args'                => $plugin_args,
+		) );
+		register_rest_route( $namespace, '/plugins/manage/uninstall', array(
+			'methods'             => 'POST',
+			'callback'            => function ( $request ) {
+				$request->set_param( 'action', 'delete' );
+				return $this->plugins->manage_plugin( $request );
+			},
+			'permission_callback' => $validate,
+			'args'                => $plugin_args,
 		) );
 
 		// Themes
