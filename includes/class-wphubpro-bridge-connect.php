@@ -51,7 +51,9 @@ class WPHubPro_Bridge_Connect {
 		}
 		$origin = $request->get_header( 'Origin' );
 		if ( $origin ) {
-			header( 'Access-Control-Allow-Origin: ' . esc_attr( $origin ) );
+			// Strip CR/LF to prevent header injection. Do not use esc_attr() - HTTP headers must not be HTML-escaped.
+			$origin = str_replace( array( "\r", "\n" ), '', $origin );
+			header( 'Access-Control-Allow-Origin: ' . $origin );
 		}
 		header( 'Access-Control-Allow-Methods: POST, OPTIONS' );
 		header( 'Access-Control-Allow-Headers: Content-Type, X-WPHub-Key' );
