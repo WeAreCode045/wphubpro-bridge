@@ -259,8 +259,8 @@ class WPHubPro_Bridge {
 		if ( ! is_array( $lines ) ) {
 			return rest_ensure_response( array( 'lines' => array(), 'file' => $log_file, 'error' => __( 'Could not read log file.', 'wphubpro-bridge' ) ) );
 		}
-		$last_20 = array_slice( $lines, -20 );
-		return rest_ensure_response( array( 'lines' => $last_20, 'file' => $log_file ) );
+		$last_200 = array_slice( $lines, -200 );
+		return rest_ensure_response( array( 'lines' => $last_200, 'file' => $log_file ) );
 	}
 
 	/**
