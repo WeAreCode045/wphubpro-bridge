@@ -164,6 +164,13 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 		) );
 
+		// Bridge logs (from option WPHUBPRO_LOG; this call is not logged)
+		register_rest_route( $namespace, '/logs', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_logs' ),
+			'permission_callback' => $validate,
+		) );
+
 		// Feature-specific route registration (placeholders)
 		$this->health->register_routes( $namespace );
 		$this->debug->register_routes( $namespace );
@@ -177,8 +184,32 @@ class WPHubPro_Bridge {
 	 * @param WP_REST_Request           $request  Request object.
 	 * @return WP_REST_Response|WP_Error Unchanged response.
 	 */
+	/**
+	 * Return bridge API log from option WPHUBPRO_LOG (used by platform; this request is not logged).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_logs( $request ) {
+		$log = get_option( 'WPHUBPRO_LOG', array() );
+		if ( ! is_array( $log ) ) {
+			$log = array();
+		}
+		return rest_ensure_response( array( 'logs' => $log ) );
+	}
+
+	/**
+	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
+	 * Excludes /logs to avoid logging the logs request itself.
+	 *
+	 * @param WP_REST_Response|WP_Error $response Result to send.
+	 * @param WP_REST_Server            $server   Server instance.
+	 * @param WP_REST_Request          $request  Request object.
+	 * @return WP_REST_Response|WP_Error Unchanged response.
+	 */
 	public function log_rest_request( $response, $server, $request ) {
-		if ( strpos( $request->get_route(), 'wphubpro/v1' ) !== false ) {
+		$route = $request->get_route();
+		if ( strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false ) {
 			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
 		}
 		return $response;

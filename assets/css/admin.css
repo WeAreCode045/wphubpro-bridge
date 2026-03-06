@@ -40,6 +40,8 @@
 	padding: 10px 12px;
 	border-bottom: 1px solid #f0f0f1;
 	vertical-align: top;
+	word-break: break-word;
+	overflow-wrap: break-word;
 }
 
 .wphubpro-logs-table tbody tr:last-child td {
@@ -85,6 +87,14 @@
 	max-width: 120px;
 }
 
+/* Main row: click to close detail */
+.wphubpro-log-main-row {
+	cursor: pointer;
+}
+.wphubpro-log-main-row .wphubpro-log-toggle {
+	cursor: pointer;
+}
+
 /* Log row: sub-row for request/response */
 .wphubpro-log-detail-row .wphubpro-log-detail-cell {
 	padding: 0;
@@ -94,46 +104,92 @@
 }
 
 .wphubpro-log-detail-row .wphubpro-log-detail {
-	padding: 0 12px 12px;
-}
-
-.wphubpro-log-toggle {
-	background: #f0f0f1;
-	border: 1px solid #c3c4c7;
-	border-radius: 3px;
-	padding: 4px 10px;
-	font-size: 12px;
-	cursor: pointer;
-	color: #50575e;
-}
-
-.wphubpro-log-toggle:hover {
-	background: #e0e0e0;
-	color: #1d2327;
+	padding: 12px;
 }
 
 .wphubpro-log-detail-row .wphubpro-panel {
-	margin-top: 8px;
+	margin-top: 10px;
+}
+.wphubpro-log-detail-row .wphubpro-panel:first-child {
+	margin-top: 0;
 }
 
 .wphubpro-log-detail-row .wphubpro-panel strong {
 	display: block;
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 	font-size: 12px;
 	color: #50575e;
 }
 
-.wphubpro-log-detail-row .wphubpro-log-pre {
-	margin: 0;
-	padding: 10px 12px;
+/* Data container around pre */
+.wphubpro-log-data {
 	background: #fff;
 	border: 1px solid #c3c4c7;
-	border-radius: 3px;
+	border-radius: 4px;
+	overflow: hidden;
+	max-width: 100%;
+}
+
+.wphubpro-log-detail-row .wphubpro-log-pre {
+	margin: 0;
+	padding: 12px 14px;
 	font-size: 12px;
 	line-height: 1.5;
-	overflow-x: auto;
 	max-height: 280px;
 	overflow-y: auto;
 	white-space: pre-wrap;
 	word-break: break-word;
+	overflow-wrap: break-word;
+	box-sizing: border-box;
+	max-width: 100%;
+}
+
+/* Request / Response buttons */
+.wphubpro-log-toggle {
+	display: inline-block;
+	border-radius: 4px;
+	padding: 6px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	border: 1px solid transparent;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.wphubpro-log-toggle-request {
+	background: #e7f5fe;
+	color: #0c5a87;
+	border-color: #72aee6;
+}
+.wphubpro-log-toggle-request:hover {
+	background: #cce9f9;
+	color: #064c73;
+	border-color: #3582c4;
+}
+.wphubpro-log-toggle-request.wphubpro-log-toggle-active {
+	background: #0c5a87;
+	color: #fff;
+	border-color: #0c5a87;
+}
+.wphubpro-log-toggle-response {
+	background: #edfaef;
+	color: #0e6027;
+	border-color: #68de7c;
+}
+.wphubpro-log-toggle-response:hover {
+	background: #d4edda;
+	color: #0a4720;
+	border-color: #46b450;
+}
+.wphubpro-log-toggle-response.wphubpro-log-toggle-active {
+	background: #0e6027;
+	color: #fff;
+	border-color: #0e6027;
+}
+
+/* Line breaks: keep content within table width */
+.wphubpro-logs-table .wphubpro-log-endpoint code {
+	word-break: break-all;
+	overflow-wrap: break-word;
+	white-space: normal;
+	max-width: 100%;
 }

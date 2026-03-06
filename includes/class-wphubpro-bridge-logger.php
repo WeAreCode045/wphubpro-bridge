@@ -97,7 +97,7 @@ class WPHubPro_Bridge_Logger {
 	 */
 	public static function push_api_log( $request, $response ) {
 		$route = $request->get_route();
-		if ( strpos( $route, 'wphubpro/v1' ) === false ) {
+		if ( strpos( $route, 'wphubpro/v1' ) === false || strpos( $route, '/logs' ) !== false ) {
 			return;
 		}
 

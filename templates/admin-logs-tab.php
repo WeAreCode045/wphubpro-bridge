@@ -80,27 +80,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 			html += '<td class="wphubpro-log-endpoint"><code>' + esc(e.endpoint || '') + '</code></td>';
 			html += '<td class="wphubpro-log-type">' + esc(e.type || '') + '</td>';
 			html += '<td class="wphubpro-log-code ' + codeClass + '">' + esc(String(code || '')) + '</td>';
-			html += '<td class="wphubpro-log-request"><button type="button" class="wphubpro-log-toggle" data-panel="request">Request</button></td>';
-			html += '<td class="wphubpro-log-response"><button type="button" class="wphubpro-log-toggle" data-panel="response">Response</button></td>';
+			html += '<td class="wphubpro-log-request"><button type="button" class="wphubpro-log-toggle wphubpro-log-toggle-request" data-panel="request">Request</button></td>';
+			html += '<td class="wphubpro-log-response"><button type="button" class="wphubpro-log-toggle wphubpro-log-toggle-response" data-panel="response">Response</button></td>';
 			html += '</tr>';
 			html += '<tr class="wphubpro-log-detail-row"><td colspan="6" class="wphubpro-log-detail-cell">';
 			html += '<div class="wphubpro-log-detail">';
-			html += '<div class="wphubpro-request-panel wphubpro-panel" style="display:none"><strong>Request</strong><pre class="wphubpro-log-pre">' + reqJson + '</pre></div>';
-			html += '<div class="wphubpro-response-panel wphubpro-panel" style="display:none"><strong>Response</strong><pre class="wphubpro-log-pre">' + resJson + '</pre></div>';
+			html += '<div class="wphubpro-request-panel wphubpro-panel" style="display:none"><strong>Request</strong><div class="wphubpro-log-data"><pre class="wphubpro-log-pre">' + reqJson + '</pre></div></div>';
+			html += '<div class="wphubpro-response-panel wphubpro-panel" style="display:none"><strong>Response</strong><div class="wphubpro-log-data"><pre class="wphubpro-log-pre">' + resJson + '</pre></div></div>';
 			html += '</div></td></tr>';
 		});
 		tbody.innerHTML = html;
 		tbody.addEventListener('click', function(ev) {
 			var btn = ev.target.closest('.wphubpro-log-toggle');
-			if (!btn) return;
-			var mainRow = btn.closest('.wphubpro-log-main-row');
+			var mainRow = ev.target.closest('.wphubpro-log-main-row');
+			if (!mainRow) return;
 			var detailRow = mainRow.nextElementSibling;
 			if (!detailRow || !detailRow.classList.contains('wphubpro-log-detail-row')) return;
-			var panel = detailRow.querySelector('.wphubpro-' + btn.getAttribute('data-panel') + '-panel');
-			if (!panel) return;
-			var isHidden = panel.style.display === 'none';
-			panel.style.display = isHidden ? 'block' : 'none';
-			btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+			if (btn) {
+				var panel = detailRow.querySelector('.wphubpro-' + btn.getAttribute('data-panel') + '-panel');
+				if (!panel) return;
+				var isHidden = panel.style.display === 'none';
+				panel.style.display = isHidden ? 'block' : 'none';
+				btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+				btn.classList.toggle('wphubpro-log-toggle-active', isHidden);
+			} else {
+				detailRow.querySelectorAll('.wphubpro-panel').forEach(function(p) { p.style.display = 'none'; });
+				mainRow.querySelectorAll('.wphubpro-log-toggle').forEach(function(b) {
+					b.setAttribute('aria-expanded', 'false');
+					b.classList.remove('wphubpro-log-toggle-active');
+				});
+			}
 		});
 	}).catch(function() {
 		loading.style.display = 'none';
