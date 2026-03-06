@@ -171,6 +171,13 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 		) );
 
+		// PHP error log (last 20 lines; this call is not logged)
+		register_rest_route( $namespace, '/error-log', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_error_log' ),
+			'permission_callback' => $validate,
+		) );
+
 		// Feature-specific route registration (placeholders)
 		$this->health->register_routes( $namespace );
 		$this->debug->register_routes( $namespace );
@@ -199,6 +206,38 @@ class WPHubPro_Bridge {
 	}
 
 	/**
+	 * Return last 20 lines of the site's PHP error log (WP debug.log or PHP error_log).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_error_log( $request ) {
+		$log_file = null;
+		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG && defined( 'WP_CONTENT_DIR' ) ) {
+			$log_file = WP_CONTENT_DIR . '/debug.log';
+		}
+		if ( ! $log_file || ! is_readable( $log_file ) ) {
+			$php_log = ini_get( 'error_log' );
+			if ( $php_log && is_readable( $php_log ) ) {
+				$log_file = $php_log;
+			}
+		}
+		if ( ! $log_file || ! is_readable( $log_file ) ) {
+			return rest_ensure_response( array(
+				'lines' => array(),
+				'file'  => null,
+				'error' => __( 'Error log file not found or not readable. Enable WP_DEBUG_LOG or check PHP error_log.', 'wphubpro-bridge' ),
+			) );
+		}
+		$lines = @file( $log_file, FILE_IGNORE_NEW_LINES );
+		if ( ! is_array( $lines ) ) {
+			return rest_ensure_response( array( 'lines' => array(), 'file' => $log_file, 'error' => __( 'Could not read log file.', 'wphubpro-bridge' ) ) );
+		}
+		$last_20 = array_slice( $lines, -20 );
+		return rest_ensure_response( array( 'lines' => $last_20, 'file' => $log_file ) );
+	}
+
+	/**
 	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
 	 * Excludes /logs to avoid logging the logs request itself.
 	 *
@@ -209,7 +248,7 @@ class WPHubPro_Bridge {
 	 */
 	public function log_rest_request( $response, $server, $request ) {
 		$route = $request->get_route();
-		if ( strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false ) {
+		if ( strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
 			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
 		}
 		return $response;
