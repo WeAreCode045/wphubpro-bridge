@@ -151,6 +151,16 @@ class WPHubPro_Bridge_Plugins {
 					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
 					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 				}
+				// Deactivate first; uninstall_plugin() and delete_plugins() require the plugin to be inactive.
+				if ( is_plugin_active( $plugin ) ) {
+					$deact = deactivate_plugins( $plugin );
+					if ( is_wp_error( $deact ) ) {
+						WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Deactivate before uninstall failed: ' . $deact->get_error_message() ) );
+						return $deact;
+					}
+				}
+				// Run the plugin's uninstall.php or registered uninstall hook before deleting files.
+				uninstall_plugin( $plugin );
 				$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $req_data );
 				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 				return $resp;
