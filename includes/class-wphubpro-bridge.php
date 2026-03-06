@@ -72,6 +72,26 @@ class WPHubPro_Bridge {
 			},
 		) );
 
+		// Connection status (admin only)
+		register_rest_route( $namespace, '/connection-status', array(
+			'methods'             => 'GET',
+			'callback'            => function () {
+				return rest_ensure_response( WPHubPro_Bridge_Connection_Status::fetch() );
+			},
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+
+		// Disconnect (remove from hub, admin only)
+		register_rest_route( $namespace, '/disconnect', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->connect, 'handle_disconnect' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+
 		// Plugins
 		register_rest_route( $namespace, '/plugins', array(
 			'methods'             => 'GET',
