@@ -161,6 +161,15 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
+		register_rest_route( $namespace, '/plugins/manage/update', array(
+			'methods'             => 'POST',
+			'callback'            => function ( $request ) {
+				$request->set_param( 'action', 'update' );
+				return $this->plugins->manage_plugin( $request );
+			},
+			'permission_callback' => $validate,
+			'args'                => $plugin_args,
+		) );
 
 		// Themes
 		register_rest_route( $namespace, '/themes', array(
