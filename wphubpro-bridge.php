@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$autoload = __DIR__ . '/vendor/autoload.php';
+$autoload = __DIR__ . '/lib/appwrite-autoload.php';
 if ( file_exists( $autoload ) ) {
 	require_once $autoload;
 }
