@@ -114,6 +114,7 @@ class WPHubPro_Bridge_Connect {
 		delete_option( 'WPHUBPRO_ENDPOINT' );
 		delete_option( 'WPHUBPRO_PROJECT_ID' );
 		delete_option( 'WPHUBPRO_CONNECTION_STATUS' );
+		delete_option( 'WPHUBPRO_DATA' );
 		return array( 'success' => true );
 	}
 

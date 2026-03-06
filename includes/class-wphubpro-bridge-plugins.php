@@ -19,9 +19,10 @@ class WPHubPro_Bridge_Plugins {
 	/**
 	 * Get list of all plugins with status and update info.
 	 *
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response
 	 */
-	public function get_plugins_list() {
+	public function get_plugins_list( $request ) {
 		error_log( '[WPHubPro Bridge] plugins/list GET' );
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -40,6 +41,19 @@ class WPHubPro_Bridge_Plugins {
 				'update'  => isset( $updates->response[ $file ] ) ? $updates->response[ $file ]->new_version : null,
 			);
 		}
+
+		$site_url = get_site_url();
+		$log_resp = array(
+			'count'  => count( $response ),
+			'plugins' => array_slice( array_map( function ( $p ) {
+				return array( 'name' => $p['name'], 'active' => $p['active'] );
+			}, $response ), 0, 10 ),
+		);
+		if ( count( $response ) > 10 ) {
+			$log_resp['_truncated'] = count( $response ) . ' total';
+		}
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'list', 'plugins', array(), $log_resp );
+
 		return rest_ensure_response( $response );
 	}
 
@@ -80,7 +94,7 @@ class WPHubPro_Bridge_Plugins {
 				$plugin = $this->resolve_plugin_file( $slug );
 			}
 			if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, 'Invalid or missing plugin param' );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
 				return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 			}
 		}
@@ -90,12 +104,12 @@ class WPHubPro_Bridge_Plugins {
 		switch ( $action ) {
 			case 'activate':
 				$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, $resp );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 				return $resp;
 
 			case 'deactivate':
 				$resp = apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, $resp );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'success' => true ) );
 				return true;
 
 			case 'delete':
@@ -103,11 +117,11 @@ class WPHubPro_Bridge_Plugins {
 					$plugin = $this->resolve_plugin_file( $slug );
 				}
 				if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, 'Invalid or missing plugin param' );
+					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
 					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 				}
 				$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, $resp );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 				return $resp;
 
 			case 'update':
@@ -115,23 +129,23 @@ class WPHubPro_Bridge_Plugins {
 					$plugin = $this->resolve_plugin_file( $slug );
 				}
 				if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, 'Invalid or missing plugin param' );
+					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
 					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 				}
 				$upgrader = new Plugin_Upgrader( $skin );
 				$resp     = apply_filters( 'wphub_plugin_update', $upgrader->update( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, $resp );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 				return $resp;
 
 			case 'install':
-				$api       = plugins_api( 'plugin_information', array( 'slug' => $slug, 'fields' => array( 'sections' => false ) ) );
-				$upgrader  = new Plugin_Upgrader( $skin );
-				$resp      = apply_filters( 'wphub_plugin_install', $upgrader->install( $api->download_link ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, $resp );
+				$api      = plugins_api( 'plugin_information', array( 'slug' => $slug, 'fields' => array( 'sections' => false ) ) );
+				$upgrader = new Plugin_Upgrader( $skin );
+				$resp     = apply_filters( 'wphub_plugin_install', $upgrader->install( $api->download_link ), $plugin, $slug, $req_data );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'installed' => is_array( $resp ) ? true : $resp ) );
 				return $resp;
 
 			default:
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, 'Action not supported' );
+				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Action not supported' ) );
 				return new WP_Error( 'invalid_action', 'Action not supported' );
 		}
 	}

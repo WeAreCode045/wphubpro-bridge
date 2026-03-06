@@ -19,23 +19,27 @@ class WPHubPro_Bridge_Details {
 	/**
 	 * Get site details.
 	 *
+	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response
 	 */
-	public function get_details() {
-		$wp_installed = get_bloginfo( 'version' );
-		$wp_latest    = $this->get_latest_wp_version();
+	public function get_details( $request ) {
+		$wp_installed  = get_bloginfo( 'version' );
+		$wp_latest     = $this->get_latest_wp_version();
 		$plugins_count = $this->get_plugins_count();
 		$themes_count  = $this->get_themes_count();
 		$php_info      = $this->get_php_version_info();
 
 		$response = array(
-			'wp_version'       => $wp_installed,
-			'wp_version_latest'=> $wp_latest,
-			'plugins_count'    => $plugins_count,
-			'themes_count'     => $themes_count,
-			'php_version'      => PHP_VERSION,
-			'php_check'        => $php_info,
+			'wp_version'        => $wp_installed,
+			'wp_version_latest' => $wp_latest,
+			'plugins_count'     => $plugins_count,
+			'themes_count'      => $themes_count,
+			'php_version'       => PHP_VERSION,
+			'php_check'         => $php_info,
 		);
+
+		$site_url = get_site_url();
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'get', 'details', array(), $response );
 
 		return rest_ensure_response( $response );
 	}
