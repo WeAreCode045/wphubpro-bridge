@@ -24,9 +24,14 @@ class WPHubPro_Bridge_Connection_Status {
 	 * @return array{connected: bool, site_id?: string, username?: string, plan_name?: string, connected_at?: string, action_log?: array, error?: string}
 	 */
 	public static function fetch() {
+		$api_log = get_option( 'WPHUBPRO_LOG', array() );
+		if ( ! is_array( $api_log ) ) {
+			$api_log = array();
+		}
+
 		$api_key = get_option( 'wphubpro_api_key' );
 		if ( empty( $api_key ) ) {
-			return array( 'connected' => false );
+			return array( 'connected' => false, 'api_log' => $api_log );
 		}
 
 		$jwt      = get_option( 'WPHUBPRO_USER_JWT' );
@@ -37,6 +42,7 @@ class WPHubPro_Bridge_Connection_Status {
 			return array(
 				'connected' => true,
 				'error'     => __( 'Appwrite config not set. Connect from dashboard to save JWT and connection details.', 'wphubpro-bridge' ),
+				'api_log'   => $api_log,
 			);
 		}
 
@@ -46,6 +52,7 @@ class WPHubPro_Bridge_Connection_Status {
 			return array(
 				'connected' => true,
 				'error'     => __( 'Site not found in platform. Connect from the dashboard to link this site.', 'wphubpro-bridge' ),
+				'api_log'   => $api_log,
 			);
 		}
 
@@ -79,6 +86,7 @@ class WPHubPro_Bridge_Connection_Status {
 			'plan_name'    => $plan_name,
 			'connected_at' => $created_at,
 			'action_log'   => $action_log,
+			'api_log'      => $api_log,
 		);
 	}
 

@@ -82,8 +82,78 @@ class WPHubPro_Bridge_Logger {
 				$site_id,
 				array( 'action_log' => $action_log )
 			);
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			error_log( '[WPHubPro Bridge] log_action failed: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Log a single request to the wphubpro/v1 API to option WPHUBPRO_LOG (last 20).
+	 *
+	 * Entry: time, endpoint, type (GET|POST), code, request, response.
+	 *
+	 * @param WP_REST_Request $request  Request object.
+	 * @param WP_REST_Response|WP_Error $response Response or error.
+	 */
+	public static function push_api_log( $request, $response ) {
+		$route = $request->get_route();
+		if ( strpos( $route, 'wphubpro/v1' ) === false ) {
+			return;
+		}
+
+		$req_data = array(
+			'query' => $request->get_query_params(),
+			'body'  => $request->get_body_params(),
+		);
+		if ( empty( $req_data['body'] ) && $request->get_body() ) {
+			$parsed = json_decode( $request->get_body(), true );
+			$req_data['body'] = is_array( $parsed ) ? $parsed : array( '_raw' => substr( $request->get_body(), 0, 500 ) );
+		}
+
+		if ( is_wp_error( $response ) ) {
+			$code     = (int) $response->get_error_data( 'status' );
+			$res_data = array( 'error' => $response->get_error_message() );
+		} else {
+			$code     = $response->get_status();
+			$res_data = $response->get_data();
+		}
+		self::cap_size( $req_data );
+		self::cap_size( $res_data );
+
+		$entry = array(
+			'time'     => gmdate( 'c' ),
+			'endpoint' => $route,
+			'type'     => $request->get_method(),
+			'code'     => $code ? $code : 500,
+			'request'  => $req_data,
+			'response' => $res_data,
+		);
+
+		$log = get_option( 'WPHUBPRO_LOG', array() );
+		if ( ! is_array( $log ) ) {
+			$log = array();
+		}
+		array_unshift( $log, $entry );
+		$log = array_slice( $log, 0, 20 );
+		update_option( 'WPHUBPRO_LOG', $log );
+	}
+
+	/**
+	 * Cap size of logged value to avoid huge options (e.g. full plugin list).
+	 *
+	 * @param mixed $value Value to cap in place (array/object by reference).
+	 */
+	private static function cap_size( &$value ) {
+		if ( ! is_array( $value ) ) {
+			return;
+		}
+		$n = count( $value );
+		if ( $n > 30 ) {
+			$value = array(
+				'_summary' => 'array',
+				'count'   => $n,
+				'preview' => array_slice( $value, 0, 5 ),
+			);
 		}
 	}
 }

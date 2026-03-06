@@ -54,6 +54,7 @@ class WPHubPro_Bridge {
 		$this->debug   = new WPHubPro_Bridge_Debug();
 
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
 	}
 
 	/**
@@ -166,6 +167,21 @@ class WPHubPro_Bridge {
 		// Feature-specific route registration (placeholders)
 		$this->health->register_routes( $namespace );
 		$this->debug->register_routes( $namespace );
+	}
+
+	/**
+	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
+	 *
+	 * @param WP_REST_Response|WP_Error $response Result to send.
+	 * @param WP_REST_Server            $server   Server instance.
+	 * @param WP_REST_Request           $request  Request object.
+	 * @return WP_REST_Response|WP_Error Unchanged response.
+	 */
+	public function log_rest_request( $response, $server, $request ) {
+		if ( strpos( $request->get_route(), 'wphubpro/v1' ) !== false ) {
+			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
+		}
+		return $response;
 	}
 }
 
