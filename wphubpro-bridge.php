@@ -9,9 +9,16 @@
  */
 
 
-if (!defined('ABSPATH')) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
-if (!defined('WPHUBPRO_BRIDGE_PLUGIN_FILE')) {
+$autoload = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $autoload ) ) {
+	require_once $autoload;
+}
+
+if ( ! defined( 'WPHUBPRO_BRIDGE_PLUGIN_FILE' ) ) {
 	define('WPHUBPRO_BRIDGE_PLUGIN_FILE', __FILE__);
 }
 if (!defined('WPHUBPRO_BRIDGE_ABSPATH')) {

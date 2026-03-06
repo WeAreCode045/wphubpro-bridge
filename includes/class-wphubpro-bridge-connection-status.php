@@ -2,7 +2,7 @@
 /**
  * Connection status for WPHubPro Bridge admin.
  *
- * Fetches site info from Appwrite to display on the admin page.
+ * Fetches site info from Appwrite using JWT (when available) or API key.
  *
  * @package WPHubPro
  */
@@ -19,6 +19,8 @@ class WPHubPro_Bridge_Connection_Status {
 	/**
 	 * Fetch connection status from Appwrite.
 	 *
+	 * Uses WPHUBPRO_USER_JWT when available (from ConnectSuccessPage), else falls back to env vars.
+	 *
 	 * @return array{connected: bool, site_id?: string, username?: string, plan_name?: string, connected_at?: string, action_log?: array, error?: string}
 	 */
 	public static function fetch() {
@@ -27,18 +29,25 @@ class WPHubPro_Bridge_Connection_Status {
 			return array( 'connected' => false );
 		}
 
-		$endpoint = getenv( 'APPWRITE_ENDPOINT' );
-		$project  = getenv( 'APPWRITE_PROJECT_ID' );
+		$jwt      = get_option( 'WPHUBPRO_USER_JWT' );
+		$endpoint = get_option( 'WPHUBPRO_ENDPOINT' ) ?: getenv( 'APPWRITE_ENDPOINT' );
+		$project  = get_option( 'WPHUBPRO_PROJECT_ID' ) ?: getenv( 'APPWRITE_PROJECT_ID' );
 		$key      = getenv( 'APPWRITE_API_KEY' );
-		if ( ! $endpoint || ! $project || ! $key ) {
-			return array(
-				'connected' => true,
-				'error'     => __( 'Appwrite config (APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY) not set. Connection state unavailable.', 'wphubpro-bridge' ),
-			);
+
+		// Prefer JWT when available and SDK loaded
+		if ( ! empty( $jwt ) && ! empty( $endpoint ) && ! empty( $project ) && class_exists( 'Appwrite\Client' ) ) {
+			$site = self::fetch_site_via_sdk( $endpoint, $project, $jwt );
+		} else {
+			if ( ! $endpoint || ! $project || ! $key ) {
+				return array(
+					'connected' => true,
+					'error'     => __( 'Appwrite config not set. Connect from dashboard to save JWT, or set APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY.', 'wphubpro-bridge' ),
+				);
+			}
+			$site_url = get_site_url();
+			$site     = self::fetch_site_by_url( $endpoint, $project, $key, $site_url );
 		}
 
-		$site_url = get_site_url();
-		$site     = self::fetch_site_by_url( $endpoint, $project, $key, $site_url );
 		if ( ! $site ) {
 			return array(
 				'connected' => true,
@@ -51,11 +60,16 @@ class WPHubPro_Bridge_Connection_Status {
 		$created_at  = $site['$createdAt'] ?? '';
 		$action_log  = isset( $site['action_log'] ) && is_array( $site['action_log'] ) ? array_reverse( $site['action_log'] ) : array();
 
-		$username = '';
+		$username  = '';
 		$plan_name = '';
 		if ( $user_id ) {
-			$username = self::fetch_user_name( $endpoint, $project, $key, $user_id );
-			$plan_name = self::fetch_plan_name( $endpoint, $project, $key, $user_id );
+			if ( ! empty( $jwt ) && class_exists( 'Appwrite\Client' ) ) {
+				$username  = self::fetch_user_name_via_sdk( $endpoint, $project, $jwt, $user_id );
+				$plan_name = self::fetch_plan_name_via_sdk( $endpoint, $project, $jwt, $user_id );
+			} elseif ( ! empty( $key ) ) {
+				$username  = self::fetch_user_name( $endpoint, $project, $key, $user_id );
+				$plan_name = self::fetch_plan_name( $endpoint, $project, $key, $user_id );
+			}
 		}
 
 		return array(
@@ -66,6 +80,93 @@ class WPHubPro_Bridge_Connection_Status {
 			'connected_at' => $created_at,
 			'action_log'   => $action_log,
 		);
+	}
+
+	/**
+	 * Fetch site document via Appwrite SDK with JWT.
+	 *
+	 * @param string $endpoint Appwrite endpoint.
+	 * @param string $project  Project ID.
+	 * @param string $jwt      User JWT.
+	 * @return array|null Site document or null.
+	 */
+	private static function fetch_site_via_sdk( $endpoint, $project, $jwt ) {
+		try {
+			$client = new \Appwrite\Client();
+			$client->setEndpoint( $endpoint )->setProject( $project )->setJWT( $jwt );
+			$databases = new \Appwrite\Services\Databases( $client );
+			$site_url  = get_site_url();
+			$urls      = array( $site_url, untrailingslashit( $site_url ), trailingslashit( $site_url ) );
+			foreach ( $urls as $url ) {
+				$resp = $databases->listDocuments( 'platform_db', 'sites', array(
+					\Appwrite\Query::equal( 'site_url', $url ),
+				) );
+				if ( ! empty( $resp['documents'][0] ) ) {
+					return $resp['documents'][0];
+				}
+			}
+		} catch ( Exception $e ) {
+			return null;
+		}
+		return null;
+	}
+
+	/**
+	 * Fetch user name via SDK with JWT.
+	 *
+	 * @param string $endpoint Appwrite endpoint.
+	 * @param string $project  Project ID.
+	 * @param string $jwt      User JWT.
+	 * @param string $user_id  User ID.
+	 * @return string
+	 */
+	private static function fetch_user_name_via_sdk( $endpoint, $project, $jwt, $user_id ) {
+		try {
+			$client = new \Appwrite\Client();
+			$client->setEndpoint( $endpoint )->setProject( $project )->setJWT( $jwt );
+			$users  = new \Appwrite\Services\Users( $client );
+			$user   = $users->get( $user_id );
+			return $user['name'] ?? $user['email'] ?? '';
+		} catch ( Exception $e ) {
+			return '';
+		}
+	}
+
+	/**
+	 * Fetch plan name via SDK with JWT.
+	 *
+	 * @param string $endpoint Appwrite endpoint.
+	 * @param string $project  Project ID.
+	 * @param string $jwt      User JWT.
+	 * @param string $user_id  User ID.
+	 * @return string
+	 */
+	private static function fetch_plan_name_via_sdk( $endpoint, $project, $jwt, $user_id ) {
+		try {
+			$client    = new \Appwrite\Client();
+			$client->setEndpoint( $endpoint )->setProject( $project )->setJWT( $jwt );
+			$databases = new \Appwrite\Services\Databases( $client );
+			$accounts  = $databases->listDocuments( 'platform_db', 'accounts', array(
+				\Appwrite\Query::equal( 'user_id', $user_id ),
+				\Appwrite\Query::limit( 1 ),
+			) );
+			if ( empty( $accounts['documents'][0] ) ) {
+				return '';
+			}
+			$plan_id = $accounts['documents'][0]['current_plan_id'] ?? null;
+			if ( ! $plan_id && ! empty( $accounts['documents'][0]['current_plan'] ) ) {
+				$plan_id = is_string( $accounts['documents'][0]['current_plan'] )
+					? $accounts['documents'][0]['current_plan']
+					: ( $accounts['documents'][0]['current_plan']['$id'] ?? null );
+			}
+			if ( ! $plan_id ) {
+				return '';
+			}
+			$plan = $databases->getDocument( 'platform_db', 'plans', $plan_id );
+			return $plan['name'] ?? '';
+		} catch ( Exception $e ) {
+			return '';
+		}
 	}
 
 	/**
