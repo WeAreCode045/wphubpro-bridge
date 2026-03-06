@@ -13,10 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 ?>
-<div class="wrap">
+<div class="wrap wphubpro-admin-wrap">
 	<h1>WPHubPro Bridge</h1>
 	<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
-		<a href="<?php echo esc_url( $base_url ); ?>" class="nav-tab <?php echo $tab === 'connect' ? 'nav-tab-active' : ''; ?>">Koppelen</a>
+		<a href="<?php echo esc_url( $base_url ); ?>" class="nav-tab <?php echo $tab === 'connect' ? 'nav-tab-active' : ''; ?>">Overzicht</a>
+		<a href="<?php echo esc_url( add_query_arg( 'tab', 'logs', $base_url ) ); ?>" class="nav-tab <?php echo $tab === 'logs' ? 'nav-tab-active' : ''; ?>">Logs</a>
 		<a href="<?php echo esc_url( add_query_arg( 'tab', 'debug', $base_url ) ); ?>" class="nav-tab <?php echo $tab === 'debug' ? 'nav-tab-active' : ''; ?>">Debug</a>
 	</nav>
 
@@ -27,6 +28,12 @@ $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 		$disconnect_url = get_rest_url( null, 'wphubpro/v1/disconnect' );
 		$nonce          = wp_create_nonce( 'wp_rest' );
 		include $template_dir . 'admin-connect-tab.php';
+		?>
+	<?php elseif ( $tab === 'logs' ) : ?>
+		<?php
+		$status_url = get_rest_url( null, 'wphubpro/v1/connection-status' );
+		$nonce      = wp_create_nonce( 'wp_rest' );
+		include $template_dir . 'admin-logs-tab.php';
 		?>
 	<?php elseif ( $tab === 'debug' ) : ?>
 		<?php

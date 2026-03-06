@@ -27,10 +27,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<tr><th>Gekoppeld op</th><td id="wphubpro-connected-at">—</td></tr>
 				</tbody>
 			</table>
-			<h3 style="margin:16px 0 8px;font-size:14px">Actielog</h3>
-			<div id="wphubpro-action-log" style="max-height:200px;overflow-y:auto;font-size:12px;background:#f6f7f7;padding:12px;border-radius:4px">
-				<p style="margin:0;color:#646970">Geen acties gelogd.</p>
-			</div>
 			<p style="margin-top:16px">
 				<button type="button" id="wphubpro-reconnect" class="button button-primary">Opnieuw koppelen</button>
 				<button type="button" id="wphubpro-remove" class="button">Verwijderen van hub</button>
@@ -48,19 +44,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	var nonce=<?php echo wp_json_encode( $nonce ); ?>;
 	function req(u,o){o=o||{};o.headers=o.headers||{};o.headers['X-WP-Nonce']=nonce;if(o.body&&typeof o.body==='object'){o.headers['Content-Type']='application/json';o.body=JSON.stringify(o.body);}return fetch(u,o).then(function(r){return r.json();});}
 	function fmt(d){if(!d)return'—';try{return new Date(d).toLocaleString('nl-NL',{dateStyle:'medium',timeStyle:'short'});}catch(e){return d;}}
-	function jsonStr(v){if(v===null||v===undefined)return'—';if(typeof v==='string')return v;try{var s=JSON.stringify(v);return s.length>200?s.substring(0,200)+'…':s;}catch(x){return String(v);}}
-	function esc(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-	function renderLog(d){
-		var el=document.getElementById('wphubpro-action-log');
-		var log=d.api_log;
-		if(!log||!log.length){el.innerHTML='<p style="margin:0;color:#646970">Geen API-aanroepen gelogd.</p>';return;}
-		var h='<table class="widefat striped" style="margin:0"><thead><tr><th>Tijd</th><th>Endpoint</th><th>Type</th><th>Code</th><th>Request</th><th>Response</th></tr></thead><tbody>';
-		log.forEach(function(e){
-			var req=jsonStr(e.request);var res=jsonStr(e.response);
-			h+='<tr><td>'+fmt(e.time)+'</td><td><code style="font-size:11px">'+esc(e.endpoint||'')+'</code></td><td>'+esc(e.type||'')+'</td><td>'+esc(String(e.code||''))+'</td><td title="'+esc(req)+'"><code style="font-size:10px;word-break:break-all">'+esc(req)+'</code></td><td title="'+esc(res)+'"><code style="font-size:10px;word-break:break-all">'+esc(res)+'</code></td></tr>';
-		});
-		el.innerHTML=h+'</tbody></table>';
-	}
 	function load(){var ld=document.getElementById('wphubpro-status-loading'),nc=document.getElementById('wphubpro-not-connected'),card=document.getElementById('wphubpro-connected-card'),err=document.getElementById('wphubpro-status-error'),errMsg=document.getElementById('wphubpro-status-error-msg');
 	ld.style.display='block';nc.style.display='none';card.style.display='none';err.style.display='none';
 	req(statusUrl).then(function(d){ld.style.display='none';
@@ -68,7 +51,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	document.getElementById('wphubpro-username').textContent=d.username||'—';
 	document.getElementById('wphubpro-plan').textContent=d.plan_name||'—';
 	document.getElementById('wphubpro-site-id').innerHTML='<code style="font-size:12px">'+(d.site_id||'—').replace(/</g,'&lt;')+'</code>';
-	document.getElementById('wphubpro-connected-at').textContent=fmt(d.connected_at);renderLog(d);}else{nc.style.display='block';}}).catch(function(){ld.style.display='none';nc.style.display='block';});}
+	document.getElementById('wphubpro-connected-at').textContent=fmt(d.connected_at);}else{nc.style.display='block';}}).catch(function(){ld.style.display='none';nc.style.display='block';});}
 	load();
 	document.getElementById('wphubpro-btn').onclick=function(){req(connectUrl).then(function(d){if(d.redirect)window.location.href=d.redirect;});};
 	document.getElementById('wphubpro-reconnect').onclick=function(){req(connectUrl).then(function(d){if(d.redirect)window.location.href=d.redirect;});};

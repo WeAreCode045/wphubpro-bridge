@@ -2,3 +2,85 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
+
+/* Logs tab */
+.wphubpro-logs-tab .wphubpro-logs-loading,
+.wphubpro-logs-tab .wphubpro-logs-empty {
+	margin: 1em 0;
+	color: #646970;
+}
+
+.wphubpro-logs-table-wrap {
+	margin-top: 1em;
+	overflow-x: auto;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.wphubpro-logs-table {
+	border: 0;
+	margin: 0;
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.wphubpro-logs-table thead th {
+	text-align: left;
+	padding: 10px 12px;
+	background: #f6f7f7;
+	border-bottom: 1px solid #c3c4c7;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wphubpro-logs-table tbody td {
+	padding: 10px 12px;
+	border-bottom: 1px solid #f0f0f1;
+	vertical-align: top;
+}
+
+.wphubpro-logs-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.wphubpro-logs-table .wphubpro-log-time {
+	white-space: nowrap;
+	color: #50575e;
+	font-size: 12px;
+}
+
+.wphubpro-logs-table .wphubpro-log-endpoint code,
+.wphubpro-logs-table .wphubpro-log-request code,
+.wphubpro-logs-table .wphubpro-log-response code {
+	font-size: 12px;
+	word-break: break-all;
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	display: inline-block;
+	max-width: 100%;
+}
+
+.wphubpro-logs-table .wphubpro-log-type {
+	font-weight: 500;
+}
+
+.wphubpro-logs-table .wphubpro-log-code {
+	font-weight: 600;
+}
+
+.wphubpro-logs-table .wphubpro-log-code.wphubpro-code-ok {
+	color: #00a32a;
+}
+
+.wphubpro-logs-table .wphubpro-log-code.wphubpro-code-err {
+	color: #d63638;
+}
+
+.wphubpro-logs-table .wphubpro-log-request,
+.wphubpro-logs-table .wphubpro-log-response {
+	max-width: 280px;
+}

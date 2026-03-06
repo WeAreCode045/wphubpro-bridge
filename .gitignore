@@ -1,2 +1,12 @@
 .DS_Store
 /vendor/
+.gitignore
+templates/admin-connect-tab.php
+templates/admin-page.php
+.gitignore
+templates/admin-connect-tab.php
+templates/admin-page.php
+.gitignore
+assets/css/admin.css
+templates/admin-connect-tab.php
+templates/admin-page.php
