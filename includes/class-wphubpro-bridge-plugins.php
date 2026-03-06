@@ -30,15 +30,28 @@ class WPHubPro_Bridge_Plugins {
 		$all_plugins   = get_plugins();
 		$active_plugins = get_option( 'active_plugins' );
 		$updates       = get_site_transient( 'update_plugins' );
-		$response      = array();
+
+		// After a plugin upgrade, WordPress clears update_plugins transient. Repopulate if empty so list reflects reality.
+		if ( ! $updates || ! is_object( $updates ) ) {
+			if ( function_exists( 'wp_update_plugins' ) ) {
+				wp_update_plugins();
+				$updates = get_site_transient( 'update_plugins' );
+			}
+		}
+
+		$response = array();
+		$updates_response = ( is_object( $updates ) && isset( $updates->response ) && is_array( $updates->response ) ) ? $updates->response : array();
 
 		foreach ( $all_plugins as $file => $data ) {
+			$update_version = isset( $updates_response[ $file ] ) && ! empty( $updates_response[ $file ]->new_version )
+				? $updates_response[ $file ]->new_version
+				: null;
 			$response[] = array(
 				'file'    => $file,
 				'name'    => $data['Name'],
 				'version' => $data['Version'],
 				'active'  => in_array( $file, (array) $active_plugins, true ),
-				'update'  => isset( $updates->response[ $file ] ) ? $updates->response[ $file ]->new_version : null,
+				'update'  => $update_version,
 			);
 		}
 
