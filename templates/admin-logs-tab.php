@@ -49,10 +49,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 		if (!d) return '—';
 		try { return new Date(d).toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return d; }
 	}
-	function jsonStr(v) {
-		if (v === null || v === undefined) return '—';
+	function prettyJson(v) {
+		if (v === null || v === undefined) return '';
 		if (typeof v === 'string') return v;
-		try { var s = JSON.stringify(v); return s.length > 300 ? s.substring(0, 300) + '…' : s; } catch (x) { return String(v); }
+		try { return JSON.stringify(v, null, 2); } catch (x) { return String(v); }
 	}
 	function esc(v) {
 		return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -71,13 +71,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 		wrap.style.display = 'block';
 		var html = '';
 		log.forEach(function(e) {
-			var reqStr = jsonStr(e.request);
-			var resStr = jsonStr(e.response);
 			var code = e.code;
 			var codeClass = (code >= 200 && code < 300) ? 'wphubpro-code-ok' : (code >= 400 ? 'wphubpro-code-err' : '');
-			html += '<tr><td class="wphubpro-log-time">' + fmt(e.time) + '</td><td class="wphubpro-log-endpoint"><code>' + esc(e.endpoint || '') + '</code></td><td class="wphubpro-log-type">' + esc(e.type || '') + '</td><td class="wphubpro-log-code ' + codeClass + '">' + esc(String(code || '')) + '</td><td class="wphubpro-log-request" title="' + esc(reqStr) + '"><code>' + esc(reqStr) + '</code></td><td class="wphubpro-log-response" title="' + esc(resStr) + '"><code>' + esc(resStr) + '</code></td></tr>';
+			var reqJson = esc(prettyJson(e.request));
+			var resJson = esc(prettyJson(e.response));
+			html += '<tr class="wphubpro-log-main-row">';
+			html += '<td class="wphubpro-log-time">' + fmt(e.time) + '</td>';
+			html += '<td class="wphubpro-log-endpoint"><code>' + esc(e.endpoint || '') + '</code></td>';
+			html += '<td class="wphubpro-log-type">' + esc(e.type || '') + '</td>';
+			html += '<td class="wphubpro-log-code ' + codeClass + '">' + esc(String(code || '')) + '</td>';
+			html += '<td class="wphubpro-log-request"><button type="button" class="wphubpro-log-toggle" data-panel="request">Request</button></td>';
+			html += '<td class="wphubpro-log-response"><button type="button" class="wphubpro-log-toggle" data-panel="response">Response</button></td>';
+			html += '</tr>';
+			html += '<tr class="wphubpro-log-detail-row"><td colspan="6" class="wphubpro-log-detail-cell">';
+			html += '<div class="wphubpro-log-detail">';
+			html += '<div class="wphubpro-request-panel wphubpro-panel" style="display:none"><strong>Request</strong><pre class="wphubpro-log-pre">' + reqJson + '</pre></div>';
+			html += '<div class="wphubpro-response-panel wphubpro-panel" style="display:none"><strong>Response</strong><pre class="wphubpro-log-pre">' + resJson + '</pre></div>';
+			html += '</div></td></tr>';
 		});
 		tbody.innerHTML = html;
+		tbody.addEventListener('click', function(ev) {
+			var btn = ev.target.closest('.wphubpro-log-toggle');
+			if (!btn) return;
+			var mainRow = btn.closest('.wphubpro-log-main-row');
+			var detailRow = mainRow.nextElementSibling;
+			if (!detailRow || !detailRow.classList.contains('wphubpro-log-detail-row')) return;
+			var panel = detailRow.querySelector('.wphubpro-' + btn.getAttribute('data-panel') + '-panel');
+			if (!panel) return;
+			var isHidden = panel.style.display === 'none';
+			panel.style.display = isHidden ? 'block' : 'none';
+			btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+		});
 	}).catch(function() {
 		loading.style.display = 'none';
 		empty.style.display = 'block';
