@@ -174,7 +174,7 @@ class WPHubPro_Bridge_Plugins {
 					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 				}
 				$upgrader = new Plugin_Upgrader( $skin );
-				$resp     = apply_filters( 'wphub_plugin_update', $upgrader->update( $plugin ), $plugin, $slug, $req_data );
+				$resp     = apply_filters( 'wphub_plugin_update', $upgrader->upgrade( $plugin ), $plugin, $slug, $req_data );
 				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 				return $resp;
 
