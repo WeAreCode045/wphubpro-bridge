@@ -83,12 +83,26 @@ class WPHubProRecoveryAgent {
             case 'rollback_plugin':
                 $slug = sanitize_text_field($payload['plugin_slug']);
                 $plugin_dir = WP_PLUGIN_DIR . '/' . $slug;
-                if (file_exists($plugin_dir)) {
-                    // Hernoem map om plugin te forceren uit te schakelen
-                    rename($plugin_dir, $plugin_dir . '_wphub_disabled_' . time());
-                    wp_send_json_success("Plugin $slug is gedeactiveerd.");
+                if (!file_exists($plugin_dir)) {
+                    wp_send_json_error("Plugin map niet gevonden.");
+                    break;
                 }
-                wp_send_json_error("Plugin map niet gevonden.");
+                $disabled_dir = WP_PLUGIN_DIR . '/.disabled';
+                if (!is_dir($disabled_dir)) {
+                    if (!wp_mkdir_p($disabled_dir)) {
+                        wp_send_json_error("Kon .disabled map niet aanmaken.");
+                        break;
+                    }
+                }
+                $dest = $disabled_dir . '/' . $slug;
+                if (file_exists($dest)) {
+                    $dest .= '_' . time();
+                }
+                if (rename($plugin_dir, $dest)) {
+                    wp_send_json_success("Plugin $slug is verplaatst naar .disabled.");
+                } else {
+                    wp_send_json_error("Kon plugin niet verplaatsen.");
+                }
                 break;
         }
         exit;
