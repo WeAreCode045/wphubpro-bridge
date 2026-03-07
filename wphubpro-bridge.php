@@ -67,7 +67,7 @@ register_deactivation_hook(__FILE__, function() {
  * Install WPHubPro Recovery Agent as mu-plugin on activation and when bridge is updated.
  */
 function wphubpro_bridge_ensure_recovery_agent() {
-	$source = WPHUBPRO_BRIDGE_ABSPATH . 'wphubpro-recovery-agent.php';
+	$source = WPHUBPRO_BRIDGE_ABSPATH . 'recovery/wphubpro-recovery-agent.php';
 	if ( ! file_exists( $source ) ) {
 		return;
 	}
