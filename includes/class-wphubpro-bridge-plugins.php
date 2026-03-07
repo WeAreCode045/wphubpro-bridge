@@ -16,6 +16,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPHubPro_Bridge_Plugins {
 
+	/** Plugin file path for the bridge (e.g. wphubpro-bridge/wphubpro-bridge.php). */
+	private static function get_bridge_plugin_file() {
+		if ( defined( 'WPHUBPRO_BRIDGE_PLUGIN_FILE' ) ) {
+			return plugin_basename( WPHUBPRO_BRIDGE_PLUGIN_FILE );
+		}
+		return 'wphubpro-bridge/wphubpro-bridge.php';
+	}
+
+	/**
+	 * Whether the given plugin file is the bridge itself.
+	 *
+	 * @param string $plugin Plugin file (e.g. wphubpro-bridge/wphubpro-bridge.php).
+	 * @return bool
+	 */
+	private function is_bridge_plugin( $plugin ) {
+		if ( empty( $plugin ) ) {
+			return false;
+		}
+		$bridge_file = self::get_bridge_plugin_file();
+		return $plugin === $bridge_file || strpos( $plugin, 'wphubpro-bridge/' ) === 0;
+	}
+
 	/**
 	 * Get list of all plugins with status and update info.
 	 *
@@ -121,6 +143,10 @@ class WPHubPro_Bridge_Plugins {
 			WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
 		}
+		if ( $this->is_bridge_plugin( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'error' => 'Cannot deactivate WPHubPro Bridge from platform.' ) );
+			return new WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be deactivated from the platform. Deactivate it in WordPress Admin > Plugins to manage the connection.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
+		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		do_action( 'wphub_plugin_action_pre', 'deactivate', $plugin, $slug, $params );
@@ -151,6 +177,10 @@ class WPHubPro_Bridge_Plugins {
 		if ( is_wp_error( $err ) ) {
 			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
+		}
+		if ( $this->is_bridge_plugin( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Cannot update WPHubPro Bridge from platform.' ) );
+			return new WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be updated from the platform. Update it in WordPress Admin > Plugins to keep the connection intact.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -198,6 +228,10 @@ class WPHubPro_Bridge_Plugins {
 		if ( is_wp_error( $err ) ) {
 			WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
+		}
+		if ( $this->is_bridge_plugin( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Cannot uninstall WPHubPro Bridge from platform.' ) );
+			return new WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be uninstalled from the platform. Use WordPress Admin > Plugins to remove it.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
