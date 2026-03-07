@@ -29,15 +29,14 @@ class WPHubPro_Bridge_Plugins {
 		}
 		$all_plugins   = get_plugins();
 		$active_plugins = get_option( 'active_plugins' );
-		$updates       = get_site_transient( 'update_plugins' );
 
-		// After a plugin upgrade, WordPress clears update_plugins transient. Repopulate if empty so list reflects reality.
-		if ( ! $updates || ! is_object( $updates ) ) {
-			if ( function_exists( 'wp_update_plugins' ) ) {
-				wp_update_plugins();
-				$updates = get_site_transient( 'update_plugins' );
-			}
+		// Always refresh update availability from WordPress.org when serving the plugins list.
+		// wp_update_plugins() respects its own timeout (avoids excessive API calls) but ensures
+		// we return fresh data whenever the transient has expired.
+		if ( function_exists( 'wp_update_plugins' ) ) {
+			wp_update_plugins();
 		}
+		$updates = get_site_transient( 'update_plugins' );
 
 		$response = array();
 		$updates_response = ( is_object( $updates ) && isset( $updates->response ) && is_array( $updates->response ) ) ? $updates->response : array();
