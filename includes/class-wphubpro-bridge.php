@@ -165,10 +165,29 @@ class WPHubPro_Bridge {
 			'callback'            => array( $this->themes, 'get_themes_list' ),
 			'permission_callback' => $validate,
 		) );
-		register_rest_route( $namespace, '/themes/manage', array(
+		$theme_args = array(
+			'slug' => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+		register_rest_route( $namespace, '/themes/manage/activate', array(
 			'methods'             => 'POST',
-			'callback'            => array( $this->themes, 'manage_theme' ),
+			'callback'            => array( $this->themes, 'activate_theme' ),
 			'permission_callback' => $validate,
+			'args'                => $theme_args,
+		) );
+		register_rest_route( $namespace, '/themes/manage/update', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->themes, 'update_theme' ),
+			'permission_callback' => $validate,
+			'args'                => $theme_args,
+		) );
+		register_rest_route( $namespace, '/themes/manage/delete', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->themes, 'delete_theme' ),
+			'permission_callback' => $validate,
+			'args'                => $theme_args,
 		) );
 
 		// Site details (WordPress version, plugin/theme counts, PHP info)
