@@ -99,6 +99,12 @@ class WPHubProRecoveryAgent {
                     $dest .= '_' . time();
                 }
                 if (rename($plugin_dir, $dest)) {
+                    if (file_exists($this->log_file)) {
+                        $log_content = file_get_contents($this->log_file);
+                        $error_log_path = $dest . '/error.log';
+                        $header = '[' . gmdate('Y-m-d H:i:s') . '] WPHubPro rollback - fatal error data:' . "\n";
+                        file_put_contents($error_log_path, $header . $log_content . "\n", LOCK_EX);
+                    }
                     wp_send_json_success("Plugin $slug is verplaatst naar .disabled.");
                 } else {
                     wp_send_json_error("Kon plugin niet verplaatsen.");
