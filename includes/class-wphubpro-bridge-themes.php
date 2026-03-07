@@ -25,8 +25,11 @@ class WPHubPro_Bridge_Themes {
 	public function get_themes_list( $request ) {
 		$all_themes = wp_get_themes();
 		$current    = get_stylesheet();
-		$updates    = get_site_transient( 'update_themes' );
-		$response   = array();
+		if ( function_exists( 'wp_update_themes' ) ) {
+			wp_update_themes();
+		}
+		$updates  = get_site_transient( 'update_themes' );
+		$response = array();
 
 		foreach ( $all_themes as $slug => $theme ) {
 			$response[] = array(
@@ -54,57 +57,115 @@ class WPHubPro_Bridge_Themes {
 	}
 
 	/**
-	 * Manage theme: activate, delete, update, install.
+	 * Parse theme slug from request (query, body param, or raw body).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return string
+	 */
+	private function parse_theme_slug( $request ) {
+		$slug = $request->get_param( 'slug' );
+		if ( empty( $slug ) ) {
+			$body_raw = $request->get_param( 'body' );
+			if ( is_string( $body_raw ) ) {
+				$decoded = json_decode( $body_raw, true );
+				if ( is_array( $decoded ) && ! empty( $decoded['slug'] ) ) {
+					return sanitize_text_field( $decoded['slug'] );
+				}
+			}
+			if ( ! empty( $request->get_body() ) ) {
+				$decoded = json_decode( $request->get_body(), true );
+				if ( is_array( $decoded ) && ! empty( $decoded['slug'] ) ) {
+					return sanitize_text_field( $decoded['slug'] );
+				}
+			}
+		}
+		return $slug ? sanitize_text_field( $slug ) : '';
+	}
+
+	/**
+	 * Validate theme slug and that theme exists.
+	 *
+	 * @param string $slug Theme slug.
+	 * @return WP_Error|null
+	 */
+	private function validate_theme_slug( $slug ) {
+		if ( empty( $slug ) ) {
+			return new WP_Error( 'invalid_theme', 'Invalid or missing theme slug' );
+		}
+		$theme = wp_get_theme( $slug );
+		if ( ! $theme->exists() ) {
+			return new WP_Error( 'theme_not_found', 'Theme not found: ' . $slug );
+		}
+		return null;
+	}
+
+	/**
+	 * Activate a theme.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return mixed
 	 */
-	public function manage_theme( $request ) {
+	public function activate_theme( $request ) {
+		$endpoint = 'themes/manage/activate';
 		$site_url = get_site_url();
-		$endpoint = 'themes/manage';
-		$req_data = array(
-			'action' => $request->get_param( 'action' ),
-			'slug'   => $request->get_param( 'slug' ),
-		);
+		$slug     = $this->parse_theme_slug( $request );
+		$err      = $this->validate_theme_slug( $slug );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			return $err;
+		}
+		require_once ABSPATH . 'wp-admin/includes/theme.php';
+		do_action( 'wphub_theme_action_pre', 'activate', $slug, array( 'slug' => $slug ) );
+		$resp = apply_filters( 'wphub_theme_activate', switch_theme( $slug ), $slug, array( 'slug' => $slug ) );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		return is_wp_error( $resp ) ? $resp : true;
+	}
 
+	/**
+	 * Update a theme.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function update_theme( $request ) {
+		$endpoint = 'themes/manage/update';
+		$site_url = get_site_url();
+		$slug     = $this->parse_theme_slug( $request );
+		$err      = $this->validate_theme_slug( $slug );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			return $err;
+		}
 		require_once ABSPATH . 'wp-admin/includes/theme.php';
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		do_action( 'wphub_theme_action_pre', 'update', $slug, array( 'slug' => $slug ) );
+		$skin    = new Automatic_Upgrader_Skin();
+		$upgrader = new Theme_Upgrader( $skin );
+		$resp     = apply_filters( 'wphub_theme_update', $upgrader->update( $slug ), $slug, array( 'slug' => $slug ) );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
+		return $resp;
+	}
 
-		$action = $req_data['action'];
-		$slug   = $req_data['slug'];
-
-		do_action( 'wphub_theme_action_pre', $action, $slug, $req_data );
-
-		$skin = new Automatic_Upgrader_Skin();
-
-		switch ( $action ) {
-			case 'activate':
-				$resp = apply_filters( 'wphub_theme_activate', switch_theme( $slug ), $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'success' => true ) );
-				return true;
-
-			case 'delete':
-				$resp = apply_filters( 'wphub_theme_delete', delete_theme( $slug ), $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-				return $resp;
-
-			case 'update':
-				$upgrader = new Theme_Upgrader( $skin );
-				$resp     = apply_filters( 'wphub_theme_update', $upgrader->update( $slug ), $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
-				return $resp;
-
-			case 'install':
-				$api      = themes_api( 'theme_information', array( 'slug' => $slug, 'fields' => array( 'sections' => false ) ) );
-				$upgrader = new Theme_Upgrader( $skin );
-				$resp     = apply_filters( 'wphub_theme_install', $upgrader->install( $api->download_link ), $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'installed' => is_array( $resp ) ? true : $resp ) );
-				return $resp;
-
-			default:
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Action not supported' ) );
-				return new WP_Error( 'invalid_action', 'Action not supported' );
+	/**
+	 * Delete (deinstall) a theme.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function delete_theme( $request ) {
+		$endpoint = 'themes/manage/delete';
+		$site_url = get_site_url();
+		$slug     = $this->parse_theme_slug( $request );
+		$err      = $this->validate_theme_slug( $slug );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			return $err;
 		}
+		require_once ABSPATH . 'wp-admin/includes/theme.php';
+		do_action( 'wphub_theme_action_pre', 'delete', $slug, array( 'slug' => $slug ) );
+		$resp = apply_filters( 'wphub_theme_delete', delete_theme( $slug ), $slug, array( 'slug' => $slug ) );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		return $resp;
 	}
 }
