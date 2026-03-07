@@ -104,6 +104,7 @@ class WPHubProRecoveryAgent {
                         $error_log_path = $dest . '/error.log';
                         $header = '[' . gmdate('Y-m-d H:i:s') . '] WPHubPro rollback - fatal error data:' . "\n";
                         file_put_contents($error_log_path, $header . $log_content . "\n", LOCK_EX);
+                        @unlink($this->log_file);
                     }
                     wp_send_json_success("Plugin $slug is verplaatst naar .disabled.");
                 } else {
