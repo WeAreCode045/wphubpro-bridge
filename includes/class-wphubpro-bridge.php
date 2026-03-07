@@ -136,37 +136,25 @@ class WPHubPro_Bridge {
 
 		register_rest_route( $namespace, '/plugins/manage/activate', array(
 			'methods'             => 'POST',
-			'callback'            => function ( $request ) {
-				$request->set_param( 'action', 'activate' );
-				return $this->plugins->manage_plugin( $request );
-			},
+			'callback'            => array( $this->plugins, 'activate_plugin' ),
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
 		register_rest_route( $namespace, '/plugins/manage/deactivate', array(
 			'methods'             => 'POST',
-			'callback'            => function ( $request ) {
-				$request->set_param( 'action', 'deactivate' );
-				return $this->plugins->manage_plugin( $request );
-			},
+			'callback'            => array( $this->plugins, 'deactivate_plugin' ),
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
 		register_rest_route( $namespace, '/plugins/manage/uninstall', array(
 			'methods'             => 'POST',
-			'callback'            => function ( $request ) {
-				$request->set_param( 'action', 'delete' );
-				return $this->plugins->manage_plugin( $request );
-			},
+			'callback'            => array( $this->plugins, 'uninstall_plugin' ),
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
 		register_rest_route( $namespace, '/plugins/manage/update', array(
 			'methods'             => 'POST',
-			'callback'            => function ( $request ) {
-				$request->set_param( 'action', 'update' );
-				return $this->plugins->manage_plugin( $request );
-			},
+			'callback'            => array( $this->plugins, 'update_plugin' ),
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );

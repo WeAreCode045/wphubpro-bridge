@@ -2,7 +2,7 @@
 /**
  * Plugin management for WPHubPro Bridge.
  *
- * Handles: list, install, update, activate, deactivate, delete (remove).
+ * Handles: list, activate, deactivate, update, uninstall.
  *
  * @package WPHubPro
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Plugin management: install, update, activate, deactivate, delete.
+ * Plugin management: list, activate, deactivate, update, uninstall.
  */
 class WPHubPro_Bridge_Plugins {
 
@@ -71,19 +71,150 @@ class WPHubPro_Bridge_Plugins {
 	}
 
 	/**
-	 * Manage plugin: activate, deactivate, delete, update, install.
+	 * Activate a plugin.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return mixed
 	 */
-	public function manage_plugin( $request ) {
+	public function activate_plugin( $request ) {
+		$endpoint = 'plugins/manage/activate';
 		$site_url = get_site_url();
-		$action   = $request->get_param( 'action' );
-		$endpoint = 'plugins/manage/' . ( $action === 'delete' ? 'uninstall' : $action );
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$slug     = $params['slug'];
 
+		if ( empty( $plugin ) && ! empty( $slug ) ) {
+			$plugin = $this->resolve_plugin_file( $slug );
+		}
+		$err = $this->validate_plugin_file( $plugin );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			return $err;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		do_action( 'wphub_plugin_action_pre', 'activate', $plugin, $slug, $params );
+		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
+
+		$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $params );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		return $resp;
+	}
+
+	/**
+	 * Deactivate a plugin.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function deactivate_plugin( $request ) {
+		$endpoint = 'plugins/manage/deactivate';
+		$site_url = get_site_url();
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$slug     = $params['slug'];
+
+		if ( empty( $plugin ) && ! empty( $slug ) ) {
+			$plugin = $this->resolve_plugin_file( $slug );
+		}
+		$err = $this->validate_plugin_file( $plugin );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			return $err;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		do_action( 'wphub_plugin_action_pre', 'deactivate', $plugin, $slug, $params );
+		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
+
+		apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $params );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'success' => true ) );
+		return true;
+	}
+
+	/**
+	 * Update a plugin.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function update_plugin( $request ) {
+		$endpoint = 'plugins/manage/update';
+		$site_url = get_site_url();
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$slug     = $params['slug'];
+
+		if ( empty( $plugin ) && ! empty( $slug ) ) {
+			$plugin = $this->resolve_plugin_file( $slug );
+		}
+		$err = $this->validate_plugin_file( $plugin );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			return $err;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		do_action( 'wphub_plugin_action_pre', 'update', $plugin, $slug, $params );
+		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
+
+		$skin    = new Automatic_Upgrader_Skin();
+		$upgrader = new Plugin_Upgrader( $skin );
+		$resp     = apply_filters( 'wphub_plugin_update', $upgrader->upgrade( $plugin ), $plugin, $slug, $params );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
+		return $resp;
+	}
+
+	/**
+	 * Uninstall (deactivate, run uninstall, delete) a plugin.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function uninstall_plugin( $request ) {
+		$endpoint = 'plugins/manage/uninstall';
+		$site_url = get_site_url();
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$slug     = $params['slug'];
+
+		if ( empty( $plugin ) && ! empty( $slug ) ) {
+			$plugin = $this->resolve_plugin_file( $slug );
+		}
+		$err = $this->validate_plugin_file( $plugin );
+		if ( is_wp_error( $err ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			return $err;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		do_action( 'wphub_plugin_action_pre', 'delete', $plugin, $slug, $params );
+		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
+
+		if ( is_plugin_active( $plugin ) ) {
+			$deact = deactivate_plugins( $plugin );
+			if ( is_wp_error( $deact ) ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Deactivate before uninstall failed: ' . $deact->get_error_message() ) );
+				return $deact;
+			}
+		}
+		uninstall_plugin( $plugin );
+		$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $params );
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		return $resp;
+	}
+
+	/**
+	 * Parse plugin and slug from request (query, body param, or raw body).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return array{plugin: string, slug: string}
+	 */
+	private function parse_plugin_params( $request ) {
 		$plugin = $request->get_param( 'plugin' );
 		$slug   = $request->get_param( 'slug' );
-		// Body may arrive as query param "body" (e.g. from Appwrite proxy) instead of POST body.
 		if ( empty( $plugin ) || empty( $slug ) ) {
 			$body_raw = $request->get_param( 'body' );
 			if ( is_string( $body_raw ) ) {
@@ -109,99 +240,20 @@ class WPHubPro_Bridge_Plugins {
 				}
 			}
 		}
+		return array( 'plugin' => $plugin ?: '', 'slug' => $slug ?: '' );
+	}
 
-		$req_data = array(
-			'action' => $action,
-			'plugin' => $plugin,
-			'slug'   => $slug,
-		);
-
-		// Debug: log alle binnenkomende plugin-actions
-		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array(
-			'get_params'   => $req_data,
-			'body_params'  => $request->get_body_params(),
-			'query_params' => $request->get_query_params(),
-		) ) );
-
-		require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-
-		$action = $req_data['action'];
-		$plugin = $req_data['plugin'];
-		$slug   = $req_data['slug'];
-
-		do_action( 'wphub_plugin_action_pre', $action, $plugin, $slug, $req_data );
-
-		if ( in_array( $action, array( 'activate', 'deactivate', 'delete', 'update' ), true ) ) {
-			if ( empty( $plugin ) && ! empty( $slug ) ) {
-				$plugin = $this->resolve_plugin_file( $slug );
-			}
-			if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
-				return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
-			}
+	/**
+	 * Validate plugin file path format.
+	 *
+	 * @param string $plugin Plugin file path.
+	 * @return WP_Error|null WP_Error on failure, null on success.
+	 */
+	private function validate_plugin_file( $plugin ) {
+		if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
+			return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 		}
-
-		$skin = new Automatic_Upgrader_Skin();
-
-		switch ( $action ) {
-			case 'activate':
-				$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-				return $resp;
-
-			case 'deactivate':
-				$resp = apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'success' => true ) );
-				return true;
-
-			case 'delete':
-				if ( empty( $plugin ) && ! empty( $slug ) ) {
-					$plugin = $this->resolve_plugin_file( $slug );
-				}
-				if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
-					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
-				}
-				// Deactivate first; uninstall_plugin() and delete_plugins() require the plugin to be inactive.
-				if ( is_plugin_active( $plugin ) ) {
-					$deact = deactivate_plugins( $plugin );
-					if ( is_wp_error( $deact ) ) {
-						WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Deactivate before uninstall failed: ' . $deact->get_error_message() ) );
-						return $deact;
-					}
-				}
-				// Run the plugin's uninstall.php or registered uninstall hook before deleting files.
-				uninstall_plugin( $plugin );
-				$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-				return $resp;
-
-			case 'update':
-				if ( empty( $plugin ) && ! empty( $slug ) ) {
-					$plugin = $this->resolve_plugin_file( $slug );
-				}
-				if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-					WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Invalid or missing plugin param' ) );
-					return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
-				}
-				$upgrader = new Plugin_Upgrader( $skin );
-				$resp     = apply_filters( 'wphub_plugin_update', $upgrader->upgrade( $plugin ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
-				return $resp;
-
-			case 'install':
-				$api      = plugins_api( 'plugin_information', array( 'slug' => $slug, 'fields' => array( 'sections' => false ) ) );
-				$upgrader = new Plugin_Upgrader( $skin );
-				$resp     = apply_filters( 'wphub_plugin_install', $upgrader->install( $api->download_link ), $plugin, $slug, $req_data );
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'installed' => is_array( $resp ) ? true : $resp ) );
-				return $resp;
-
-			default:
-				WPHubPro_Bridge_Logger::log_action( $site_url, $action, $endpoint, $req_data, array( 'error' => 'Action not supported' ) );
-				return new WP_Error( 'invalid_action', 'Action not supported' );
-		}
+		return null;
 	}
 
 	/**
