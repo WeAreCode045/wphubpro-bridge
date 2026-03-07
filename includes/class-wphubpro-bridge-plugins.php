@@ -88,7 +88,7 @@ class WPHubPro_Bridge_Plugins {
 		}
 		$err = $this->validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) ) {
-			WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
 			return $err;
 		}
 
@@ -160,9 +160,21 @@ class WPHubPro_Bridge_Plugins {
 		do_action( 'wphub_plugin_action_pre', 'update', $plugin, $slug, $params );
 		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
 
+		// When updating via REST API (not cron), Plugin_Upgrader deactivates the plugin but does NOT
+		// reactivate it. We must restore activation state after a successful upgrade.
+		$was_active = is_plugin_active( $plugin );
+
 		$skin    = new Automatic_Upgrader_Skin();
 		$upgrader = new Plugin_Upgrader( $skin );
 		$resp     = apply_filters( 'wphub_plugin_update', $upgrader->upgrade( $plugin ), $plugin, $slug, $params );
+
+		if ( ! is_wp_error( $resp ) && $was_active ) {
+			$activate_result = activate_plugin( $plugin );
+			if ( is_wp_error( $activate_result ) ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'warning' => 'Upgrade succeeded but reactivation failed: ' . $activate_result->get_error_message() ) );
+			}
+		}
+
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 		return $resp;
 	}
