@@ -28,7 +28,7 @@ class Client
      *
      * @var string
      */
-    protected string $endpoint = 'https://cloud.appwrite.io/v1';
+    protected string $endpoint = 'https://api.wphub.pro/v1';
 
     /**
      * Global Headers
