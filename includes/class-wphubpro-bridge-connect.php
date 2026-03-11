@@ -114,6 +114,7 @@ class WPHubPro_Bridge_Connect {
 		delete_option( 'WPHUBPRO_ENDPOINT' );
 		delete_option( 'WPHUBPRO_PROJECT_ID' );
 		delete_option( 'WPHUBPRO_SITE_ID' );
+		delete_option( 'WPHUBPRO_HEARTBEAT_URL' );
 		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_AT' );
 		update_option( 'wphub_status', 'disconnected' );
 		WPHubPro_Bridge_Heartbeat::unschedule();
@@ -129,10 +130,11 @@ class WPHubPro_Bridge_Connect {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_save_connection( $request ) {
-		$jwt       = $request->get_param( 'jwt' );
-		$endpoint  = $request->get_param( 'endpoint' );
-		$project_id = $request->get_param( 'project_id' );
-		$site_id   = $request->get_param( 'site_id' );
+		$jwt          = $request->get_param( 'jwt' );
+		$endpoint     = $request->get_param( 'endpoint' );
+		$project_id   = $request->get_param( 'project_id' );
+		$site_id      = $request->get_param( 'site_id' );
+		$heartbeat_url = $request->get_param( 'heartbeat_url' );
 
 		if ( empty( $jwt ) ) {
 			return new WP_Error( 'missing_jwt', 'JWT is required', array( 'status' => 400 ) );
@@ -147,6 +149,11 @@ class WPHubPro_Bridge_Connect {
 		}
 		if ( ! empty( $site_id ) ) {
 			update_option( 'WPHUBPRO_SITE_ID', sanitize_text_field( $site_id ) );
+		}
+		if ( ! empty( $heartbeat_url ) ) {
+			update_option( 'WPHUBPRO_HEARTBEAT_URL', esc_url_raw( untrailingslashit( $heartbeat_url ) ) );
+		} else {
+			delete_option( 'WPHUBPRO_HEARTBEAT_URL' );
 		}
 		update_option( 'wphub_status', 'connected' );
 

@@ -55,48 +55,69 @@ class WPHubPro_Bridge_Heartbeat {
 	 * @return bool True on success, false on failure (logged).
 	 */
 	public static function send_heartbeat() {
-		$site_id  = get_option( 'WPHUBPRO_SITE_ID' );
-		$jwt      = get_option( 'WPHUBPRO_USER_JWT' );
-		$endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
-		$project  = get_option( 'WPHUBPRO_PROJECT_ID' );
+		$site_id       = get_option( 'WPHUBPRO_SITE_ID' );
+		$jwt           = get_option( 'WPHUBPRO_USER_JWT' );
+		$endpoint      = get_option( 'WPHUBPRO_ENDPOINT' );
+		$project       = get_option( 'WPHUBPRO_PROJECT_ID' );
+		$heartbeat_url = get_option( 'WPHUBPRO_HEARTBEAT_URL', '' );
 
-		if ( empty( $site_id ) || empty( $jwt ) || empty( $endpoint ) || empty( $project ) ) {
+		if ( empty( $site_id ) || empty( $jwt ) ) {
 			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array(
-				'skipped' => 'Missing site_id, jwt, endpoint or project_id',
-				'has_site_id' => ! empty( $site_id ),
+				'skipped'      => 'Missing site_id or jwt',
+				'has_site_id'  => ! empty( $site_id ),
 			) );
 			wp_clear_scheduled_hook( self::CRON_HOOK );
 			return false;
 		}
-
-		$url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
 
 		$payload = array(
 			'siteId'  => $site_id,
 			'site_id' => $site_id,
 		);
 
-		$request_body = wp_json_encode( array(
-			'body'    => wp_json_encode( $payload ),
-			'method'  => 'POST',
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $jwt,
-				'Content-Type'  => 'application/json',
-			),
-		) );
-
-		$response = wp_remote_post(
-			$url,
-			array(
+		// Prefer function domain: JWT in header avoids body truncation ("Incomplete segments")
+		if ( ! empty( $heartbeat_url ) ) {
+			$url = untrailingslashit( $heartbeat_url );
+			$response = wp_remote_post(
+				$url,
+				array(
+					'headers' => array(
+						'Content-Type'            => 'application/json',
+						'x-appwrite-user-jwt'    => $jwt,
+					),
+					'body'    => wp_json_encode( $payload ),
+					'timeout' => 15,
+				)
+			);
+		} else {
+			// Fallback: executions API (JWT in body; may truncate on some setups)
+			if ( empty( $endpoint ) || empty( $project ) ) {
+				WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
+				return false;
+			}
+			$url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
+			$payload['jwt'] = $jwt;
+			$request_body = wp_json_encode( array(
+				'body'    => wp_json_encode( $payload ),
+				'method'  => 'POST',
 				'headers' => array(
-					'Content-Type'       => 'application/json',
-					'X-Appwrite-Project' => $project,
-					'X-Appwrite-JWT'    => $jwt,
+					'Authorization' => 'Bearer ' . $jwt,
+					'Content-Type'  => 'application/json',
 				),
-				'body'    => $request_body,
-				'timeout' => 15,
-			)
-		);
+			) );
+			$response = wp_remote_post(
+				$url,
+				array(
+					'headers' => array(
+						'Content-Type'         => 'application/json',
+						'X-Appwrite-Project'   => $project,
+						'X-Appwrite-JWT'      => $jwt,
+					),
+					'body'    => $request_body,
+					'timeout' => 15,
+				)
+			);
+		}
 
 		$code = wp_remote_retrieve_response_code( $response );
 		$body_response = wp_remote_retrieve_body( $response );

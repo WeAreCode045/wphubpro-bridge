@@ -99,25 +99,30 @@ class WPHubPro_Bridge {
 			'callback'            => array( $this->connect, 'handle_save_connection' ),
 			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
 			'args'                => array(
-				'jwt'        => array(
+				'jwt'           => array(
 					'required'          => true,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 				),
-				'endpoint'   => array(
+				'endpoint'      => array(
 					'required'          => false,
 					'type'              => 'string',
 					'sanitize_callback' => 'esc_url_raw',
 				),
-				'project_id' => array(
+				'project_id'    => array(
 					'required'          => false,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 				),
-				'site_id'   => array(
+				'site_id'       => array(
 					'required'          => false,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'heartbeat_url' => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'esc_url_raw',
 				),
 			),
 		) );
