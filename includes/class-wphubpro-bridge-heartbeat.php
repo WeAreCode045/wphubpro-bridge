@@ -157,4 +157,14 @@ class WPHubPro_Bridge_Heartbeat {
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 	}
+
+	/**
+	 * Handle heartbeat/poke REST request.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function handle_poke( $request ) {
+		return rest_ensure_response( array( 'success' => true, 'poked' => true ) );
+	}
 }

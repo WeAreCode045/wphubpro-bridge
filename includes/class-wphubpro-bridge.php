@@ -93,6 +93,13 @@ class WPHubPro_Bridge {
 			},
 		) );
 
+		// Heartbeat poke (platform can call to verify bridge is reachable)
+		register_rest_route( $namespace, '/heartbeat/poke', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( 'WPHubPro_Bridge_Heartbeat', 'handle_poke' ),
+			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
+		) );
+
 		// Save connection (api_key, endpoint, project) from platform - validates via X-WPHub-Key
 		register_rest_route( $namespace, '/save-connection', array(
 			'methods'             => 'POST',
