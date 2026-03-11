@@ -113,23 +113,26 @@ class WPHubPro_Bridge_Connect {
 		delete_option( 'WPHUBPRO_USER_JWT' );
 		delete_option( 'WPHUBPRO_ENDPOINT' );
 		delete_option( 'WPHUBPRO_PROJECT_ID' );
+		delete_option( 'WPHUBPRO_SITE_ID' );
 		delete_option( 'WPHUBPRO_CONNECTION_STATUS' );
 		delete_option( 'WPHUBPRO_DATA' );
+		WPHubPro_Bridge_Heartbeat::unschedule();
 		return array( 'success' => true );
 	}
 
 	/**
-	 * Handle save connection: store JWT, endpoint, project from platform.
+	 * Handle save connection: store JWT, endpoint, project, site_id from platform.
 	 *
 	 * Called by ConnectSuccessPage after site create/update. Validates API key.
 	 *
-	 * @param WP_REST_Request $request Request with jwt, endpoint, project_id.
+	 * @param WP_REST_Request $request Request with jwt, endpoint, project_id, site_id.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_save_connection( $request ) {
 		$jwt       = $request->get_param( 'jwt' );
 		$endpoint  = $request->get_param( 'endpoint' );
 		$project_id = $request->get_param( 'project_id' );
+		$site_id   = $request->get_param( 'site_id' );
 
 		if ( empty( $jwt ) ) {
 			return new WP_Error( 'missing_jwt', 'JWT is required', array( 'status' => 400 ) );
@@ -142,10 +145,15 @@ class WPHubPro_Bridge_Connect {
 		if ( ! empty( $project_id ) ) {
 			update_option( 'WPHUBPRO_PROJECT_ID', $project_id );
 		}
+		if ( ! empty( $site_id ) ) {
+			update_option( 'WPHUBPRO_SITE_ID', sanitize_text_field( $site_id ) );
+		}
 		update_option( 'WPHUBPRO_CONNECTION_STATUS', array(
 			'status'       => 'connected',
 			'connected_at' => current_time( 'c' ),
 		) );
+
+		WPHubPro_Bridge_Heartbeat::schedule();
 
 		return rest_ensure_response( array( 'success' => true ) );
 	}

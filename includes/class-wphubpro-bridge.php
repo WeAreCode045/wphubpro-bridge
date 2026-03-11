@@ -114,6 +114,11 @@ class WPHubPro_Bridge {
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 				),
+				'site_id'   => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
 			),
 		) );
 

@@ -118,6 +118,9 @@ class WPHubPro_Bridge_Themes {
 		do_action( 'wphub_theme_action_pre', 'activate', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_activate', switch_theme( $slug ), $slug, array( 'slug' => $slug ) );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
+		}
 		return is_wp_error( $resp ) ? $resp : true;
 	}
 
@@ -144,6 +147,9 @@ class WPHubPro_Bridge_Themes {
 		$upgrader = new Theme_Upgrader( $skin );
 		$resp     = apply_filters( 'wphub_theme_update', $upgrader->update( $slug ), $slug, array( 'slug' => $slug ) );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
+		}
 		return $resp;
 	}
 
@@ -166,6 +172,9 @@ class WPHubPro_Bridge_Themes {
 		do_action( 'wphub_theme_action_pre', 'delete', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_delete', delete_theme( $slug ), $slug, array( 'slug' => $slug ) );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
+		}
 		return $resp;
 	}
 }
