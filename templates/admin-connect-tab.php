@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<tr><th>Plan</th><td id="wphubpro-plan">—</td></tr>
 					<tr><th>Site ID</th><td id="wphubpro-site-id"><code style="font-size:12px">—</code></td></tr>
 					<tr><th>Gekoppeld op</th><td id="wphubpro-connected-at">—</td></tr>
+					<tr><th>Laatste heartbeat</th><td id="wphubpro-last-heartbeat"><span id="wphubpro-heartbeat-bullet" class="wphubpro-ht-bullet" title="Heartbeat bereikt platform" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle"></span><span id="wphubpro-last-heartbeat-text">—</span></td></tr>
 				</tbody>
 			</table>
 			<p style="margin-top:16px">
@@ -51,7 +52,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	document.getElementById('wphubpro-username').textContent=d.username||'—';
 	document.getElementById('wphubpro-plan').textContent=d.plan_name||'—';
 	document.getElementById('wphubpro-site-id').innerHTML='<code style="font-size:12px">'+(d.site_id||'—').replace(/</g,'&lt;')+'</code>';
-	document.getElementById('wphubpro-connected-at').textContent=fmt(d.connected_at);}else{nc.style.display='block';}}).catch(function(){ld.style.display='none';nc.style.display='block';});}
+	document.getElementById('wphubpro-connected-at').textContent=fmt(d.connected_at);
+	var bullet=document.getElementById('wphubpro-heartbeat-bullet'),txt=document.getElementById('wphubpro-last-heartbeat-text');
+	bullet.style.backgroundColor=d.heartbeat_reached?'#22c55e':'#ef4444';
+	bullet.title=d.heartbeat_reached?'Heartbeat bereikt platform':'Heartbeat bereikt platform niet';
+	txt.textContent=fmt(d.last_heartbeat_at)||'—';}else{nc.style.display='block';}}).catch(function(){ld.style.display='none';nc.style.display='block';});}
 	load();
 	document.getElementById('wphubpro-btn').onclick=function(){req(connectUrl).then(function(d){if(d.redirect)window.location.href=d.redirect;});};
 	document.getElementById('wphubpro-reconnect').onclick=function(){req(connectUrl).then(function(d){if(d.redirect)window.location.href=d.redirect;});};

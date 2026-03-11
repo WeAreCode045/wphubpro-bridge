@@ -102,15 +102,19 @@ class WPHubPro_Bridge_Heartbeat {
 		$body_response = wp_remote_retrieve_body( $response );
 
 		if ( is_wp_error( $response ) ) {
+			update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'failed' );
 			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
 			return false;
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
+			update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'failed' );
 			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
 			return false;
 		}
 
+		update_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', current_time( 'c' ) );
+		update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'success' );
 		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}

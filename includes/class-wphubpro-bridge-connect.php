@@ -116,6 +116,8 @@ class WPHubPro_Bridge_Connect {
 		delete_option( 'WPHUBPRO_SITE_ID' );
 		delete_option( 'WPHUBPRO_CONNECTION_STATUS' );
 		delete_option( 'WPHUBPRO_DATA' );
+		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_AT' );
+		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS' );
 		WPHubPro_Bridge_Heartbeat::unschedule();
 		return array( 'success' => true );
 	}

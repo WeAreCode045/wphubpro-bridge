@@ -40,9 +40,11 @@ class WPHubPro_Bridge_Connection_Status {
 
 		if ( empty( $jwt ) || empty( $endpoint ) || empty( $project ) || ! class_exists( 'Appwrite\Client' ) ) {
 			return array(
-				'connected' => true,
-				'error'     => __( 'Appwrite config not set. Connect from dashboard to save JWT and connection details.', 'wphubpro-bridge' ),
-				'api_log'   => $api_log,
+				'connected'         => true,
+				'error'            => __( 'Appwrite config not set. Connect from dashboard to save JWT and connection details.', 'wphubpro-bridge' ),
+				'api_log'          => $api_log,
+				'last_heartbeat_at' => get_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', '' ),
+				'heartbeat_reached' => get_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', '' ) === 'success',
 			);
 		}
 
@@ -50,9 +52,11 @@ class WPHubPro_Bridge_Connection_Status {
 
 		if ( ! $site ) {
 			return array(
-				'connected' => true,
-				'error'     => __( 'Site not found in platform. Connect from the dashboard to link this site.', 'wphubpro-bridge' ),
-				'api_log'   => $api_log,
+				'connected'         => true,
+				'error'            => __( 'Site not found in platform. Connect from the dashboard to link this site.', 'wphubpro-bridge' ),
+				'api_log'          => $api_log,
+				'last_heartbeat_at' => get_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', '' ),
+				'heartbeat_reached' => get_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', '' ) === 'success',
 			);
 		}
 
@@ -70,23 +74,29 @@ class WPHubPro_Bridge_Connection_Status {
 		// Plan: fetch from accounts by user_id (connected site owner).
 		$plan_name = $user_id ? self::fetch_plan_name_via_sdk( $endpoint, $project, $jwt, $user_id ) : '';
 
+		$last_heartbeat_at = get_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', '' );
+		$heartbeat_reached = get_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', '' ) === 'success';
 		$platform_data = array(
 			'site_id'           => $site_id,
 			'username'          => $username,
 			'plan_name'         => $plan_name,
 			'connection_status' => 'connected',
 			'connected_at'      => $created_at,
+			'last_heartbeat_at' => $last_heartbeat_at,
+			'heartbeat_reached' => $heartbeat_reached,
 		);
 		update_option( 'WPHUBPRO_DATA', $platform_data );
 
 		return array(
-			'connected'    => true,
-			'site_id'      => $site_id,
-			'username'     => $username,
-			'plan_name'    => $plan_name,
-			'connected_at' => $created_at,
-			'action_log'   => $action_log,
-			'api_log'      => $api_log,
+			'connected'         => true,
+			'site_id'           => $site_id,
+			'username'          => $username,
+			'plan_name'         => $plan_name,
+			'connected_at'      => $created_at,
+			'last_heartbeat_at' => $last_heartbeat_at,
+			'heartbeat_reached' => $heartbeat_reached,
+			'action_log'        => $action_log,
+			'api_log'           => $api_log,
 		);
 	}
 
