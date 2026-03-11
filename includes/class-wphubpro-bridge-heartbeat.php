@@ -61,14 +61,20 @@ class WPHubPro_Bridge_Heartbeat {
 		$project  = get_option( 'WPHUBPRO_PROJECT_ID' );
 
 		if ( empty( $site_id ) || empty( $jwt ) || empty( $endpoint ) || empty( $project ) ) {
-			// Unschedule if no longer connected
+			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array(
+				'skipped' => 'Missing site_id, jwt, endpoint or project_id',
+				'has_site_id' => ! empty( $site_id ),
+			) );
 			wp_clear_scheduled_hook( self::CRON_HOOK );
 			return false;
 		}
 
 		$url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
 
-		$payload = array( 'siteId' => $site_id );
+		$payload = array(
+			'siteId'  => $site_id,
+			'site_id' => $site_id,
+		);
 
 		$request_body = wp_json_encode( array(
 			'body'    => wp_json_encode( $payload ),
@@ -101,21 +107,24 @@ class WPHubPro_Bridge_Heartbeat {
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ) ) );
+			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
 			return false;
 		}
 
+		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}
 
 	/**
 	 * Schedule heartbeat (call after save-connection).
+	 * Sends first heartbeat immediately, then schedules cron every minute.
 	 */
 	public static function schedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 		$site_id = get_option( 'WPHUBPRO_SITE_ID' );
 		$jwt     = get_option( 'WPHUBPRO_USER_JWT' );
 		if ( ! empty( $site_id ) && ! empty( $jwt ) ) {
+			self::send_heartbeat();
 			wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
 		}
 	}
