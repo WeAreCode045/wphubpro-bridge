@@ -57,12 +57,12 @@ class WPHubPro_Bridge_Sync {
 	 */
 	public static function sync_meta_to_appwrite() {
 		$site_id  = get_option( 'WPHUBPRO_SITE_ID' );
-		$jwt      = get_option( 'WPHUBPRO_USER_JWT' );
+		$secret   = get_option( 'wphubpro_api_key' );
 		$endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
 		$project  = get_option( 'WPHUBPRO_PROJECT_ID' );
 
-		if ( empty( $site_id ) || empty( $jwt ) || empty( $endpoint ) || empty( $project ) ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'skipped' => 'Missing site_id, jwt, endpoint or project_id' ) );
+		if ( empty( $site_id ) || empty( $secret ) || empty( $endpoint ) || empty( $project ) ) {
+			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'skipped' => 'Missing site_id, secret, endpoint or project_id' ) );
 			return false;
 		}
 
@@ -73,6 +73,7 @@ class WPHubPro_Bridge_Sync {
 
 		$payload = array(
 			'siteId'       => $site_id,
+			'secret'       => $secret,
 			'plugins_meta' => $plugins_meta,
 			'themes_meta'  => $themes_meta,
 		);
@@ -81,8 +82,7 @@ class WPHubPro_Bridge_Sync {
 			'body'    => wp_json_encode( $payload ),
 			'method'  => 'POST',
 			'headers' => array(
-				'Authorization' => 'Bearer ' . $jwt,
-				'Content-Type'  => 'application/json',
+				'Content-Type' => 'application/json',
 			),
 		) );
 
@@ -90,9 +90,8 @@ class WPHubPro_Bridge_Sync {
 			$url,
 			array(
 				'headers' => array(
-					'Content-Type'         => 'application/json',
-					'X-Appwrite-Project'   => $project,
-					'X-Appwrite-JWT'       => $jwt,
+					'Content-Type'       => 'application/json',
+					'X-Appwrite-Project' => $project,
 				),
 				'body'    => $request_body,
 				'timeout' => 30,

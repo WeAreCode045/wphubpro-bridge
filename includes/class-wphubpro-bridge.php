@@ -93,13 +93,13 @@ class WPHubPro_Bridge {
 			},
 		) );
 
-		// Save connection (jwt, endpoint, project) from platform - validates API key
+		// Save connection (api_key, endpoint, project) from platform - validates via X-WPHub-Key
 		register_rest_route( $namespace, '/save-connection', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this->connect, 'handle_save_connection' ),
 			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
 			'args'                => array(
-				'jwt'           => array(
+				'api_key'      => array(
 					'required'          => true,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',

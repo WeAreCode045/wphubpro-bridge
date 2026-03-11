@@ -122,25 +122,26 @@ class WPHubPro_Bridge_Connect {
 	}
 
 	/**
-	 * Handle save connection: store JWT, endpoint, project, site_id from platform.
+	 * Handle save connection: store api_key, endpoint, project, site_id from platform.
 	 *
-	 * Called by ConnectSuccessPage after site create/update. Validates API key.
+	 * Called by ConnectSuccessPage after site create/update. Validates via X-WPHub-Key.
+	 * Overwrites wphubpro_api_key with api_key from body.
 	 *
-	 * @param WP_REST_Request $request Request with jwt, endpoint, project_id, site_id.
+	 * @param WP_REST_Request $request Request with api_key, endpoint, project_id, site_id, heartbeat_url.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_save_connection( $request ) {
-		$jwt          = $request->get_param( 'jwt' );
+		$api_key      = $request->get_param( 'api_key' );
 		$endpoint     = $request->get_param( 'endpoint' );
 		$project_id   = $request->get_param( 'project_id' );
 		$site_id      = $request->get_param( 'site_id' );
 		$heartbeat_url = $request->get_param( 'heartbeat_url' );
 
-		if ( empty( $jwt ) ) {
-			return new WP_Error( 'missing_jwt', 'JWT is required', array( 'status' => 400 ) );
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'missing_api_key', 'api_key is required', array( 'status' => 400 ) );
 		}
 
-		update_option( 'WPHUBPRO_USER_JWT', $jwt );
+		update_option( 'wphubpro_api_key', sanitize_text_field( $api_key ) );
 		if ( ! empty( $endpoint ) ) {
 			update_option( 'WPHUBPRO_ENDPOINT', untrailingslashit( $endpoint ) );
 		}
