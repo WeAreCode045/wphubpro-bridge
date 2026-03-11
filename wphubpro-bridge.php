@@ -57,6 +57,9 @@ add_action('plugins_loaded', function() {
 	if (class_exists('WPHubPro_Bridge_Heartbeat')) {
 		WPHubPro_Bridge_Heartbeat::init();
 	}
+	if (class_exists('WPHubPro_Bridge_Sync')) {
+		WPHubPro_Bridge_Sync::init();
+	}
 });
 
 /**

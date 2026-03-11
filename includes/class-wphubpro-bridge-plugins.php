@@ -119,9 +119,7 @@ class WPHubPro_Bridge_Plugins {
 
 		$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $params );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-		if ( ! is_wp_error( $resp ) ) {
-			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
-		}
+		// Sync via activated_plugin hook
 		return $resp;
 	}
 
@@ -157,7 +155,7 @@ class WPHubPro_Bridge_Plugins {
 
 		apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $params );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'success' => true ) );
-		WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
+		// Sync via deactivated_plugin hook
 		return true;
 	}
 
@@ -209,9 +207,7 @@ class WPHubPro_Bridge_Plugins {
 		}
 
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
-		if ( ! is_wp_error( $resp ) ) {
-			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
-		}
+		// Sync via upgrader_process_complete hook
 		return $resp;
 	}
 
@@ -255,8 +251,9 @@ class WPHubPro_Bridge_Plugins {
 		uninstall_plugin( $plugin );
 		$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $params );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		// Sync via shutdown (no delete_plugin hook; run after request)
 		if ( ! is_wp_error( $resp ) ) {
-			WPHubPro_Bridge_Sync::sync_meta_to_appwrite();
+			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
 		}
 		return $resp;
 	}

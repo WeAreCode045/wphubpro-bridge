@@ -18,6 +18,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WPHubPro_Bridge_Sync {
 
 	/**
+	 * Register hooks for plugin/theme changes (WP Admin or REST).
+	 */
+	public static function init() {
+		add_action( 'activated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
+		add_action( 'deactivated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
+		add_action( 'switch_theme', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
+		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
+	}
+
+	/**
+	 * Callback for plugin/theme change hooks. Schedules async sync to avoid blocking.
+	 */
+	public static function on_plugin_or_theme_change() {
+		// Defer to avoid blocking; runs after request when safe.
+		add_action( 'shutdown', array( __CLASS__, 'sync_meta_to_appwrite' ), 5 );
+	}
+
+	/**
+	 * Callback for upgrader_process_complete (install, update).
+	 *
+	 * @param WP_Upgrader $upgrader Upgrader instance.
+	 * @param array       $options  Options (type: 'plugin'|'theme', action: 'install'|'update').
+	 */
+	public static function on_upgrader_complete( $upgrader, $options ) {
+		$type = isset( $options['type'] ) ? $options['type'] : '';
+		if ( $type === 'plugin' || $type === 'theme' ) {
+			self::on_plugin_or_theme_change();
+		}
+	}
+
+	/**
 	 * Sync plugins_meta and themes_meta to Appwrite.
 	 *
 	 * Fetches current plugins and themes, formats them, and POSTs to sync-site-meta function.

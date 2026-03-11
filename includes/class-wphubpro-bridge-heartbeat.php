@@ -1,7 +1,7 @@
 <?php
 /**
  * Heartbeat: Bridge sends heartbeat to Appwrite every minute.
- * Updates connection_status on the site document (status, heartbeat_success_at, is_alive).
+ * Updates sites.heartbeat_updated_at and bridge_status. On success: wphub_status=connected. On failure: wphub_status=disconnected.
  *
  * @package WPHubPro
  */
@@ -102,19 +102,19 @@ class WPHubPro_Bridge_Heartbeat {
 		$body_response = wp_remote_retrieve_body( $response );
 
 		if ( is_wp_error( $response ) ) {
-			update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'failed' );
+			update_option( 'wphub_status', 'disconnected' );
 			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
 			return false;
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
-			update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'failed' );
+			update_option( 'wphub_status', 'disconnected' );
 			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
 			return false;
 		}
 
 		update_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', current_time( 'c' ) );
-		update_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS', 'success' );
+		update_option( 'wphub_status', 'connected' );
 		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}

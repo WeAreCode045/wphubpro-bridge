@@ -114,10 +114,8 @@ class WPHubPro_Bridge_Connect {
 		delete_option( 'WPHUBPRO_ENDPOINT' );
 		delete_option( 'WPHUBPRO_PROJECT_ID' );
 		delete_option( 'WPHUBPRO_SITE_ID' );
-		delete_option( 'WPHUBPRO_CONNECTION_STATUS' );
-		delete_option( 'WPHUBPRO_DATA' );
 		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_AT' );
-		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_STATUS' );
+		update_option( 'wphub_status', 'disconnected' );
 		WPHubPro_Bridge_Heartbeat::unschedule();
 		return array( 'success' => true );
 	}
@@ -150,12 +148,14 @@ class WPHubPro_Bridge_Connect {
 		if ( ! empty( $site_id ) ) {
 			update_option( 'WPHUBPRO_SITE_ID', sanitize_text_field( $site_id ) );
 		}
-		update_option( 'WPHUBPRO_CONNECTION_STATUS', array(
-			'status'       => 'connected',
-			'connected_at' => current_time( 'c' ),
-		) );
+		update_option( 'wphub_status', 'connected' );
 
 		WPHubPro_Bridge_Heartbeat::schedule();
+
+		// Initial plugin/theme sync after connect
+		if ( class_exists( 'WPHubPro_Bridge_Sync' ) ) {
+			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+		}
 
 		return rest_ensure_response( array( 'success' => true ) );
 	}
