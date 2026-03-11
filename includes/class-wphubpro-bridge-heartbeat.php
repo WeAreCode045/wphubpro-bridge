@@ -75,9 +75,10 @@ class WPHubPro_Bridge_Heartbeat {
 			'site_id' => $site_id,
 		);
 
-		// Prefer function domain: JWT in header avoids body truncation ("Incomplete segments")
+		// Prefer function domain: JWT in header + body (body fallback if header is truncated)
 		if ( ! empty( $heartbeat_url ) ) {
 			$url = untrailingslashit( $heartbeat_url );
+			$payload['jwt'] = $jwt;
 			$response = wp_remote_post(
 				$url,
 				array(
