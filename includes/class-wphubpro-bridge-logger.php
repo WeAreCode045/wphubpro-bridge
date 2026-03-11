@@ -28,11 +28,17 @@ class WPHubPro_Bridge_Logger {
 	 * @param mixed  $response Response/result.
 	 */
 	public static function log_action( $site_url, $action, $endpoint, $request, $response ) {
+		$log_req = is_array( $request ) ? $request : array();
+		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
+		$log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
+		self::strip_sensitive_data( $log_req_copy );
+		self::strip_sensitive_data( $log_res_copy );
 		error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
 			'action'   => $action,
 			'endpoint' => $endpoint,
-			'request'  => $request,
-			'response' => $response,
+			'request'  => $log_req_copy,
+			'response' => $log_res_copy,
 		) ) );
 
 		$appwrite_endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
@@ -67,14 +73,19 @@ class WPHubPro_Bridge_Logger {
 			$site_id    = $site['$id'];
 			$action_log = isset( $site['action_log'] ) && is_array( $site['action_log'] ) ? $site['action_log'] : array();
 
-			$entry = array(
-				'timestamp' => gmdate( 'c' ),
-				'action'    => $action,
-				'endpoint'  => $endpoint,
-				'request'   => $request,
-				'response'  => $response,
-			);
-			$action_log[] = $entry;
+		$req_safe  = is_array( $request ) ? $request : array();
+		$res_safe  = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		self::strip_sensitive_data( $req_safe );
+		self::strip_sensitive_data( $res_safe );
+
+		$entry = array(
+			'timestamp' => gmdate( 'c' ),
+			'action'    => $action,
+			'endpoint'  => $endpoint,
+			'request'   => $req_safe,
+			'response'  => $res_safe,
+		);
+		$action_log[] = $entry;
 
 			$databases->updateDocument(
 				'platform_db',
@@ -116,7 +127,10 @@ class WPHubPro_Bridge_Logger {
 		} else {
 			$code     = $response->get_status();
 			$res_data = $response->get_data();
+			$res_data = is_array( $res_data ) ? $res_data : array();
 		}
+		self::strip_sensitive_data( $req_data );
+		self::strip_sensitive_data( $res_data );
 		self::cap_size( $req_data );
 		self::cap_size( $res_data );
 
@@ -136,6 +150,29 @@ class WPHubPro_Bridge_Logger {
 		array_unshift( $log, $entry );
 		$log = array_slice( $log, 0, 20 );
 		update_option( 'WPHUBPRO_LOG', $log );
+	}
+
+	/**
+	 * Strip api_key, secret and other sensitive data from arrays before storing/sending.
+	 * WPHUB_DATA (options, logs) must NEVER contain wphubpro_api_key.
+	 *
+	 * @param array $data Data to sanitize (modified in place).
+	 */
+	private static function strip_sensitive_data( &$data ) {
+		if ( ! is_array( $data ) ) {
+			return;
+		}
+		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'wphubpro_api_key', 'password', 'jwt', 'X-WPHub-Key' );
+		foreach ( $sensitive_keys as $key ) {
+			if ( isset( $data[ $key ] ) ) {
+				$data[ $key ] = '[REDACTED]';
+			}
+		}
+		foreach ( $data as $k => &$v ) {
+			if ( is_array( $v ) ) {
+				self::strip_sensitive_data( $v );
+			}
+		}
 	}
 
 	/**

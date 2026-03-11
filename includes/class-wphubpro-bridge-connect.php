@@ -110,6 +110,7 @@ class WPHubPro_Bridge_Connect {
 	 */
 	public function handle_disconnect() {
 		delete_option( 'wphubpro_api_key' );
+		delete_option( 'wphub_api_key' );
 		delete_option( 'WPHUBPRO_USER_JWT' );
 		delete_option( 'WPHUBPRO_ENDPOINT' );
 		delete_option( 'WPHUBPRO_PROJECT_ID' );
@@ -124,24 +125,28 @@ class WPHubPro_Bridge_Connect {
 	/**
 	 * Handle save connection: store api_key, endpoint, project, site_id from platform.
 	 *
-	 * Called by ConnectSuccessPage after site create/update. Validates via X-WPHub-Key.
-	 * Overwrites wphubpro_api_key with api_key from body.
+	 * Called by ConnectSuccessPage after site create/update. Validates via X-WPHub-Key (plain api_key).
+	 * Overwrites wphubpro_api_key with plain api_key. If encrypted_api_key is provided, overwrites wphub_api_key.
 	 *
-	 * @param WP_REST_Request $request Request with api_key, endpoint, project_id, site_id, heartbeat_url.
+	 * @param WP_REST_Request $request Request with api_key, endpoint, project_id, site_id, heartbeat_url, encrypted_api_key.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_save_connection( $request ) {
-		$api_key      = $request->get_param( 'api_key' );
-		$endpoint     = $request->get_param( 'endpoint' );
-		$project_id   = $request->get_param( 'project_id' );
-		$site_id      = $request->get_param( 'site_id' );
-		$heartbeat_url = $request->get_param( 'heartbeat_url' );
+		$api_key           = $request->get_param( 'api_key' );
+		$encrypted_api_key = $request->get_param( 'encrypted_api_key' );
+		$endpoint          = $request->get_param( 'endpoint' );
+		$project_id        = $request->get_param( 'project_id' );
+		$site_id           = $request->get_param( 'site_id' );
+		$heartbeat_url     = $request->get_param( 'heartbeat_url' );
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'missing_api_key', 'api_key is required', array( 'status' => 400 ) );
 		}
 
 		update_option( 'wphubpro_api_key', sanitize_text_field( $api_key ) );
+		if ( ! empty( $encrypted_api_key ) ) {
+			update_option( 'wphub_api_key', sanitize_text_field( $encrypted_api_key ) );
+		}
 		if ( ! empty( $endpoint ) ) {
 			update_option( 'WPHUBPRO_ENDPOINT', untrailingslashit( $endpoint ) );
 		}
