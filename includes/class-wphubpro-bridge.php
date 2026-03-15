@@ -174,6 +174,18 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
+		$plugin_version_args = array_merge( $plugin_args, array(
+			'version' => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		) );
+		register_rest_route( $namespace, '/plugins/manage/install-version', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->plugins, 'install_plugin_version' ),
+			'permission_callback' => $validate,
+			'args'                => $plugin_version_args,
+		) );
 
 		// Themes
 		register_rest_route( $namespace, '/themes', array(

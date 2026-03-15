@@ -259,6 +259,97 @@ class WPHubPro_Bridge_Plugins {
 	}
 
 	/**
+	 * Install or rollback to a specific version from WordPress.org.
+	 *
+	 * @param WP_REST_Request $request Request object. Expects plugin (file path) and version.
+	 * @return mixed
+	 */
+	public function install_plugin_version( $request ) {
+		$endpoint = 'plugins/manage/install-version';
+		$site_url = get_site_url();
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$slug     = $params['slug'];
+		$version  = sanitize_text_field( (string) $request->get_param( 'version' ) );
+
+		if ( empty( $plugin ) && ! empty( $slug ) ) {
+			$plugin = $this->resolve_plugin_file( $slug );
+		}
+		$plugin_slug = $plugin && strpos( $plugin, '/' ) !== false ? dirname( $plugin ) : ( $slug ?: '' );
+
+		if ( empty( $plugin_slug ) || empty( $version ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Missing plugin slug or version' ) );
+			return new WP_Error( 'missing_params', __( 'Plugin slug and version are required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+
+		$err = $this->validate_plugin_file( $plugin );
+		if ( is_wp_error( $err ) && ! $plugin ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
+			return $err;
+		}
+		if ( ! empty( $plugin ) && $this->is_bridge_plugin( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'error' => 'Cannot change WPHubPro Bridge version from platform.' ) );
+			return new WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be modified from the platform.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
+		}
+
+		if ( ! function_exists( 'plugins_api' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+		}
+		$info = plugins_api( 'plugin_information', array(
+			'slug'   => $plugin_slug,
+			'fields' => array( 'versions' => true ),
+		) );
+		$versions = isset( $info->versions ) ? (array) $info->versions : array();
+		if ( is_wp_error( $info ) || empty( $versions ) || ! isset( $versions[ $version ] ) ) {
+			$versions_available = array_keys( $versions );
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Version not found', 'available' => array_slice( $versions_available, -20 ) ) );
+			return new WP_Error( 'version_not_found', __( 'Version not found in WordPress.org. Plugin may not be in the official library.', 'wphubpro-bridge' ), array( 'status' => 404 ) );
+		}
+
+		$download_url = $versions[ $version ];
+		if ( empty( $download_url ) || ! filter_var( $download_url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error( 'invalid_url', __( 'Invalid download URL for this version.', 'wphubpro-bridge' ), array( 'status' => 500 ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+		$target_plugin = $plugin ?: $plugin_slug . '/' . $plugin_slug . '.php';
+		if ( ! $plugin ) {
+			$target_plugin = $this->resolve_plugin_file( $plugin_slug ) ?: $plugin_slug . '/' . $plugin_slug . '.php';
+		}
+		$was_active = ! empty( $target_plugin ) && is_plugin_active( $target_plugin );
+
+		$skin    = new Automatic_Upgrader_Skin();
+		$upgrader = new Plugin_Upgrader( $skin );
+		$result   = $upgrader->run( array(
+			'package'           => $download_url,
+			'destination'       => WP_PLUGIN_DIR,
+			'clear_destination' => true,
+			'clear_working'     => true,
+			'hook_extra'        => array(
+				'plugin' => $target_plugin,
+				'type'   => 'plugin',
+				'action' => 'update',
+			),
+		) );
+
+		if ( ! is_wp_error( $result ) && $was_active ) {
+			$reactivate = activate_plugin( $target_plugin );
+			if ( is_wp_error( $reactivate ) ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'warning' => 'Install succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
+			}
+		}
+
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		if ( ! is_wp_error( $result ) ) {
+			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+		}
+		return $result;
+	}
+
+	/**
 	 * Parse plugin and slug from request (query, body param, or raw body).
 	 *
 	 * @param WP_REST_Request $request Request object.
