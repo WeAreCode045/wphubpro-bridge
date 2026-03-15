@@ -168,11 +168,23 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 			'args'                => $plugin_args,
 		) );
+		$plugin_update_args = array_merge( $plugin_args, array(
+			'zip_url' => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'esc_url_raw',
+			),
+			'zip_base64' => array(
+				'type'              => 'string',
+				'sanitize_callback' => function ( $v ) {
+					return is_string( $v ) ? $v : '';
+				},
+			),
+		) );
 		register_rest_route( $namespace, '/plugins/manage/update', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this->plugins, 'update_plugin' ),
 			'permission_callback' => $validate,
-			'args'                => $plugin_args,
+			'args'                => $plugin_update_args,
 		) );
 		$plugin_version_args = array_merge( $plugin_args, array(
 			'version' => array(

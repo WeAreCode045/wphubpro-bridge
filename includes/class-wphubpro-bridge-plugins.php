@@ -161,6 +161,8 @@ class WPHubPro_Bridge_Plugins {
 
 	/**
 	 * Update a plugin.
+	 * For normal plugins: uses Plugin_Upgrader::upgrade() (download from WordPress.org).
+	 * For bridge plugin: same logic but package URL from zip_url or zip_base64 (bucket).
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return mixed
@@ -180,9 +182,31 @@ class WPHubPro_Bridge_Plugins {
 			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
 		}
-		if ( $this->is_bridge_plugin( $plugin ) ) {
-			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Cannot update WPHubPro Bridge from platform.' ) );
-			return new WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be updated from the platform. Update it in WordPress Admin > Plugins to keep the connection intact.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
+		if ( empty( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Plugin not found' ) );
+			return new WP_Error( 'plugin_not_found', __( 'Plugin not found.', 'wphubpro-bridge' ), array( 'status' => 404 ) );
+		}
+
+		$zip_url   = $request->get_param( 'zip_url' );
+		$zip_base64 = $request->get_param( 'zip_base64' );
+		if ( empty( $zip_url ) && empty( $zip_base64 ) && ! empty( $request->get_body() ) ) {
+			$decoded = json_decode( $request->get_body(), true );
+			if ( is_array( $decoded ) ) {
+				$zip_url   = $zip_url ?: ( $decoded['zip_url'] ?? '' );
+				$zip_base64 = $zip_base64 ?: ( $decoded['zip_base64'] ?? '' );
+			}
+		}
+		$zip_url   = is_string( $zip_url ) ? esc_url_raw( $zip_url ) : '';
+		$zip_base64 = is_string( $zip_base64 ) ? trim( $zip_base64 ) : '';
+
+		$is_bridge = $this->is_bridge_plugin( $plugin );
+		if ( $is_bridge && empty( $zip_url ) && empty( $zip_base64 ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Bridge update requires zip_url or zip_base64' ) );
+			return new WP_Error( 'missing_package', __( 'Bridge update requires zip_url from the platform.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+		if ( ! $is_bridge && ( ! empty( $zip_url ) || ! empty( $zip_base64 ) ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'zip_url/zip_base64 only allowed for bridge plugin' ) );
+			return new WP_Error( 'forbidden', __( 'zip_url is only for the WPHubPro Bridge plugin.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -191,13 +215,51 @@ class WPHubPro_Bridge_Plugins {
 		do_action( 'wphub_plugin_action_pre', 'update', $plugin, $slug, $params );
 		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
 
-		// When updating via REST API (not cron), Plugin_Upgrader deactivates the plugin but does NOT
-		// reactivate it. We must restore activation state after a successful upgrade.
 		$was_active = is_plugin_active( $plugin );
 
 		$skin    = new Automatic_Upgrader_Skin();
 		$upgrader = new Plugin_Upgrader( $skin );
-		$resp     = apply_filters( 'wphub_plugin_update', $upgrader->upgrade( $plugin ), $plugin, $slug, $params );
+
+		if ( $is_bridge ) {
+			// Same as install_plugin_version / normal update: Plugin_Upgrader::run with package URL.
+			$package = '';
+			if ( ! empty( $zip_base64 ) ) {
+				$decoded = base64_decode( $zip_base64, true );
+				if ( $decoded === false || strlen( $decoded ) < 100 ) {
+					WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Invalid zip_base64' ) );
+					return new WP_Error( 'invalid_zip_base64', __( 'Invalid zip_base64 data.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+				}
+				$tmp = wp_tempnam( 'wphubpro-bridge-' );
+				if ( ! $tmp || file_put_contents( $tmp, $decoded ) === false ) {
+					WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Could not write temp file' ) );
+					return new WP_Error( 'temp_file', __( 'Could not write temporary file.', 'wphubpro-bridge' ), array( 'status' => 500 ) );
+				}
+				$package = $tmp;
+			} else {
+				$package = $zip_url;
+			}
+
+			$resp = $upgrader->run( array(
+				'package'           => $package,
+				'destination'       => WP_PLUGIN_DIR,
+				'clear_destination' => true,
+				'clear_working'     => true,
+				'hook_extra'        => array(
+					'plugin' => $plugin,
+					'type'   => 'plugin',
+					'action' => 'update',
+				),
+			) );
+
+			if ( ! empty( $zip_base64 ) && ! empty( $package ) && file_exists( $package ) ) {
+				@unlink( $package );
+			}
+		} else {
+			// Normal plugin: upgrade from WordPress.org (same as before).
+			$resp = $upgrader->upgrade( $plugin );
+		}
+
+		$resp = apply_filters( 'wphub_plugin_update', $resp, $plugin, $slug, $params );
 
 		if ( ! is_wp_error( $resp ) && $was_active ) {
 			$activate_result = activate_plugin( $plugin );
@@ -207,7 +269,9 @@ class WPHubPro_Bridge_Plugins {
 		}
 
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
-		// Sync via upgrader_process_complete hook
+		if ( ! is_wp_error( $resp ) ) {
+			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+		}
 		return $resp;
 	}
 
