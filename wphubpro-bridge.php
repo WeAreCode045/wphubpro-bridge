@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: REST bridge for WPHubPro platform. Provides plugin, theme, and site health management via WP REST Controllers.
- * Version: 2.2.9
+ * Version: 2.2.10
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -25,7 +25,7 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_ABSPATH' ) ) {
 	define( 'WPHUBPRO_BRIDGE_ABSPATH', plugin_dir_path( __FILE__ ) );
 }
 if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
-	define( 'WPHUBPRO_BRIDGE_VERSION', '2.2.9' );
+	define( 'WPHUBPRO_BRIDGE_VERSION', '2.2.10' );
 }
 
 // Autoload includes
