@@ -191,6 +191,12 @@ class WPHubPro_Bridge {
 				'type'              => 'string',
 				'sanitize_callback' => 'esc_url_raw',
 			),
+			'zip_base64' => array(
+				'type'              => 'string',
+				'sanitize_callback' => function ( $v ) {
+					return is_string( $v ) ? $v : '';
+				},
+			),
 		) );
 		register_rest_route( $namespace, '/plugins/manage/install-from-zip', array(
 			'methods'             => 'POST',

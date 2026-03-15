@@ -350,10 +350,11 @@ class WPHubPro_Bridge_Plugins {
 	}
 
 	/**
-	 * Update the WPHubPro Bridge plugin from a zip URL (e.g. from WPHubPro storage bucket).
-	 * Only allows updating the bridge plugin; zip_url must be HTTPS.
+	 * Update the WPHubPro Bridge plugin from a zip URL or base64 payload.
+	 * Only allows updating the bridge plugin.
+	 * Accepts zip_url (HTTPS) or zip_base64 (proxy flow – avoids WordPress downloading from Appwrite).
 	 *
-	 * @param WP_REST_Request $request Request object. Expects plugin (bridge file path) and zip_url.
+	 * @param WP_REST_Request $request Request object. Expects plugin (bridge file path) and zip_url or zip_base64.
 	 * @return mixed
 	 */
 	public function install_plugin_from_zip_url( $request ) {
@@ -362,13 +363,16 @@ class WPHubPro_Bridge_Plugins {
 		$params   = $this->parse_plugin_params( $request );
 		$plugin   = $params['plugin'];
 		$zip_url  = $request->get_param( 'zip_url' );
-		if ( empty( $zip_url ) && ! empty( $request->get_body() ) ) {
+		$zip_base64 = $request->get_param( 'zip_base64' );
+		if ( empty( $zip_url ) && empty( $zip_base64 ) && ! empty( $request->get_body() ) ) {
 			$decoded = json_decode( $request->get_body(), true );
-			if ( is_array( $decoded ) && ! empty( $decoded['zip_url'] ) ) {
-				$zip_url = $decoded['zip_url'];
+			if ( is_array( $decoded ) ) {
+				$zip_url = $decoded['zip_url'] ?? '';
+				$zip_base64 = $decoded['zip_base64'] ?? '';
 			}
 		}
 		$zip_url = is_string( $zip_url ) ? esc_url_raw( $zip_url ) : '';
+		$zip_base64 = is_string( $zip_base64 ) ? trim( $zip_base64 ) : '';
 
 		if ( empty( $plugin ) ) {
 			$plugin = self::get_bridge_plugin_file();
@@ -377,8 +381,12 @@ class WPHubPro_Bridge_Plugins {
 			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( 'plugin' => $plugin ), array( 'error' => 'Only the WPHubPro Bridge plugin can be updated via zip URL.' ) );
 			return new WP_Error( 'forbidden', __( 'Only the WPHubPro Bridge plugin can be updated from a zip URL.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
-		if ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) {
-			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required.' ) );
+		if ( empty( $zip_url ) && empty( $zip_base64 ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
+			return new WP_Error( 'invalid_input', __( 'zip_url or zip_base64 is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+		if ( empty( $zip_base64 ) && ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
 			return new WP_Error( 'invalid_zip_url', __( 'A valid HTTPS zip URL is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 
@@ -386,11 +394,28 @@ class WPHubPro_Bridge_Plugins {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
+		$package = '';
+		if ( ! empty( $zip_base64 ) ) {
+			$decoded = base64_decode( $zip_base64, true );
+			if ( $decoded === false || strlen( $decoded ) < 100 ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Invalid zip_base64' ) );
+				return new WP_Error( 'invalid_zip_base64', __( 'Invalid zip_base64 data.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+			}
+			$tmp = wp_tempnam( 'wphubpro-bridge-' );
+			if ( ! $tmp || file_put_contents( $tmp, $decoded ) === false ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Could not write temp file' ) );
+				return new WP_Error( 'temp_file', __( 'Could not write temporary file.', 'wphubpro-bridge' ), array( 'status' => 500 ) );
+			}
+			$package = $tmp;
+		} else {
+			$package = $zip_url;
+		}
+
 		$was_active = is_plugin_active( $plugin );
 		$skin       = new Automatic_Upgrader_Skin();
 		$upgrader   = new Plugin_Upgrader( $skin );
 		$result     = $upgrader->run( array(
-			'package'           => $zip_url,
+			'package'           => $package,
 			'destination'       => WP_PLUGIN_DIR,
 			'clear_destination' => true,
 			'clear_working'     => true,
@@ -401,6 +426,10 @@ class WPHubPro_Bridge_Plugins {
 			),
 		) );
 
+		if ( ! empty( $zip_base64 ) && ! empty( $package ) && file_exists( $package ) ) {
+			@unlink( $package );
+		}
+
 		if ( ! is_wp_error( $result ) && $was_active ) {
 			$reactivate = activate_plugin( $plugin );
 			if ( is_wp_error( $reactivate ) ) {
@@ -408,7 +437,8 @@ class WPHubPro_Bridge_Plugins {
 			}
 		}
 
-		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( 'zip_url' => $zip_url ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		$log_source = ! empty( $zip_base64 ) ? 'zip_base64' : 'zip_url';
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
 			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
 		}
