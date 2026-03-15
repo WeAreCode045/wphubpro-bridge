@@ -350,6 +350,72 @@ class WPHubPro_Bridge_Plugins {
 	}
 
 	/**
+	 * Update the WPHubPro Bridge plugin from a zip URL (e.g. from WPHubPro storage bucket).
+	 * Only allows updating the bridge plugin; zip_url must be HTTPS.
+	 *
+	 * @param WP_REST_Request $request Request object. Expects plugin (bridge file path) and zip_url.
+	 * @return mixed
+	 */
+	public function install_plugin_from_zip_url( $request ) {
+		$endpoint = 'plugins/manage/install-from-zip';
+		$site_url = get_site_url();
+		$params   = $this->parse_plugin_params( $request );
+		$plugin   = $params['plugin'];
+		$zip_url  = $request->get_param( 'zip_url' );
+		if ( empty( $zip_url ) && ! empty( $request->get_body() ) ) {
+			$decoded = json_decode( $request->get_body(), true );
+			if ( is_array( $decoded ) && ! empty( $decoded['zip_url'] ) ) {
+				$zip_url = $decoded['zip_url'];
+			}
+		}
+		$zip_url = is_string( $zip_url ) ? esc_url_raw( $zip_url ) : '';
+
+		if ( empty( $plugin ) ) {
+			$plugin = self::get_bridge_plugin_file();
+		}
+		if ( ! $this->is_bridge_plugin( $plugin ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( 'plugin' => $plugin ), array( 'error' => 'Only the WPHubPro Bridge plugin can be updated via zip URL.' ) );
+			return new WP_Error( 'forbidden', __( 'Only the WPHubPro Bridge plugin can be updated from a zip URL.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
+		}
+		if ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required.' ) );
+			return new WP_Error( 'invalid_zip_url', __( 'A valid HTTPS zip URL is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+		$was_active = is_plugin_active( $plugin );
+		$skin       = new Automatic_Upgrader_Skin();
+		$upgrader   = new Plugin_Upgrader( $skin );
+		$result     = $upgrader->run( array(
+			'package'           => $zip_url,
+			'destination'       => WP_PLUGIN_DIR,
+			'clear_destination' => true,
+			'clear_working'     => true,
+			'hook_extra'        => array(
+				'plugin' => $plugin,
+				'type'   => 'plugin',
+				'action' => 'update',
+			),
+		) );
+
+		if ( ! is_wp_error( $result ) && $was_active ) {
+			$reactivate = activate_plugin( $plugin );
+			if ( is_wp_error( $reactivate ) ) {
+				WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'warning' => 'Update succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
+			}
+		}
+
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( 'zip_url' => $zip_url ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		if ( ! is_wp_error( $result ) ) {
+			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+		}
+		return $result;
+	}
+
+	/**
 	 * Parse plugin and slug from request (query, body param, or raw body).
 	 *
 	 * @param WP_REST_Request $request Request object.

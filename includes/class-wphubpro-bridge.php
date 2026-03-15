@@ -186,6 +186,18 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 			'args'                => $plugin_version_args,
 		) );
+		$plugin_zip_args = array_merge( $plugin_args, array(
+			'zip_url' => array(
+				'type'              => 'string',
+				'sanitize_callback' => 'esc_url_raw',
+			),
+		) );
+		register_rest_route( $namespace, '/plugins/manage/install-from-zip', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->plugins, 'install_plugin_from_zip_url' ),
+			'permission_callback' => $validate,
+			'args'                => $plugin_zip_args,
+		) );
 
 		// Themes
 		register_rest_route( $namespace, '/themes', array(
