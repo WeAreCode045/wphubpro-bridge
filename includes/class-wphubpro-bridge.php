@@ -287,7 +287,7 @@ class WPHubPro_Bridge {
 			return rest_ensure_response( array(
 				'lines' => array(),
 				'file'  => null,
-				'error' => __( 'Error log file not found or not readable. Enable WP_DEBUG_LOG or check PHP error_log.', 'wphubpro-bridge' ),
+				'error' => __( 'Error log files not found or not readable. Enable WP_DEBUG_LOG or check PHP error_log.', 'wphubpro-bridge' ),
 			) );
 		}
 		$lines = @file( $log_file, FILE_IGNORE_NEW_LINES );
