@@ -1,0 +1,8 @@
+#!/bin/sh
+# After each commit in the bridge repo: bump version, zip, upload to Appwrite bucket "bridge".
+# Install: from wphubpro-bridge run: sh scripts/install-hooks.sh
+BRIDGE_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+[ -z "$BRIDGE_ROOT" ] && exit 0
+MAIN_REPO="${BRIDGE_ROOT}/.."
+[ ! -f "${MAIN_REPO}/scripts/bridge-release.js" ] && exit 0
+cd "$MAIN_REPO" && node scripts/bridge-release.js 2>/dev/null || true
