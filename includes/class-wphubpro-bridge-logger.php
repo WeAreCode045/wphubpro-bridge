@@ -154,7 +154,7 @@ class WPHubPro_Bridge_Logger {
 
 	/**
 	 * Strip api_key, secret and other sensitive data from arrays before storing/sending.
-	 * WPHUB_DATA (options, logs) must NEVER contain wphubpro_api_key.
+	 * WPHUB_DATA (options, logs) must NEVER contain WPHUBPRO_API_KEY.
 	 *
 	 * @param array $data Data to sanitize (modified in place).
 	 */
@@ -162,7 +162,7 @@ class WPHubPro_Bridge_Logger {
 		if ( ! is_array( $data ) ) {
 			return;
 		}
-		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'wphubpro_api_key', 'password', 'jwt', 'X-WPHub-Key' );
+		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'WPHUBPRO_API_KEY', 'password', 'jwt', 'X-WPHub-Key' );
 		foreach ( $sensitive_keys as $key ) {
 			if ( isset( $data[ $key ] ) ) {
 				$data[ $key ] = '[REDACTED]';

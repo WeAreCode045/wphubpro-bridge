@@ -64,7 +64,7 @@ add_action('plugins_loaded', function() {
 
 /**
  * Deactivation: explicitly preserve connection options.
- * Options (wphubpro_api_key, WPHUBPRO_USER_JWT, etc.) must remain in wp_options
+ * Options (WPHUBPRO_API_KEY, WPHUBPRO_USER_JWT, etc.) must remain in wp_options
  * so the connection works again after reactivation without reconnecting.
  */
 register_deactivation_hook(__FILE__, function() {

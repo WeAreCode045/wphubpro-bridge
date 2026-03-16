@@ -29,6 +29,7 @@ class WPHubPro_Bridge_Debug {
 			self::DEFAULT_BASE_URL,
 			'https://app.wphub.pro',
 			'https://dev.wphub.pro',
+			'https://wphubpro.jhbdesigns.nl',
 		);
 	}
 

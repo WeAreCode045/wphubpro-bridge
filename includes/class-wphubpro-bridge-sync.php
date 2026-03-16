@@ -57,7 +57,7 @@ class WPHubPro_Bridge_Sync {
 	 */
 	public static function sync_meta_to_appwrite() {
 		$site_id  = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret   = get_option( 'wphubpro_api_key' );
+		$secret   = get_option( 'WPHUBPRO_API_KEY' );
 		$endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
 		$project  = get_option( 'WPHUBPRO_PROJECT_ID' );
 

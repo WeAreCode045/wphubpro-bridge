@@ -28,7 +28,7 @@ class WPHubPro_Bridge_Heartbeat {
 		// Schedule on init if not already scheduled
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			$site_id = get_option( 'WPHUBPRO_SITE_ID' );
-			$secret  = get_option( 'wphubpro_api_key' );
+			$secret  = get_option( 'WPHUBPRO_API_KEY' );
 			if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 				wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
 			}
@@ -56,7 +56,7 @@ class WPHubPro_Bridge_Heartbeat {
 	 */
 	public static function send_heartbeat() {
 		$site_id       = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret        = get_option( 'wphubpro_api_key' );
+		$secret        = get_option( 'WPHUBPRO_API_KEY' );
 		$endpoint      = get_option( 'WPHUBPRO_ENDPOINT' );
 		$project       = get_option( 'WPHUBPRO_PROJECT_ID' );
 		$heartbeat_url = get_option( 'WPHUBPRO_HEARTBEAT_URL', '' );
@@ -144,7 +144,7 @@ class WPHubPro_Bridge_Heartbeat {
 	public static function schedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 		$site_id = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret  = get_option( 'wphubpro_api_key' );
+		$secret  = get_option( 'WPHUBPRO_API_KEY' );
 		if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 			self::send_heartbeat();
 			wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );

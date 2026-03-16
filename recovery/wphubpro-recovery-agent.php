@@ -30,7 +30,7 @@ class WPHubProRecoveryAgent {
         $token = substr($auth_header, 7);
         
         // Haal de gedeelde sleutel uit de WP database
-        $shared_secret = get_option('wphubpro_api_key');
+        $shared_secret = get_option('WPHUBPRO_API_KEY');
         if (!$shared_secret) return;
 
         $payload = $this->validate_jwt($token, $shared_secret);
