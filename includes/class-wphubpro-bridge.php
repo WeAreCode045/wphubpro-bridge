@@ -289,7 +289,7 @@ class WPHubPro_Bridge {
 	 * @return WP_REST_Response
 	 */
 	public function get_logs( $request ) {
-		$log = get_option( 'WPHUBPRO_LOG', array() );
+		$log = WPHubPro_Bridge_Config::get_log();
 		if ( ! is_array( $log ) ) {
 			$log = array();
 		}

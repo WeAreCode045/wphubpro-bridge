@@ -50,7 +50,7 @@ class WPHubPro_Bridge_Plugins {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all_plugins   = get_plugins();
-		$active_plugins = get_option( 'active_plugins' );
+		$active_plugins = WPHubPro_Bridge_Config::get_active_plugins();
 
 		// Always refresh update availability from WordPress.org when serving the plugins list.
 		// wp_update_plugins() respects its own timeout (avoids excessive API calls) but ensures

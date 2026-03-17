@@ -29,8 +29,9 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
 }
 
 // Autoload includes
-foreach ([
+foreach ( array(
 	'class-wphubpro-bridge-logger.php',
+	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-connect.php',
 	'class-wphubpro-bridge-connection-status.php',
 	'class-wphubpro-bridge-plugins.php',
@@ -44,9 +45,19 @@ foreach ([
 	'class-wphubpro-bridge-admin.php',
 	'class-wphubpro-bridge-ajax.php',
 	'class-wphubpro-bridge-frontend.php',
-] as $file) {
+) as $file ) {
 	$inc = __DIR__ . '/includes/' . $file;
-	if (file_exists($inc)) require_once $inc;
+	if ( file_exists( $inc ) ) {
+		require_once $inc;
+	}
+}
+
+// Error classes (require Logger first)
+foreach ( array( 'BaseError.php', 'AuthenticationError.php', 'ValidationError.php', 'NotFoundError.php' ) as $err_file ) {
+	$inc = __DIR__ . '/includes/Error/' . $err_file;
+	if ( file_exists( $inc ) ) {
+		require_once $inc;
+	}
 }
 
 // Main loader
@@ -88,12 +99,12 @@ function wphubpro_bridge_ensure_recovery_agent() {
 	}
 	$dest = $mu_dir . '/wphubpro-recovery-agent.php';
 	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
-	$installed = get_option( 'wphubpro_recovery_agent_version', '' );
+	$installed = WPHubPro_Bridge_Config::get_recovery_agent_version();
 	if ( $installed === $bridge_version && file_exists( $dest ) ) {
 		return;
 	}
 	if ( copy( $source, $dest ) ) {
-		update_option( 'wphubpro_recovery_agent_version', $bridge_version );
+		update_option( WPHubPro_Bridge_Config::OPTION_RECOVERY_AGENT_VERSION, $bridge_version );
 	}
 }
 

@@ -21,13 +21,12 @@ class WPHubPro_Bridge_Logger {
 	 *
 	 * Uses JWT and Appwrite SDK. Requires WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
 	 *
-	 * @param string $site_url Site URL.
 	 * @param string $action   Action name (e.g. activate, deactivate, update, list).
 	 * @param string $endpoint REST endpoint (e.g. plugins/manage, plugins).
 	 * @param array  $request  Request data.
 	 * @param mixed  $response Response/result.
 	 */
-	public static function log_action( $site_url, $action, $endpoint, $request, $response ) {
+	public static function log_action($action, $endpoint, $request, $response ) {
 		$log_req = is_array( $request ) ? $request : array();
 		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
 		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
@@ -41,9 +40,9 @@ class WPHubPro_Bridge_Logger {
 			'response' => $log_res_copy,
 		) ) );
 
-		$appwrite_endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
-		$appwrite_project  = get_option( 'WPHUBPRO_PROJECT_ID' );
-		$appwrite_jwt      = get_option( 'WPHUBPRO_USER_JWT' );
+		$appwrite_endpoint = WPHubPro_Bridge_Config::get_endpoint();
+		$appwrite_project  = WPHubPro_Bridge_Config::get_project_id();
+		$appwrite_jwt      = WPHubPro_Bridge_Config::get_user_jwt();
 
 		if ( ! $appwrite_endpoint || ! $appwrite_project || ! $appwrite_jwt || ! class_exists( 'Appwrite\Client' ) ) {
 			return;
@@ -53,7 +52,7 @@ class WPHubPro_Bridge_Logger {
 			$client    = new \Appwrite\Client();
 			$client->setEndpoint( $appwrite_endpoint )->setProject( $appwrite_project )->setJWT( $appwrite_jwt );
 			$databases = new \Appwrite\Services\Databases( $client );
-
+			$site_url = get_site_url();
 			$urls = array( $site_url, untrailingslashit( $site_url ), trailingslashit( $site_url ) );
 			$site = null;
 			foreach ( $urls as $url ) {
@@ -143,13 +142,10 @@ class WPHubPro_Bridge_Logger {
 			'response' => $res_data,
 		);
 
-		$log = get_option( 'WPHUBPRO_LOG', array() );
-		if ( ! is_array( $log ) ) {
-			$log = array();
-		}
+		$log = WPHubPro_Bridge_Config::get_log();
 		array_unshift( $log, $entry );
 		$log = array_slice( $log, 0, 20 );
-		update_option( 'WPHUBPRO_LOG', $log );
+		update_option( WPHubPro_Bridge_Config::OPTION_LOG, $log );
 	}
 
 	/**

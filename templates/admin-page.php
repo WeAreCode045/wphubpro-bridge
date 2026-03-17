@@ -39,7 +39,7 @@ $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 		<?php
 		$rest_url = get_rest_url( null, 'wphubpro/v1/debug' );
 		$nonce    = wp_create_nonce( 'wp_rest' );
-		$current  = get_option( 'wphubpro_redirect_base_url', 'https://wphub.pro' );
+		$current  = WPHubPro_Bridge_Config::get_redirect_base_url();
 		include $template_dir . 'admin-debug-tab.php';
 		?>
 	<?php endif; ?>

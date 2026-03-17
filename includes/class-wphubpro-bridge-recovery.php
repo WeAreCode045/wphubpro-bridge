@@ -112,7 +112,7 @@ class WPHubPro_Bridge_Recovery {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = get_option('wphubpro_last_update', null);
+        $last_update = WPHubPro_Bridge_Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);

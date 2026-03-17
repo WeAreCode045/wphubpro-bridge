@@ -71,7 +71,7 @@ class WPHubPro_Bridge_Connect {
 	 * @return bool
 	 */
 	public static function validate_api_key() {
-		$stored_key   = get_option( 'WPHUBPRO_API_KEY' );
+		$stored_key   = WPHubPro_Bridge_Config::get_api_key();
 		$provided_key = isset( $_SERVER['HTTP_X_WPHUB_KEY'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_WPHUB_KEY'] ) ) : '';
 		if ( empty( $stored_key ) || empty( $provided_key ) ) {
 			return false;
@@ -109,15 +109,15 @@ class WPHubPro_Bridge_Connect {
 	 * @return array{success: bool}
 	 */
 	public function handle_disconnect() {
-		delete_option( 'WPHUBPRO_API_KEY' );
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
 		delete_option( 'wphub_api_key' );
-		delete_option( 'WPHUBPRO_USER_JWT' );
-		delete_option( 'WPHUBPRO_ENDPOINT' );
-		delete_option( 'WPHUBPRO_PROJECT_ID' );
-		delete_option( 'WPHUBPRO_SITE_ID' );
-		delete_option( 'WPHUBPRO_HEARTBEAT_URL' );
-		delete_option( 'WPHUBPRO_LAST_HEARTBEAT_AT' );
-		update_option( 'wphub_status', 'disconnected' );
+		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_ENDPOINT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
 		WPHubPro_Bridge_Heartbeat::unschedule();
 		return array( 'success' => true );
 	}
@@ -143,25 +143,25 @@ class WPHubPro_Bridge_Connect {
 			return new WP_Error( 'missing_api_key', 'api_key is required', array( 'status' => 400 ) );
 		}
 
-		update_option( 'WPHUBPRO_API_KEY', sanitize_text_field( $api_key ) );
+		update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, sanitize_text_field( $api_key ) );
 		if ( ! empty( $encrypted_api_key ) ) {
-			update_option( 'WPHUBPRO_API_KEY', sanitize_text_field( $encrypted_api_key ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, sanitize_text_field( $encrypted_api_key ) );
 		}
 		if ( ! empty( $endpoint ) ) {
-			update_option( 'WPHUBPRO_ENDPOINT', untrailingslashit( $endpoint ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_ENDPOINT, untrailingslashit( $endpoint ) );
 		}
 		if ( ! empty( $project_id ) ) {
-			update_option( 'WPHUBPRO_PROJECT_ID', $project_id );
+			update_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID, $project_id );
 		}
 		if ( ! empty( $site_id ) ) {
-			update_option( 'WPHUBPRO_SITE_ID', sanitize_text_field( $site_id ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
 		}
 		if ( ! empty( $heartbeat_url ) ) {
-			update_option( 'WPHUBPRO_HEARTBEAT_URL', esc_url_raw( untrailingslashit( $heartbeat_url ) ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL, esc_url_raw( untrailingslashit( $heartbeat_url ) ) );
 		} else {
-			delete_option( 'WPHUBPRO_HEARTBEAT_URL' );
+			delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
 		}
-		update_option( 'wphub_status', 'connected' );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
 
 		WPHubPro_Bridge_Heartbeat::schedule();
 
@@ -183,7 +183,7 @@ class WPHubPro_Bridge_Connect {
 	public function handle_connect() {
 		error_log( '[WPHubPro Bridge] connect GET' );
 		$api_key = wp_generate_password( 32, false );
-		update_option( 'WPHUBPRO_API_KEY', $api_key );
+		update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, $api_key );
 		$params = array(
 			'site_url'   => get_site_url(),
 			'user_login' => wp_get_current_user()->user_login,

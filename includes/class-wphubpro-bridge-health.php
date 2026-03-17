@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site health feature (placeholder).
  */
-class WPHubPro_Bridge_Health {
+class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
 
     public static function get_health_status(WP_REST_Request $request) {
         $t0 = microtime(true);
@@ -60,7 +60,7 @@ class WPHubPro_Bridge_Health {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = get_option('wphubpro_last_update', null);
+        $last_update = WPHubPro_Bridge_Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);
@@ -110,6 +110,16 @@ class WPHubPro_Bridge_Health {
         ];
 
         return new WP_REST_Response($payload, 200);
+    }
+
+    public static function send_health_status(WP_REST_Request $request) {
+
+        $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
+        if (!$request_id) $request_id = wp_generate_uuid4();
+
+        $payload = self::get_health_status($request);
+
+        return parent::post('health', $payload);
     }
 
     private static function get_woo_status(): array {

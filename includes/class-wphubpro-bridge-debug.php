@@ -16,9 +16,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPHubPro_Bridge_Debug {
 
-	const OPTION_BASE_URL = 'wphubpro_redirect_base_url';
-	const DEFAULT_BASE_URL = 'https://wphub.pro';
-
 	/**
 	 * Hardcoded list of allowed redirect domains.
 	 *
@@ -26,7 +23,7 @@ class WPHubPro_Bridge_Debug {
 	 */
 	private function get_domains_list() {
 		return array(
-			self::DEFAULT_BASE_URL,
+			WPHubPro_Bridge_Config::DEFAULT_REDIRECT_BASE_URL,
 			'https://app.wphub.pro',
 			'https://dev.wphub.pro',
 			'https://wphubpro.jhbdesigns.nl',
@@ -85,7 +82,7 @@ class WPHubPro_Bridge_Debug {
 	 * @return WP_REST_Response
 	 */
 	public function get_base_url() {
-		$base_url = get_option( self::OPTION_BASE_URL, self::DEFAULT_BASE_URL );
+		$base_url = WPHubPro_Bridge_Config::get_redirect_base_url();
 		return rest_ensure_response( array( 'base_url' => $base_url ) );
 	}
 
@@ -101,7 +98,7 @@ class WPHubPro_Bridge_Debug {
 		if ( empty( $base_url ) ) {
 			return new WP_Error( 'invalid_base_url', 'Invalid base URL', array( 'status' => 400 ) );
 		}
-		update_option( self::OPTION_BASE_URL, $base_url );
+		update_option( WPHubPro_Bridge_Config::OPTION_REDIRECT_BASE_URL, $base_url );
 		return rest_ensure_response( array( 'base_url' => $base_url ) );
 	}
 
@@ -111,6 +108,6 @@ class WPHubPro_Bridge_Debug {
 	 * @return string
 	 */
 	public static function get_redirect_base_url() {
-		return get_option( self::OPTION_BASE_URL, self::DEFAULT_BASE_URL );
+		return WPHubPro_Bridge_Config::get_redirect_base_url();
 	}
 }

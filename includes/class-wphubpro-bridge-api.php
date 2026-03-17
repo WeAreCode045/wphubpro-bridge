@@ -20,50 +20,62 @@ class WPHubPro_Bridge_API {
     private $secret = '';
     private $baseurl = '';
     private $project = '';
-    
+
+    private static int $connection_timeout = 15;
+
 
     public function __construct() {
-        $this->site_id       = get_option( 'WPHUBPRO_SITE_ID' );
-		$this->base_url       = get_option( 'WPHUBPRO_ENDPOINT' );
-		$this->project       = get_option( 'WPHUBPRO_PROJECT_ID' );
-        $this->api_key       = get_option( 'WPHUBPRO_API_KEY' );
+		$this->base_url  = WPHubPro_Bridge_Config::get_base_url();
+		$this->project   = WPHubPro_Bridge_Config::get_project_id();
+		$this->api_key   = WPHubPro_Bridge_Config::get_api_key();
+    }
+
+    /**
+     * Get the headers for the API request.
+     *
+     * @return array The headers for the API request.
+     */
+    protected function get_headers() {
+        return array(
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $this->api_key,
+        );
     }
 
     /**
      * Simple base API class wrapping GET and POST requests for Appwrite endpoints.
      * Uses wp_remote_get and wp_remote_post.
      */
-    public static function get($endpoint, $query = array(), $headers = array()) {
-        
+    protected function get(string $endpoint, array $query = []) {
+        $this->check_auth();
+
         if (empty($endpoint)) {
-            WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/get', 'error', array(), array(
-                'msg'      => 'Missing endpoint.',
-                'endpoint' => $endpoint,
-            ));
-            return false;
+            throw new ValidationError('Missing endpoint.', 0, null, array('endpoint' => $endpoint));
         }
-        $url = $this->base_url . $endpoint;
+
+        $url = untrailingslashit( $this->base_url ) . '/' . $endpoint;
         if (!empty($query) && is_array($query)) {
             $url = add_query_arg($query, $url);
         }
 
-        $default_headers = array(
-            'Accept' => 'application/json',
-        );
-        $headers = array_merge($default_headers, $headers);
+        $headers = $this->get_headers();
 
         $response = wp_remote_get($url, array(
             'headers' => $headers,
-            'timeout' => 15,
+            'timeout' => self::$connection_timeout,
         ));
+        
         if (is_wp_error($response)) {
-            WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/get', 'error', array(), array(
-                'msg'    => $response->get_error_message(),
-                'url'    => $url,
-                'query'  => $query,
-            ));
-            return false;
+            throw new RequestError($response->get_error_message(), 0, null, array('url' => $url, 'query' => $query));
+            // WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/get', 'error', array(), array(
+            //     'msg'    => $response->get_error_message(),
+            //     'url'    => $url,
+            //     'query'  => $query,
+            // ));
+            // return false;
         }
+        // return $this->resolve_response($response);
         $code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
@@ -79,45 +91,64 @@ class WPHubPro_Bridge_API {
         $json = json_decode($body, true);
         return $json !== null ? $json : $body;
     }
+    /**
+     * Send a POST request to the API.
+     *
+     * @param string $endpoint The endpoint to send the request to.
+     * @param array $body The body of the request.
+     * @return array The response from the API.
+     * @throws Exception If the endpoint is missing or the request fails.
+     */
+    private function post(string $endpoint, array $body = []) {
 
-    public static function post($endpoint, $body = array(), $headers = array()) {
         if (empty($endpoint)) {
             WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/post', 'error', array(), array(
                 'msg'      => 'Missing endpoint.',
                 'endpoint' => $endpoint,
             ));
-            return false;
+            throw new Exception('Missing endpoint.');
         }
-        $default_headers = array(
-            'Content-Type'  => 'application/json',
-            'Accept'        => 'application/json',
-        );
-        $headers = array_merge($default_headers, $headers);
-
-        $args = array(
-            'headers' => $headers,
+        
+        $this->check_auth();
+        
+        $request_args = array(
+            'headers' => $this->get_headers(),
             'body'    => is_string($body) ? $body : wp_json_encode($body),
-            'timeout' => 15,
+            'timeout' => self::$connection_timeout,
         );
-        $response = wp_remote_post($endpoint, $args);
+
+        $response = wp_remote_post($endpoint, $request_args);
         if (is_wp_error($response)) {
             WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/post', 'error', array(), array(
                 'msg'    => $response->get_error_message(),
                 'url'    => $endpoint,
                 'body'   => $body,
             ));
-            return false;
+            throw new Exception('Error: ' . $response->get_error_message());
         }
+        
+        return $this->resolve_response($response);
+    }
+
+    /**
+     * Check the response from the API.
+     *
+     * @param int $code The HTTP response code.
+     * @return array The response body.
+     * @throws RequestError If the response is not a 2xx response.
+     */
+    protected function resolve_response(WP_REST_Response $response) {
         $code = wp_remote_retrieve_response_code($response);
         $resp_body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
-            WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/post', 'http_error', array(), array(
-                'msg'   => 'Non-2xx response',
-                'code'  => $code,
-                'body'  => $resp_body,
-                'url'   => $endpoint,
-            ));
-            return false;
+            throw new RequestError('Non-2xx response', 0, null, array('code' => $code, 'body' => $resp_body, 'url' => $endpoint));
+            // WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/post', 'http_error', array(), array(
+            //     'msg'   => 'Non-2xx response',
+            //     'code'  => $code,
+            //     'body'  => $resp_body,
+            //     'url'   => $endpoint,
+            // ));
+            // return false;
         }
         $json = json_decode($resp_body, true);
         return $json !== null ? $json : $resp_body;
@@ -127,10 +158,11 @@ class WPHubPro_Bridge_API {
      * Check if the site is authenticated.
      *
      * @return bool True if authenticated, false otherwise.
+     * @throws Exception If the site is not authenticated.
      */
     private function check_auth() {
-        if (empty($this->site_id) || empty($this->secret)) {
-            return false;
+        if (empty($this->api_key)) {
+            throw new AuthenticationError("Not authenticated: api_key");
         }
         return true;
     }
@@ -140,81 +172,63 @@ class WPHubPro_Bridge_API {
 	 *
 	 * @return bool True on success, false on failure (logged).
 	 */
-	public static function send_healthcheck() {
-		$site_id       = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret        = get_option( 'WPHUBPRO_API_KEY' );
-		$endpoint      = get_option( 'WPHUBPRO_ENDPOINT' );
-		$project       = get_option( 'WPHUBPRO_PROJECT_ID' );
-		$heartbeat_url = get_option( 'WPHUBPRO_HEARTBEAT_URL', '' );
-
-		if($this->check_auth()) {
-            throw new Exception('Not authenticated');
+	public static function send_heartbeat() {
+		
+        
+        try {
+            $response = $this->post('/heartbeat');
+        } catch (Exception $e) {
+            WPHubPro_Bridge_Logger::log_action(get_site_url(), 'heartbeat', 'error', array(), array(
+                'msg' => $e->getMessage(),
+            ));
+            return false;
         }
 
-		$payload = array(
-			'siteId'  => $site_id,
-			'site_id' => $site_id,
-			'secret'  => $secret,
-		);
 
 		// Prefer function domain when configured
-		if ( ! empty( $heartbeat_url ) ) {
-			$url = untrailingslashit( $heartbeat_url );
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array(
-						'Content-Type' => 'application/json',
-					),
-					'body'    => wp_json_encode( $payload ),
-					'timeout' => 15,
-				)
-			);
-		} else {
-			// Fallback: executions API
-			if ( empty( $endpoint ) || empty( $project ) ) {
-				WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
-				return false;
-			}
-			$url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
-			$request_body = wp_json_encode( array(
-				'body'    => wp_json_encode( $payload ),
-				'method'  => 'POST',
-				'headers' => array(
-					'Content-Type' => 'application/json',
-				),
-			) );
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array(
-						'Content-Type'       => 'application/json',
-						'X-Appwrite-Project' => $project,
-					),
-					'body'    => $request_body,
-					'timeout' => 15,
-				)
-			);
-		}
-
-		$code = wp_remote_retrieve_response_code( $response );
-		$body_response = wp_remote_retrieve_body( $response );
+		
+		
+			// // Fallback: executions API
+			// if ( empty( $endpoint ) || empty( $project ) ) {
+			// 	WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
+			// 	return false;
+			// }
+			// $url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
+			// $request_body = wp_json_encode( array(
+			// 	'body'    => wp_json_encode( $payload ),
+			// 	'method'  => 'POST',
+			// 	'headers' => array(
+			// 		'Content-Type' => 'application/json',
+			// 	),
+			// ) );
+			// $response = wp_remote_post(
+			// 	$url,
+			// 	array(
+			// 		'headers' => array(
+			// 			'Content-Type'       => 'application/json',
+			// 			'X-Appwrite-Project' => $project,
+			// 		),
+			// 		'body'    => $request_body,
+			// 		'timeout' => self::$connection_timeout,
+			// 	)
+			// );
+		
 
 		if ( is_wp_error( $response ) ) {
-			update_option( 'wphub_status', 'disconnected' );
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+			WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
 			return false;
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
-			update_option( 'wphub_status', 'disconnected' );
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+			WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
 			return false;
 		}
 
-		update_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', current_time( 'c' ) );
-		update_option( 'wphub_status', 'connected' );
-		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
+		update_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
+		WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}
 }
