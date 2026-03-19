@@ -224,6 +224,23 @@ class WPHubPro_Bridge_Connect {
 	}
 
 	/**
+	 * Permission callback for exchange-token: validate connect_token instead of WP auth.
+	 * Cross-origin requests from Hub do not send WordPress cookies, so we use the
+	 * one-time token as proof that the user initiated connect from the WP admin.
+	 *
+	 * @param WP_REST_Request $request Request with connect_token query param.
+	 * @return bool
+	 */
+	public function validate_exchange_token_permission( $request ) {
+		$connect_token = $request->get_param( 'connect_token' );
+		if ( empty( $connect_token ) ) {
+			return false;
+		}
+		$transient_key = 'wphubpro_connect_' . sanitize_text_field( $connect_token );
+		return get_transient( $transient_key ) !== false;
+	}
+
+	/**
 	 * Exchange one-time connect_token for bridge_secret. Invalidates token after use.
 	 *
 	 * @param WP_REST_Request $request Request with connect_token query param.

@@ -73,13 +73,12 @@ class WPHubPro_Bridge {
 			},
 		) );
 
-		// Exchange one-time token for bridge_secret (requires manage_options, CORS for hub fetch)
+		// Exchange one-time token for bridge_secret. Validates token (not WP auth) because
+		// the request is cross-origin from Hub and cookies are not sent.
 		register_rest_route( $namespace, '/exchange-token', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this->connect, 'handle_exchange_token' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
+			'permission_callback' => array( $this->connect, 'validate_exchange_token_permission' ),
 			'args'                => array(
 				'connect_token' => array(
 					'required'          => true,
