@@ -170,7 +170,7 @@ class WPHubPro_Bridge_Themes {
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		// Sync via delete_theme hook (fires when delete_theme is called)
 		if ( ! is_wp_error( $resp ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			WPHubPro_Bridge_Sync::schedule_sync();
 		}
 		return $resp;
 	}

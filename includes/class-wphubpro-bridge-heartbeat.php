@@ -68,7 +68,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	public static function send_heartbeat() {
 		// WPHubPro_Bridge_Logger::log_action( 'send_heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => WPHubPro_Bridge_Config::get_site_id() ) );
         try {
-            $response = self::instance()->post('functions/site-heartbeat/executions', ['siteId' => WPHubPro_Bridge_Config::get_site_id(), 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret()]);
+            $response = self::instance()->post('functions/site-heartbeat/executions', array( 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret() ));
         } catch (Exception $e) {
             WPHubPro_Bridge_Logger::log_action('heartbeat', 'error', array(), array(
                 'msg' => $e->getMessage(),

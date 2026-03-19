@@ -168,56 +168,62 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         ];
     }
 
-    private static function summarize_backups(string $baseDir, int $maxSlugs = 10): array {
-        if (!is_dir($baseDir)) {
-            return ['present' => false, 'base' => $baseDir, 'slugs' => []];
+    private static function summarize_backups(string $base_dir, int $max_slugs = 10): array {
+        if ( ! is_dir( $base_dir ) ) {
+            return array( 'present' => false, 'base' => $base_dir, 'slugs' => array() );
         }
 
-        $slugs = [];
-        $dirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
-        $dirs = array_slice($dirs, 0, $maxSlugs);
+        $slugs = array();
+        $dirs  = glob( $base_dir . '/*', GLOB_ONLYDIR ) ?: array();
+        $dirs  = array_slice( $dirs, 0, $max_slugs );
 
-        foreach ($dirs as $slugDir) {
-            $slug = basename($slugDir);
-            $snapshots = glob($slugDir . '/*', GLOB_ONLYDIR) ?: [];
-            rsort($snapshots);
+        foreach ( $dirs as $slug_dir ) {
+            $slug      = basename( $slug_dir );
+            $snapshots = glob( $slug_dir . '/*', GLOB_ONLYDIR ) ?: array();
+            rsort( $snapshots );
 
-            $slugs[] = [
-                'slug' => $slug,
-                'count' => count($snapshots),
+            $slugs[] = array(
+                'slug'   => $slug,
+                'count'  => count( $snapshots ),
                 'latest' => $snapshots[0] ?? null,
-            ];
+            );
         }
 
-        return [
+        return array(
             'present' => true,
-            'base' => $baseDir,
-            'slugs' => $slugs,
-        ];
+            'base'    => $base_dir,
+            'slugs'   => $slugs,
+        );
     }
 
-    private static function tail_debug_log(string $file, int $lines = 5, int $maxBytes = 8192): ?array {
-        if (!file_exists($file) || !is_readable($file)) return null;
+    private static function tail_debug_log(string $file, int $lines = 5, int $max_bytes = 8192): ?array {
+        if ( ! file_exists( $file ) || ! is_readable( $file ) ) {
+            return null;
+        }
 
-        $size = filesize($file);
-        $read = min($maxBytes, $size);
-        $fp = @fopen($file, 'rb');
-        if (!$fp) return null;
+        $size = filesize( $file );
+        $read = min( $max_bytes, $size );
+        $fp = @fopen( $file, 'rb' );
+        if ( ! $fp ) {
+            return null;
+        }
 
-        @fseek($fp, -$read, SEEK_END);
-        $chunk = @fread($fp, $read);
-        @fclose($fp);
+        @fseek( $fp, -$read, SEEK_END );
+        $chunk = @fread( $fp, $read );
+        @fclose( $fp );
 
-        if (!is_string($chunk) || $chunk === '') return null;
+        if ( ! is_string( $chunk ) || $chunk === '' ) {
+            return null;
+        }
 
-        $chunk = str_replace(["\r\n", "\r"], "\n", $chunk);
-        $parts = array_values(array_filter(explode("\n", $chunk), 'strlen'));
-        $tail = array_slice($parts, -$lines);
+        $chunk = str_replace( array( "\r\n", "\r" ), "\n", $chunk );
+        $parts = array_values( array_filter( explode( "\n", $chunk ), 'strlen' ) );
+        $tail  = array_slice( $parts, -$lines );
 
-        return [
-            'file' => $file,
+        return array(
+            'file'  => $file,
             'lines' => $tail,
-        ];
+        );
     }
 
     private static function client_ip(): string {

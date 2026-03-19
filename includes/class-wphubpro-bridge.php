@@ -35,9 +35,6 @@ class WPHubPro_Bridge {
 	/** @var WPHubPro_Bridge_Health */
 	private $health;
 
-	/** @var WPHubPro_Bridge_Debug */
-	private $debug;
-
 	public static function instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
@@ -51,7 +48,6 @@ class WPHubPro_Bridge {
 		$this->themes  = new WPHubPro_Bridge_Themes();
 		$this->details = new WPHubPro_Bridge_Details();
 		$this->health  = new WPHubPro_Bridge_Health();
-		$this->debug   = new WPHubPro_Bridge_Debug();
 
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
@@ -103,6 +99,48 @@ class WPHubPro_Bridge {
 		register_rest_route( $namespace, '/disconnect', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this->connect, 'handle_disconnect' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+
+		// Redirect URL settings for connect flow (admin only)
+		register_rest_route( $namespace, '/connect/redirect-settings', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this->connect, 'get_redirect_settings' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+		register_rest_route( $namespace, '/connect/redirect-settings', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->connect, 'save_redirect_settings' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+			'args'                => array(
+				'use_default' => array(
+					'required' => true,
+					'type'     => 'boolean',
+				),
+				'custom_url'  => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'esc_url_raw',
+				),
+			),
+		) );
+
+		// Bridge update: check for updates and install (admin only)
+		register_rest_route( $namespace, '/bridge/check-update', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->connect, 'handle_check_for_update' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+		register_rest_route( $namespace, '/bridge/install-update', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this->connect, 'handle_install_update' ),
 			'permission_callback' => function () {
 				return current_user_can( 'manage_options' );
 			},
@@ -299,8 +337,6 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 		) );
 
-		// Feature-specific route registration (placeholders)
-		$this->debug->register_routes( $namespace );
 	}
 
 	/**
@@ -368,9 +404,13 @@ class WPHubPro_Bridge {
 	 */
 	public function log_rest_request( $response, $server, $request ) {
 		$route = $request->get_route();
-		if ( is_null($route) || strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
-			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
+		if ( ! $route || strpos( $route, 'wphubpro/v1' ) === false ) {
+			return $response;
 		}
+		if ( strpos( $route, '/logs' ) !== false || strpos( $route, '/error-log' ) !== false || strpos( $route, '/connection-status' ) !== false ) {
+			return $response;
+		}
+		WPHubPro_Bridge_Logger::push_api_log( $request, $response );
 		return $response;
 	}
 }

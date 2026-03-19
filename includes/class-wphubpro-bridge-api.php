@@ -125,7 +125,7 @@ class WPHubPro_Bridge_API {
         
         $this->check_auth();
 
-        $payload = array_merge($body, ['siteId' => $this->site_id, 'site_id' => $this->site_id, 'secret' => $this->site_secret]);
+        $payload = array_merge($body, array( 'site_id' => $this->site_id, 'secret' => $this->site_secret ));
         $request_body = wp_json_encode(array(
             'body'    => is_string($payload) ? $payload : wp_json_encode($payload),
 

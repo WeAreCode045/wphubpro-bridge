@@ -44,8 +44,10 @@ class WPHubPro_Bridge_Config {
 	const OPTION_RECOVERY_AGENT_VERSION = 'wphubpro_recovery_agent_version';
 	/** Option: Last bridge update timestamp. */
 	const OPTION_LAST_UPDATE = 'wphubpro_last_update';
+	/** Option: Bridge plugin installed version (JSON: { installed }). */
+	const OPTION_BRIDGE_PLUGIN = 'bridge_plugin';
 
-	const DEFAULT_REDIRECT_BASE_URL = 'https://wphub.pro';
+	const DEFAULT_REDIRECT_BASE_URL = 'https://app.wphub.pro';
 	const DEFAULT_STATUS = 'disconnected';
 
 	/**
@@ -154,7 +156,7 @@ class WPHubPro_Bridge_Config {
 	}
 
 	/**
-	 * Redirect base URL for connect flow (debug).
+	 * Redirect base URL for connect flow.
 	 *
 	 * @return string
 	 */
@@ -178,6 +180,39 @@ class WPHubPro_Bridge_Config {
 	 */
 	public static function get_last_update() {
 		return get_option( self::OPTION_LAST_UPDATE, null );
+	}
+
+	/**
+	 * Bridge plugin version data. WP options store only installed version.
+	 * Latest version is fetched from WPHub when user clicks "Check for updates".
+	 *
+	 * @return array{installed: string, latest: string}
+	 */
+	public static function get_bridge_plugin_data() {
+		$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '';
+		$raw       = get_option( self::OPTION_BRIDGE_PLUGIN, '' );
+		if ( is_string( $raw ) && $raw !== '' ) {
+			$decoded = json_decode( $raw, true );
+			if ( is_array( $decoded ) && ! empty( $decoded['installed'] ) ) {
+				$installed = $decoded['installed'];
+			}
+		} else {
+			$legacy = get_option( 'bridge_version', '' );
+			if ( $legacy ) {
+				$installed = $legacy;
+			}
+		}
+		return array( 'installed' => $installed, 'latest' => $installed );
+	}
+
+	/**
+	 * Installed bridge plugin version.
+	 *
+	 * @return string
+	 */
+	public static function get_bridge_version() {
+		$data = self::get_bridge_plugin_data();
+		return $data['installed'];
 	}
 
 	/**

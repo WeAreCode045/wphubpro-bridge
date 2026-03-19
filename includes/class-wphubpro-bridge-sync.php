@@ -1,9 +1,9 @@
 <?php
 /**
- * Sync plugins_meta and themes_meta to Appwrite sites collection.
+ * Sync plugins_meta, themes_meta, and wp_meta to Appwrite sites collection.
  *
- * Called after plugin/theme actions (activate, deactivate, update, install, uninstall).
- * Pushes data to sync-site-meta Appwrite Function via JWT.
+ * Called after plugin/theme/core changes (activate, deactivate, update, install, uninstall, WP version update).
+ * Pushes data to sync-site-meta Appwrite Function. Bridge uses site_secret for auth (Bridge→Hub).
  *
  * @package WPHubPro
  */
@@ -19,15 +19,30 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 
 	private static $instance = null;
 
+	/** @var bool True if sync already scheduled for this request (avoids double sync on shutdown). */
+	private static $sync_scheduled = false;
+
 	public static function instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
 	}
-	
+
 	/**
-	 * Register hooks for plugin/theme changes (WP Admin or REST).
+	 * Schedule sync to run at shutdown. Idempotent: only one shutdown hook per request.
+	 * Call from Connect, Plugins, Themes, or on_plugin_or_theme_change.
+	 */
+	public static function schedule_sync() {
+		if ( self::$sync_scheduled ) {
+			return;
+		}
+		self::$sync_scheduled = true;
+		add_action( 'shutdown', array( self::instance(), 'sync_meta_to_appwrite' ), 5 );
+	}
+
+	/**
+	 * Register hooks for plugin/theme/core changes (WP Admin or REST).
 	 */
 	public static function init() {
 		add_action( 'activated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
@@ -40,19 +55,18 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	 * Callback for plugin/theme change hooks. Schedules async sync to avoid blocking.
 	 */
 	public static function on_plugin_or_theme_change() {
-		// Defer to avoid blocking; runs after request when safe.
-		add_action( 'shutdown', array( self::$instance, 'sync_meta_to_appwrite' ), 5 );
+		self::schedule_sync();
 	}
 
 	/**
 	 * Callback for upgrader_process_complete (install, update).
 	 *
 	 * @param WP_Upgrader $upgrader Upgrader instance.
-	 * @param array       $options  Options (type: 'plugin'|'theme', action: 'install'|'update').
+	 * @param array       $options  Options (type: 'plugin'|'theme'|'core', action: 'install'|'update').
 	 */
 	public static function on_upgrader_complete( $upgrader, $options ) {
 		$type = isset( $options['type'] ) ? $options['type'] : '';
-		if ( $type === 'plugin' || $type === 'theme' ) {
+		if ( $type === 'plugin' || $type === 'theme' || $type === 'core' ) {
 			self::on_plugin_or_theme_change();
 		}
 	}

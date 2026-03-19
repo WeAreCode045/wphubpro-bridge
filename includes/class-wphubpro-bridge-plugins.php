@@ -270,7 +270,7 @@ class WPHubPro_Bridge_Plugins {
 
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 		if ( ! is_wp_error( $resp ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			WPHubPro_Bridge_Sync::schedule_sync();
 		}
 		return $resp;
 	}
@@ -317,7 +317,7 @@ class WPHubPro_Bridge_Plugins {
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'delete', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		// Sync via shutdown (no delete_plugin hook; run after request)
 		if ( ! is_wp_error( $resp ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			WPHubPro_Bridge_Sync::schedule_sync();
 		}
 		return $resp;
 	}
@@ -408,7 +408,7 @@ class WPHubPro_Bridge_Plugins {
 
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			WPHubPro_Bridge_Sync::schedule_sync();
 		}
 		return $result;
 	}
@@ -504,7 +504,7 @@ class WPHubPro_Bridge_Plugins {
 		$log_source = ! empty( $zip_base64 ) ? 'zip_base64' : 'zip_url';
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			WPHubPro_Bridge_Sync::schedule_sync();
 		}
 		return $result;
 	}

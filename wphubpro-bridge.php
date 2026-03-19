@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.2.27
+ * Version: 2.2.40
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -13,11 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$autoload = __DIR__ . '/lib/appwrite-autoload.php';
-if ( file_exists( $autoload ) ) {
-	require_once $autoload;
-}
-
 if ( ! defined( 'WPHUBPRO_BRIDGE_PLUGIN_FILE' ) ) {
 	define('WPHUBPRO_BRIDGE_PLUGIN_FILE', __FILE__);
 }
@@ -25,7 +20,7 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_ABSPATH' ) ) {
 	define( 'WPHUBPRO_BRIDGE_ABSPATH', plugin_dir_path( __FILE__ ) );
 }
 if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
-	define( 'WPHUBPRO_BRIDGE_VERSION', '2.2.27' );
+	define( 'WPHUBPRO_BRIDGE_VERSION', '2.2.40' );
 }
 
 // Autoload includes
@@ -47,7 +42,6 @@ foreach ( array(
 	'class-wphubpro-bridge-heartbeat.php',
 	'class-wphubpro-bridge-details.php',
 	'class-wphubpro-bridge-health.php',
-	'class-wphubpro-bridge-debug.php',
 	'class-wphubpro-bridge.php',
 	'class-wphubpro-bridge-admin.php',
 	'class-wphubpro-bridge-ajax.php',
@@ -93,6 +87,10 @@ register_deactivation_hook(__FILE__, function() {
  * Install WPHubPro Recovery Agent as mu-plugin on activation and when bridge is updated.
  */
 function wphubpro_bridge_ensure_recovery_agent() {
+	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
+	$data = array( 'installed' => $bridge_version );
+	update_option( WPHubPro_Bridge_Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
+
 	$source = WPHUBPRO_BRIDGE_ABSPATH . 'recovery/wphubpro-recovery-agent.php';
 	if ( ! file_exists( $source ) ) {
 		return;
@@ -105,7 +103,6 @@ function wphubpro_bridge_ensure_recovery_agent() {
 		return;
 	}
 	$dest = $mu_dir . '/wphubpro-recovery-agent.php';
-	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
 	$installed = WPHubPro_Bridge_Config::get_recovery_agent_version();
 	if ( $installed === $bridge_version && file_exists( $dest ) ) {
 		return;

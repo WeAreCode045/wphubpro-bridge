@@ -17,30 +17,19 @@ $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 	<h1>WPHubPro Bridge</h1>
 	<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
 		<a href="<?php echo esc_url( $base_url ); ?>" class="nav-tab <?php echo $tab === 'connect' ? 'nav-tab-active' : ''; ?>">Overzicht</a>
-		<a href="<?php echo esc_url( add_query_arg( 'tab', 'logs', $base_url ) ); ?>" class="nav-tab <?php echo $tab === 'logs' ? 'nav-tab-active' : ''; ?>">Logs</a>
-		<a href="<?php echo esc_url( add_query_arg( 'tab', 'debug', $base_url ) ); ?>" class="nav-tab <?php echo $tab === 'debug' ? 'nav-tab-active' : ''; ?>">Debug</a>
 	</nav>
 
 	<?php if ( $tab === 'connect' ) : ?>
 		<?php
-		$connect_url    = get_rest_url( null, 'wphubpro/v1/connect' );
-		$status_url     = get_rest_url( null, 'wphubpro/v1/connection-status' );
-		$disconnect_url = get_rest_url( null, 'wphubpro/v1/disconnect' );
-		$nonce          = wp_create_nonce( 'wp_rest' );
+		$connect_url           = get_rest_url( null, 'wphubpro/v1/connect' );
+		$status_url            = get_rest_url( null, 'wphubpro/v1/connection-status' );
+		$disconnect_url        = get_rest_url( null, 'wphubpro/v1/disconnect' );
+		$redirect_settings_url = get_rest_url( null, 'wphubpro/v1/connect/redirect-settings' );
+		$check_update_url      = get_rest_url( null, 'wphubpro/v1/bridge/check-update' );
+		$install_update_url    = get_rest_url( null, 'wphubpro/v1/bridge/install-update' );
+		$nonce            = wp_create_nonce( 'wp_rest' );
+		$bridge_version   = WPHubPro_Bridge_Config::get_bridge_version();
 		include $template_dir . 'admin-connect-tab.php';
-		?>
-	<?php elseif ( $tab === 'logs' ) : ?>
-		<?php
-		$status_url = get_rest_url( null, 'wphubpro/v1/connection-status' );
-		$nonce      = wp_create_nonce( 'wp_rest' );
-		include $template_dir . 'admin-logs-tab.php';
-		?>
-	<?php elseif ( $tab === 'debug' ) : ?>
-		<?php
-		$rest_url = get_rest_url( null, 'wphubpro/v1/debug' );
-		$nonce    = wp_create_nonce( 'wp_rest' );
-		$current  = WPHubPro_Bridge_Config::get_redirect_base_url();
-		include $template_dir . 'admin-debug-tab.php';
 		?>
 	<?php endif; ?>
 </div>
