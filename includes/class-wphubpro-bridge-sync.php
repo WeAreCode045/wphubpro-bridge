@@ -17,6 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 
+	private static $instance = null;
+
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+	
 	/**
 	 * Register hooks for plugin/theme changes (WP Admin or REST).
 	 */
@@ -32,7 +41,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	 */
 	public static function on_plugin_or_theme_change() {
 		// Defer to avoid blocking; runs after request when safe.
-		add_action( 'shutdown', array( __CLASS__, 'sync_meta_to_appwrite' ), 5 );
+		add_action( 'shutdown', array( self::$instance, 'sync_meta_to_appwrite' ), 5 );
 	}
 
 	/**
@@ -55,13 +64,14 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	 *
 	 * @return bool True on success, false on failure (logged).
 	 */
-	public static function sync_meta_to_appwrite() {
+	public function sync_meta_to_appwrite() {
 		
 
 		$plugins_meta = self::get_plugins_meta();
+		error_log(print_r($plugins_meta, true));
 		$themes_meta  = self::get_themes_meta();
+		error_log(print_r($themes_meta, true));
 
-		$url = untrailingslashit( $endpoint ) . '';
 
 		$payload = array(
 			'plugins_meta' => $plugins_meta,
@@ -69,9 +79,9 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 		);
 		
 		try {
-			$response = parent::post('functions/sync-site-meta/executions', $payload);
+			$response = $this->post('functions/sync-site-meta/executions', $payload);
 		} catch (Exception $e) {
-			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage() ) );
+			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;
 		}
 		

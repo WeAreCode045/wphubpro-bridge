@@ -30,9 +30,14 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
 
 // Autoload includes
 foreach ( array(
+	'Error/BaseError.php',
+	'Error/AuthenticationError.php',
+	'Error/ValidationError.php',
+	'Error/NotFoundError.php',
+	'Error/RequestError.php',
 	'class-wphubpro-bridge-api.php',
-	'class-wphubpro-bridge-logger.php',
 	'class-wphubpro-bridge-config.php',
+	'class-wphubpro-bridge-logger.php',
 	'class-wphubpro-bridge-connect.php',
 	'class-wphubpro-bridge-connection-status.php',
 	'class-wphubpro-bridge-plugins.php',

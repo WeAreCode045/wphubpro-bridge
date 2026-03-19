@@ -18,6 +18,8 @@ class WPHubPro_Bridge_Config {
 
 	/** Option: Base URL. */
 	const OPTION_BASE_URL = 'wphubpro_base_url';
+	/** Option: Base URL. */
+	const OPTION_API_BASE_URL = 'wphubpro_api_base_url';
 	/** Option: Appwrite project ID. */
 	const OPTION_PROJECT_ID = 'wphubpro_project_id';
 	/** Option: API key / shared secret. */
@@ -45,12 +47,21 @@ class WPHubPro_Bridge_Config {
 	const DEFAULT_STATUS = 'disconnected';
 
 	/**
-	 * Appwrite endpoint URL.
+	 * Appwrite Base URL.
 	 *
 	 * @return string
 	 */
 	public static function get_base_url() {
 		return get_option( self::OPTION_BASE_URL, '' );
+	}
+
+	/**
+	 * Appwrite Base URL.
+	 *
+	 * @return string
+	 */
+	public static function get_api_base_url() {
+		return get_option( self::OPTION_API_BASE_URL, 'https://api.wphub.pro/v1' );
 	}
 
 	/**

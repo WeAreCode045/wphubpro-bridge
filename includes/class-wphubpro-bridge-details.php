@@ -38,8 +38,7 @@ class WPHubPro_Bridge_Details {
 			'php_check'         => $php_info,
 		);
 
-		$site_url = get_site_url();
-		WPHubPro_Bridge_Logger::log_action( $site_url, 'get', 'details', array(), $response );
+		WPHubPro_Bridge_Logger::log_action( 'get', 'details', array(), $response );
 
 		return rest_ensure_response( $response );
 	}

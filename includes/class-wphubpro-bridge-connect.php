@@ -16,6 +16,10 @@ class WPHubPro_Bridge_Connect {
 
 	private static $instance = null;
 
+	/** @var WPHubPro_Bridge_Sync */
+	private $sync;
+
+
 	public static function instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
@@ -26,6 +30,7 @@ class WPHubPro_Bridge_Connect {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'rest_api_init', array( $this, 'add_save_connection_cors' ) );
+		$this->sync = WPHubPro_Bridge_Sync::instance();
 	}
 
 	/**
@@ -46,7 +51,7 @@ class WPHubPro_Bridge_Connect {
 	 */
 	public function cors_headers_for_save_connection( $served, $result, $request, $server ) {
 		$route = $request->get_route();
-		if ( ! $route || strpos( $route, 'wphubpro/v1/save-connection' ) === false ) {
+		if ( !$route || strpos( $route, 'wphubpro/v1/save-connection' ) === false ) {
 			return $served;
 		}
 		$origin = $request->get_header( 'Origin' );
@@ -112,10 +117,11 @@ class WPHubPro_Bridge_Connect {
 		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
 		delete_option( 'wphub_api_key' );
 		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
-		delete_option( WPHubPro_Bridge_Config::OPTION_ENDPOINT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
 		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
 		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
 		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
 		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
 		WPHubPro_Bridge_Heartbeat::unschedule();
@@ -148,7 +154,7 @@ class WPHubPro_Bridge_Connect {
 			update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, sanitize_text_field( $encrypted_api_key ) );
 		}
 		if ( ! empty( $endpoint ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_ENDPOINT, untrailingslashit( $endpoint ) );
+			update_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL, untrailingslashit( $endpoint ) );
 		}
 		if ( ! empty( $project_id ) ) {
 			update_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID, $project_id );
@@ -163,11 +169,11 @@ class WPHubPro_Bridge_Connect {
 		}
 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
 
-		WPHubPro_Bridge_Heartbeat::schedule();
+		// WPHubPro_Bridge_Heartbeat::schedule();
 
 		// Initial plugin/theme sync after connect
 		if ( class_exists( 'WPHubPro_Bridge_Sync' ) ) {
-			add_action( 'shutdown', array( 'WPHubPro_Bridge_Sync', 'sync_meta_to_appwrite' ), 5 );
+			add_action( 'shutdown', array( $this->sync, 'sync_meta_to_appwrite' ), 5 );
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );

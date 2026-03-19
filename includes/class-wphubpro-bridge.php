@@ -270,7 +270,6 @@ class WPHubPro_Bridge {
 		) );
 
 		// Feature-specific route registration (placeholders)
-		$this->health->register_routes( $namespace );
 		$this->debug->register_routes( $namespace );
 	}
 
@@ -339,7 +338,7 @@ class WPHubPro_Bridge {
 	 */
 	public function log_rest_request( $response, $server, $request ) {
 		$route = $request->get_route();
-		if ( strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
+		if ( is_null($route) || strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
 			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
 		}
 		return $response;
