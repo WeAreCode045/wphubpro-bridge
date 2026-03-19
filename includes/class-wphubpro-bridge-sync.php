@@ -47,6 +47,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	public static function init() {
 		add_action( 'activated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'deactivated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
+		add_action( 'deleted_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'switch_theme', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
 	}

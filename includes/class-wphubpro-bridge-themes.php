@@ -118,7 +118,9 @@ class WPHubPro_Bridge_Themes {
 		do_action( 'wphub_theme_action_pre', 'activate', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_activate', switch_theme( $slug ), $slug, array( 'slug' => $slug ) );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-		// Sync via switch_theme hook
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::schedule_sync();
+		}
 		return is_wp_error( $resp ) ? $resp : true;
 	}
 
@@ -145,7 +147,9 @@ class WPHubPro_Bridge_Themes {
 		$upgrader = new Theme_Upgrader( $skin );
 		$resp     = apply_filters( 'wphub_theme_update', $upgrader->update( $slug ), $slug, array( 'slug' => $slug ) );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
-		// Sync via upgrader_process_complete hook
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::schedule_sync();
+		}
 		return $resp;
 	}
 

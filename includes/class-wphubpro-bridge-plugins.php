@@ -119,7 +119,9 @@ class WPHubPro_Bridge_Plugins {
 
 		$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $params );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'activate', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
-		// Sync via activated_plugin hook
+		if ( ! is_wp_error( $resp ) ) {
+			WPHubPro_Bridge_Sync::schedule_sync();
+		}
 		return $resp;
 	}
 
@@ -155,7 +157,7 @@ class WPHubPro_Bridge_Plugins {
 
 		apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $params );
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'success' => true ) );
-		// Sync via deactivated_plugin hook
+		WPHubPro_Bridge_Sync::schedule_sync();
 		return true;
 	}
 
@@ -543,7 +545,28 @@ class WPHubPro_Bridge_Plugins {
 				}
 			}
 		}
+		if ( ! empty( $plugin ) && strpos( $plugin, '/' ) === false && strpos( $plugin, '-' ) !== false ) {
+			$plugin = $this->normalize_plugin_to_path( $plugin );
+		}
 		return array( 'plugin' => $plugin ?: '', 'slug' => $slug ?: '' );
+	}
+
+	/**
+	 * Convert slug-style plugin (e.g. elementor-elementor.php) to path format (elementor/elementor.php).
+	 *
+	 * @param string $plugin Plugin identifier (slug or path).
+	 * @return string
+	 */
+	private function normalize_plugin_to_path( $plugin ) {
+		if ( empty( $plugin ) || strpos( $plugin, '/' ) !== false ) {
+			return $plugin;
+		}
+		$base = preg_replace( '/\.php$/i', '', $plugin );
+		if ( strpos( $base, '-' ) !== false ) {
+			$base = str_replace( '-', '/', $base );
+			return $base . '.php';
+		}
+		return $plugin;
 	}
 
 	/**

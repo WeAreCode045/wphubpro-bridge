@@ -83,7 +83,29 @@ class WPHubPro_Bridge_Connect {
 		if ( empty( $stored_key ) || empty( $provided_key ) ) {
 			return false;
 		}
-		return hash_equals( $stored_key, $provided_key );
+		if ( ! hash_equals( $stored_key, $provided_key ) ) {
+			return false;
+		}
+		self::ensure_admin_user_for_api_request();
+		return true;
+	}
+
+	/**
+	 * Set current user to first administrator when request is authenticated via X-WPHub-Key.
+	 * Plugins like Elementor may check current_user_can() during activation.
+	 */
+	private static function ensure_admin_user_for_api_request() {
+		if ( get_current_user_id() > 0 ) {
+			return;
+		}
+		$admins = get_users( array(
+			'role'   => 'administrator',
+			'number' => 1,
+			'orderby' => 'ID',
+		) );
+		if ( ! empty( $admins ) ) {
+			wp_set_current_user( $admins[0]->ID );
+		}
 	}
 
 	/**
@@ -153,10 +175,8 @@ class WPHubPro_Bridge_Connect {
 		if ( empty( $bridge_secret_to_store ) ) {
 			return new WP_Error( 'missing_api_key', 'api_key or bridge_secret is required', array( 'status' => 400 ) );
 		}
-
-		$bridge_secret_to_store = ! empty( $encrypted_api_key )
-			? sanitize_text_field( $encrypted_api_key )
-			: sanitize_text_field( $bridge_secret_to_store );
+		// Store plaintext only – validate_api_key compares X-WPHub-Key with stored. encrypted_api_key is for Hub storage.
+		$bridge_secret_to_store = sanitize_text_field( $bridge_secret_to_store );
 		if ( class_exists( 'WPHubPro_Bridge_Crypto' ) ) {
 			WPHubPro_Bridge_Crypto::encrypt_and_store( WPHubPro_Bridge_Config::OPTION_API_KEY, $bridge_secret_to_store );
 		} else {
