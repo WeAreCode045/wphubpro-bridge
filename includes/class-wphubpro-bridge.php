@@ -73,6 +73,22 @@ class WPHubPro_Bridge {
 			},
 		) );
 
+		// Exchange one-time token for bridge_secret (requires manage_options, CORS for hub fetch)
+		register_rest_route( $namespace, '/exchange-token', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this->connect, 'handle_exchange_token' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+			'args'                => array(
+				'connect_token' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		) );
+
 		// Connection status (admin only)
 		register_rest_route( $namespace, '/connection-status', array(
 			'methods'             => 'GET',
@@ -105,8 +121,23 @@ class WPHubPro_Bridge {
 			'callback'            => array( $this->connect, 'handle_save_connection' ),
 			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
 			'args'                => array(
-				'api_key'      => array(
-					'required'          => true,
+				'api_key'        => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'bridge_secret'  => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'site_secret'    => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'encrypted_api_key' => array(
+					'required'          => false,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 				),
@@ -270,7 +301,6 @@ class WPHubPro_Bridge {
 		) );
 
 		// Feature-specific route registration (placeholders)
-		$this->health->register_routes( $namespace );
 		$this->debug->register_routes( $namespace );
 	}
 
@@ -289,7 +319,7 @@ class WPHubPro_Bridge {
 	 * @return WP_REST_Response
 	 */
 	public function get_logs( $request ) {
-		$log = get_option( 'WPHUBPRO_LOG', array() );
+		$log = WPHubPro_Bridge_Config::get_log();
 		if ( ! is_array( $log ) ) {
 			$log = array();
 		}
@@ -339,7 +369,7 @@ class WPHubPro_Bridge {
 	 */
 	public function log_rest_request( $response, $server, $request ) {
 		$route = $request->get_route();
-		if ( strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
+		if ( is_null($route) || strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
 			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
 		}
 		return $response;

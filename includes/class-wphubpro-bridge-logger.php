@@ -21,13 +21,12 @@ class WPHubPro_Bridge_Logger {
 	 *
 	 * Uses JWT and Appwrite SDK. Requires WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
 	 *
-	 * @param string $site_url Site URL.
 	 * @param string $action   Action name (e.g. activate, deactivate, update, list).
 	 * @param string $endpoint REST endpoint (e.g. plugins/manage, plugins).
 	 * @param array  $request  Request data.
 	 * @param mixed  $response Response/result.
 	 */
-	public static function log_action( $site_url, $action, $endpoint, $request, $response ) {
+	public static function log_action($action, $endpoint, $request, $response ) {
 		$log_req = is_array( $request ) ? $request : array();
 		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
 		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
@@ -41,61 +40,61 @@ class WPHubPro_Bridge_Logger {
 			'response' => $log_res_copy,
 		) ) );
 
-		$appwrite_endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
-		$appwrite_project  = get_option( 'WPHUBPRO_PROJECT_ID' );
-		$appwrite_jwt      = get_option( 'WPHUBPRO_USER_JWT' );
+		// $appwrite_endpoint = WPHubPro_Bridge_Config::get_base_url();
+		// $appwrite_project  = WPHubPro_Bridge_Config::get_project_id();
+		// $appwrite_jwt      = WPHubPro_Bridge_Config::get_user_jwt();
 
-		if ( ! $appwrite_endpoint || ! $appwrite_project || ! $appwrite_jwt || ! class_exists( 'Appwrite\Client' ) ) {
-			return;
-		}
+		// if ( ! $appwrite_endpoint || ! $appwrite_project || ! $appwrite_jwt || ! class_exists( 'Appwrite\Client' ) ) {
+		// 	return;
+		// }
 
-		try {
-			$client    = new \Appwrite\Client();
-			$client->setEndpoint( $appwrite_endpoint )->setProject( $appwrite_project )->setJWT( $appwrite_jwt );
-			$databases = new \Appwrite\Services\Databases( $client );
+		// try {
+		// 	$client    = new \Appwrite\Client();
+		// 	$client->setEndpoint( $appwrite_endpoint )->setProject( $appwrite_project )->setJWT( $appwrite_jwt );
+		// 	$databases = new \Appwrite\Services\Databases( $client );
+		// 	$site_url = get_site_url();
+		// 	$urls = array( $site_url, untrailingslashit( $site_url ), trailingslashit( $site_url ) );
+		// 	$site = null;
+		// 	foreach ( $urls as $url ) {
+		// 		$resp = $databases->listDocuments( 'platform_db', 'sites', array(
+		// 			\Appwrite\Query::equal( 'site_url', $url ),
+		// 			\Appwrite\Query::limit( 1 ),
+		// 		) );
+		// 		if ( ! empty( $resp['documents'][0] ) ) {
+		// 			$site = $resp['documents'][0];
+		// 			break;
+		// 		}
+		// 	}
+		// 	if ( ! $site ) {
+		// 		return;
+		// 	}
 
-			$urls = array( $site_url, untrailingslashit( $site_url ), trailingslashit( $site_url ) );
-			$site = null;
-			foreach ( $urls as $url ) {
-				$resp = $databases->listDocuments( 'platform_db', 'sites', array(
-					\Appwrite\Query::equal( 'site_url', $url ),
-					\Appwrite\Query::limit( 1 ),
-				) );
-				if ( ! empty( $resp['documents'][0] ) ) {
-					$site = $resp['documents'][0];
-					break;
-				}
-			}
-			if ( ! $site ) {
-				return;
-			}
+		// 	$site_id    = $site['$id'];
+		// 	$action_log = isset( $site['action_log'] ) && is_array( $site['action_log'] ) ? $site['action_log'] : array();
 
-			$site_id    = $site['$id'];
-			$action_log = isset( $site['action_log'] ) && is_array( $site['action_log'] ) ? $site['action_log'] : array();
+		// $req_safe  = is_array( $request ) ? $request : array();
+		// $res_safe  = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		// self::strip_sensitive_data( $req_safe );
+		// self::strip_sensitive_data( $res_safe );
 
-		$req_safe  = is_array( $request ) ? $request : array();
-		$res_safe  = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
-		self::strip_sensitive_data( $req_safe );
-		self::strip_sensitive_data( $res_safe );
+		// $entry = array(
+		// 	'timestamp' => gmdate( 'c' ),
+		// 	'action'    => $action,
+		// 	'endpoint'  => $endpoint,
+		// 	'request'   => $req_safe,
+		// 	'response'  => $res_safe,
+		// );
+		// $action_log[] = $entry;
 
-		$entry = array(
-			'timestamp' => gmdate( 'c' ),
-			'action'    => $action,
-			'endpoint'  => $endpoint,
-			'request'   => $req_safe,
-			'response'  => $res_safe,
-		);
-		$action_log[] = $entry;
-
-			$databases->updateDocument(
-				'platform_db',
-				'sites',
-				$site_id,
-				array( 'action_log' => $action_log )
-			);
-		} catch ( \Exception $e ) {
-			error_log( '[WPHubPro Bridge] log_action failed: ' . $e->getMessage() );
-		}
+		// 	$databases->updateDocument(
+		// 		'platform_db',
+		// 		'sites',
+		// 		$site_id,
+		// 		array( 'action_log' => $action_log )
+		// 	);
+		// } catch ( \Exception $e ) {
+		// 	error_log( '[WPHubPro Bridge] log_action failed: ' . $e->getMessage() );
+		// }
 	}
 
 	/**
@@ -108,7 +107,7 @@ class WPHubPro_Bridge_Logger {
 	 */
 	public static function push_api_log( $request, $response ) {
 		$route = $request->get_route();
-		if ( strpos( $route, 'wphubpro/v1' ) === false || strpos( $route, '/logs' ) !== false ) {
+		if ( !$route || strpos( $route, 'wphubpro/v1' ) === false || strpos( $route, '/logs' ) !== false ) {
 			return;
 		}
 
@@ -143,18 +142,15 @@ class WPHubPro_Bridge_Logger {
 			'response' => $res_data,
 		);
 
-		$log = get_option( 'WPHUBPRO_LOG', array() );
-		if ( ! is_array( $log ) ) {
-			$log = array();
-		}
+		$log = WPHubPro_Bridge_Config::get_log();
 		array_unshift( $log, $entry );
 		$log = array_slice( $log, 0, 20 );
-		update_option( 'WPHUBPRO_LOG', $log );
+		update_option( WPHubPro_Bridge_Config::OPTION_LOG, $log );
 	}
 
 	/**
 	 * Strip api_key, secret and other sensitive data from arrays before storing/sending.
-	 * WPHUB_DATA (options, logs) must NEVER contain wphubpro_api_key.
+	 * WPHUB_DATA (options, logs) must NEVER contain WPHUBPRO_API_KEY.
 	 *
 	 * @param array $data Data to sanitize (modified in place).
 	 */
@@ -162,7 +158,7 @@ class WPHubPro_Bridge_Logger {
 		if ( ! is_array( $data ) ) {
 			return;
 		}
-		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'wphubpro_api_key', 'password', 'jwt', 'X-WPHub-Key' );
+		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'WPHUBPRO_API_KEY', 'password', 'jwt', 'X-WPHub-Key' );
 		foreach ( $sensitive_keys as $key ) {
 			if ( isset( $data[ $key ] ) ) {
 				$data[ $key ] = '[REDACTED]';

@@ -21,13 +21,13 @@ class WPHubPro_Bridge_Connection_Status {
 	 * @return array{connected: bool, last_heartbeat_at?: string, site_id?: string}
 	 */
 	public static function fetch() {
-		$site_id = get_option( 'WPHUBPRO_SITE_ID' );
-		$status  = get_option( 'wphub_status', 'disconnected' );
-		$connected = $status === 'connected' && ! empty( $site_id );
+		$site_id    = WPHubPro_Bridge_Config::get_site_id();
+		$status     = WPHubPro_Bridge_Config::get_status();
+		$connected  = $status === 'connected' && ! empty( $site_id );
 
 		return array(
 			'connected'         => $connected,
-			'last_heartbeat_at' => get_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', '' ),
+			'last_heartbeat_at' => WPHubPro_Bridge_Config::get_last_heartbeat_at(),
 			'site_id'           => $site_id ?: '',
 		);
 	}

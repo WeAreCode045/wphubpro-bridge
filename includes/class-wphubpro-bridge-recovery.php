@@ -1,8 +1,8 @@
 <?php
 /**
- * Site health for WPHubPro Bridge.
+ * Site recovery for WPHubPro Bridge.
  *
- * Placeholder for site health checks (WordPress Site Health, status, etc.).
+ * Recovery features for plugin & theme updates
  *
  * @package WPHubPro
  */
@@ -12,9 +12,61 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Site health feature (placeholder).
+ * Site recovery feature (placeholder).
  */
-class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
+class WPHubPro_Bridge_Recovery {
+
+    public function backup_plugin(string $slug) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+    }
+
+    public static function recover_backup() {
+        // 1) Snapshot
+        $backup_ok = self::recursive_copy($plugin_dir, $backup_dir);
+        if ( ! $backup_ok ) {
+            delete_transient($lock_key);
+
+            // Throw hier een exception die die later dit response teruggeeft
+            return new WP_REST_Response([ 'ok' => false, 'error' => 'backup_failed' ], 500);
+        }
+
+        $rolled_back = false;
+    }
+
+    public static function recovery_latest_backup_dir(string $slug): ?string {
+        $base = WPHUBPRO_BRIDGE_ABSPATH . '/upgrade-backups/' . $slug;
+        if (!is_dir($base)) return null;
+
+        $dirs = glob($base . '/*', GLOB_ONLYDIR) ?: [];
+        if (!$dirs) return null;
+
+        rsort($dirs); // newest first if timestamp naming
+        return $dirs[0] ?? null;
+    }
+
+    public static function recursive_copy(string $src, string $dst): bool {
+        if (!file_exists($src)) return false;
+        if (!is_dir($dst)) wp_mkdir_p($dst);
+
+        $dir = opendir($src);
+        if (!$dir) return false;
+
+        while (false !== ($file = readdir($dir))) {
+            if ($file === '.' || $file === '..') continue;
+            $src_path = $src . '/' . $file;
+            $dst_path = $dst . '/' . $file;
+
+            if (is_dir($src_path)) {
+                if (!self::recursive_copy($src_path, $dst_path)) { closedir($dir); return false; }
+            } else {
+                if (!@copy($src_path, $dst_path)) { closedir($dir); return false; }
+            }
+        }
+        closedir($dir);
+        return true;
+    }
+
 
     public static function get_health_status(WP_REST_Request $request) {
         $t0 = microtime(true);
@@ -110,16 +162,6 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         ];
 
         return new WP_REST_Response($payload, 200);
-    }
-
-    public static function send_health_status(WP_REST_Request $request) {
-
-        $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
-        if (!$request_id) $request_id = wp_generate_uuid4();
-
-        $payload = self::get_health_status($request);
-
-        return parent::post('health', $payload);
     }
 
     private static function get_woo_status(): array {

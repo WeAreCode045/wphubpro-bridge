@@ -13,7 +13,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sends heartbeat to Appwrite site-heartbeat function.
  */
-class WPHubPro_Bridge_Heartbeat {
+class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
+
+	private static $instance = null;
+
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
 
 	const CRON_HOOK = 'wphubpro_bridge_heartbeat';
 	const CRON_INTERVAL = 60; // seconds
@@ -22,20 +31,21 @@ class WPHubPro_Bridge_Heartbeat {
 	 * Register cron and send heartbeat.
 	 */
 	public static function init() {
-		add_action( self::CRON_HOOK, array( __CLASS__, 'send_heartbeat' ) );
+		add_action( self::CRON_HOOK, array( self::instance(), 'send_heartbeat' ) );
 		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_interval' ) );
 
 		// Schedule on init if not already scheduled
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			$site_id = get_option( 'WPHUBPRO_SITE_ID' );
-			$secret  = get_option( 'wphubpro_api_key' );
+			$site_id = WPHubPro_Bridge_Config::get_site_id();
+			$secret  = WPHubPro_Bridge_Config::get_site_secret();
 			if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 				wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
 			}
 		}
 	}
-
-	/**
+	
+	
+		/**
 	 * Add 1-minute cron interval.
 	 *
 	 * @param array $schedules Existing schedules.
@@ -50,90 +60,67 @@ class WPHubPro_Bridge_Heartbeat {
 	}
 
 	/**
-	 * Send heartbeat to Appwrite.
+	 * Send heartbeat to Appwrite site-heartbeat function.
 	 *
-	 * @return bool True on success, false on failure (logged).
+	 * @return bool True on success, false on failure.
+	 * @throws Exception If the heartbeat fails.
 	 */
 	public static function send_heartbeat() {
-		$site_id       = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret        = get_option( 'wphubpro_api_key' );
-		$endpoint      = get_option( 'WPHUBPRO_ENDPOINT' );
-		$project       = get_option( 'WPHUBPRO_PROJECT_ID' );
-		$heartbeat_url = get_option( 'WPHUBPRO_HEARTBEAT_URL', '' );
+		// WPHubPro_Bridge_Logger::log_action( 'send_heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => WPHubPro_Bridge_Config::get_site_id() ) );
+        try {
+            $response = self::instance()->post('functions/site-heartbeat/executions', ['siteId' => WPHubPro_Bridge_Config::get_site_id(), 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret()]);
+        } catch (Exception $e) {
+            WPHubPro_Bridge_Logger::log_action('heartbeat', 'error', array(), array(
+                'msg' => $e->getMessage(),
+            ));
+            return false;
+        }
 
-		if ( empty( $site_id ) || empty( $secret ) ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array(
-				'skipped'      => 'Missing site_id or secret',
-				'has_site_id'  => ! empty( $site_id ),
-			) );
-			wp_clear_scheduled_hook( self::CRON_HOOK );
-			return false;
-		}
-
-		$payload = array(
-			'siteId'  => $site_id,
-			'site_id' => $site_id,
-			'secret'  => $secret,
-		);
 
 		// Prefer function domain when configured
-		if ( ! empty( $heartbeat_url ) ) {
-			$url = untrailingslashit( $heartbeat_url );
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array(
-						'Content-Type' => 'application/json',
-					),
-					'body'    => wp_json_encode( $payload ),
-					'timeout' => 15,
-				)
-			);
-		} else {
-			// Fallback: executions API
-			if ( empty( $endpoint ) || empty( $project ) ) {
-				WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
-				return false;
-			}
-			$url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
-			$request_body = wp_json_encode( array(
-				'body'    => wp_json_encode( $payload ),
-				'method'  => 'POST',
-				'headers' => array(
-					'Content-Type' => 'application/json',
-				),
-			) );
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array(
-						'Content-Type'       => 'application/json',
-						'X-Appwrite-Project' => $project,
-					),
-					'body'    => $request_body,
-					'timeout' => 15,
-				)
-			);
-		}
+		
+		
+			// // Fallback: executions API
+			// if ( empty( $endpoint ) || empty( $project ) ) {
+			// 	WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
+			// 	return false;
+			// }
+			// $url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
+			// $request_body = wp_json_encode( array(
+			// 	'body'    => wp_json_encode( $payload ),
+			// 	'method'  => 'POST',
+			// 	'headers' => array(
+			// 		'Content-Type' => 'application/json',
+			// 	),
+			// ) );
+			// $response = wp_remote_post(
+			// 	$url,
+			// 	array(
+			// 		'headers' => array(
+			// 			'Content-Type'       => 'application/json',
+			// 			'X-Appwrite-Project' => $project,
+			// 		),
+			// 		'body'    => $request_body,
+			// 		'timeout' => self::$connection_timeout,
+			// 	)
+			// );
+		
 
-		$code = wp_remote_retrieve_response_code( $response );
-		$body_response = wp_remote_retrieve_body( $response );
+		// if ( is_wp_error( $response ) ) {
+		// 	update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+		// 	WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
+		// 	return false;
+		// }
 
-		if ( is_wp_error( $response ) ) {
-			update_option( 'wphub_status', 'disconnected' );
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
-			return false;
-		}
+		// if ( $code < 200 || $code >= 300 ) {
+		// 	update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+		// 	WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
+		// 	return false;
+		// }
 
-		if ( $code < 200 || $code >= 300 ) {
-			update_option( 'wphub_status', 'disconnected' );
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
-			return false;
-		}
-
-		update_option( 'WPHUBPRO_LAST_HEARTBEAT_AT', current_time( 'c' ) );
-		update_option( 'wphub_status', 'connected' );
-		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
+		update_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
+		// WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}
 
@@ -143,8 +130,8 @@ class WPHubPro_Bridge_Heartbeat {
 	 */
 	public static function schedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
-		$site_id = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret  = get_option( 'wphubpro_api_key' );
+		$site_id = WPHubPro_Bridge_Config::get_site_id();
+		$secret  = WPHubPro_Bridge_Config::get_site_secret();
 		if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 			self::send_heartbeat();
 			wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );

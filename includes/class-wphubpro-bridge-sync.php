@@ -15,8 +15,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Sync plugins and themes meta to Appwrite.
  */
-class WPHubPro_Bridge_Sync {
+class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 
+	private static $instance = null;
+
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+	
 	/**
 	 * Register hooks for plugin/theme changes (WP Admin or REST).
 	 */
@@ -32,7 +41,7 @@ class WPHubPro_Bridge_Sync {
 	 */
 	public static function on_plugin_or_theme_change() {
 		// Defer to avoid blocking; runs after request when safe.
-		add_action( 'shutdown', array( __CLASS__, 'sync_meta_to_appwrite' ), 5 );
+		add_action( 'shutdown', array( self::$instance, 'sync_meta_to_appwrite' ), 5 );
 	}
 
 	/**
@@ -55,63 +64,29 @@ class WPHubPro_Bridge_Sync {
 	 *
 	 * @return bool True on success, false on failure (logged).
 	 */
-	public static function sync_meta_to_appwrite() {
-		$site_id  = get_option( 'WPHUBPRO_SITE_ID' );
-		$secret   = get_option( 'wphubpro_api_key' );
-		$endpoint = get_option( 'WPHUBPRO_ENDPOINT' );
-		$project  = get_option( 'WPHUBPRO_PROJECT_ID' );
-
-		if ( empty( $site_id ) || empty( $secret ) || empty( $endpoint ) || empty( $project ) ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'skipped' => 'Missing site_id, secret, endpoint or project_id' ) );
-			return false;
-		}
+	public function sync_meta_to_appwrite() {
+		
 
 		$plugins_meta = self::get_plugins_meta();
+		error_log(print_r($plugins_meta, true));
 		$themes_meta  = self::get_themes_meta();
+		error_log(print_r($themes_meta, true));
 
-		$url = untrailingslashit( $endpoint ) . '/functions/sync-site-meta/executions';
 
 		$payload = array(
-			'siteId'       => $site_id,
-			'secret'       => $secret,
 			'plugins_meta' => $plugins_meta,
 			'themes_meta'  => $themes_meta,
 		);
-
-		$request_body = wp_json_encode( array(
-			'body'    => wp_json_encode( $payload ),
-			'method'  => 'POST',
-			'headers' => array(
-				'Content-Type' => 'application/json',
-			),
-		) );
-
-		$response = wp_remote_post(
-			$url,
-			array(
-				'headers' => array(
-					'Content-Type'       => 'application/json',
-					'X-Appwrite-Project' => $project,
-				),
-				'body'    => $request_body,
-				'timeout' => 30,
-			)
-		);
-
-		$code = wp_remote_retrieve_response_code( $response );
-		$body_response = wp_remote_retrieve_body( $response );
-
-		if ( is_wp_error( $response ) ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'error' => $response->get_error_message() ) );
+		
+		try {
+			$response = $this->post('functions/sync-site-meta/executions', $payload);
+		} catch (Exception $e) {
+			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;
 		}
+		
 
-		if ( $code < 200 || $code >= 300 ) {
-			WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ) ) );
-			return false;
-		}
-
-		WPHubPro_Bridge_Logger::log_action( get_site_url(), 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ) ) );
+		WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ) ) );
 		return true;
 	}
 
@@ -125,7 +100,7 @@ class WPHubPro_Bridge_Sync {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all_plugins   = get_plugins();
-		$active_plugins = get_option( 'active_plugins' );
+		$active_plugins = WPHubPro_Bridge_Config::get_active_plugins();
 		if ( function_exists( 'wp_update_plugins' ) ) {
 			wp_update_plugins();
 		}
