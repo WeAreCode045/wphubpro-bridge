@@ -67,21 +67,22 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	public function sync_meta_to_appwrite() {
 		$plugins_meta = self::get_plugins_meta();
 		$themes_meta  = self::get_themes_meta();
+		$wp_meta      = class_exists( 'WPHubPro_Bridge_Details' ) ? WPHubPro_Bridge_Details::get_wp_meta_array() : array();
 
 		$payload = array(
 			'plugins_meta' => $plugins_meta,
 			'themes_meta'  => $themes_meta,
+			'wp_meta'      => $wp_meta,
 		);
-		
+
 		try {
-			$response = $this->post('functions/sync-site-meta/executions', $payload);
-		} catch (Exception $e) {
+			$this->post( 'functions/sync-site-meta/executions', $payload );
+		} catch ( Exception $e ) {
 			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;
 		}
-		
 
-		WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ) ) );
+		WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ), 'wp_meta' => ! empty( $wp_meta ) ) );
 		return true;
 	}
 
