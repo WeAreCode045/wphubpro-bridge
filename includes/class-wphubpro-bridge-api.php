@@ -25,11 +25,19 @@ class WPHubPro_Bridge_API {
 
 
     public function __construct() {
+		$this->refresh_config();
+    }
+
+	/**
+	 * Refresh config from options. Call before each request so we use fresh
+	 * site_id/site_secret after save_connection (sync runs on shutdown).
+	 */
+	protected function refresh_config() {
 		$this->base_url    = WPHubPro_Bridge_Config::get_api_base_url();
 		$this->site_secret = WPHubPro_Bridge_Config::get_site_secret();
 		$this->site_id     = WPHubPro_Bridge_Config::get_site_id();
 		$this->project_id  = WPHubPro_Bridge_Config::get_project_id();
-    }
+	}
 
     /**
      * Get the headers for the API request.
@@ -52,6 +60,7 @@ class WPHubPro_Bridge_API {
      * Uses wp_remote_get and wp_remote_post.
      */
     protected function get(string $endpoint, array $query = []) {
+        $this->refresh_config();
         $this->check_auth();
         $this->endpoint = $endpoint;
         if (empty($endpoint)) {
@@ -104,6 +113,7 @@ class WPHubPro_Bridge_API {
      * @throws Exception If the endpoint is missing or the request fails.
      */
     protected function post(string $endpoint, array $body = []) {
+        $this->refresh_config();
         $this->endpoint = $endpoint;
         if (empty($this->endpoint)) {
             WPHubPro_Bridge_Logger::log_action($endpoint, 'error', array(), array(
@@ -122,7 +132,6 @@ class WPHubPro_Bridge_API {
         ));
 
         $url = untrailingslashit( $this->base_url ) . '/' . $endpoint;
-        error_log(print_r($url, true));
 
         $response = wp_remote_post(
             $url,

@@ -65,13 +65,8 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	 * @return bool True on success, false on failure (logged).
 	 */
 	public function sync_meta_to_appwrite() {
-		
-
 		$plugins_meta = self::get_plugins_meta();
-		error_log(print_r($plugins_meta, true));
 		$themes_meta  = self::get_themes_meta();
-		error_log(print_r($themes_meta, true));
-
 
 		$payload = array(
 			'plugins_meta' => $plugins_meta,
