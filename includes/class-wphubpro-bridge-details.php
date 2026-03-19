@@ -17,6 +17,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WPHubPro_Bridge_Details {
 
 	/**
+	 * Get site details as array (for sync to Hub wp_meta).
+	 *
+	 * @return array
+	 */
+	public static function get_wp_meta_array() {
+		$instance = new self();
+		$wp_installed  = get_bloginfo( 'version' );
+		$wp_latest     = $instance->get_latest_wp_version();
+		$plugins_count = $instance->get_plugins_count();
+		$themes_count  = $instance->get_themes_count();
+		$php_info      = $instance->get_php_version_info();
+
+		return array(
+			'wp_version'        => $wp_installed,
+			'wp_version_latest'  => $wp_latest,
+			'plugins_count'      => $plugins_count,
+			'themes_count'       => $themes_count,
+			'php_version'        => PHP_VERSION,
+			'php_check'          => $php_info,
+		);
+	}
+
+	/**
 	 * Get site details.
 	 *
 	 * @param WP_REST_Request $request Request object.

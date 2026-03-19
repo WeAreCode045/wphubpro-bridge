@@ -22,8 +22,10 @@ class WPHubPro_Bridge_Config {
 	const OPTION_API_BASE_URL = 'wphubpro_api_base_url';
 	/** Option: Appwrite project ID. */
 	const OPTION_PROJECT_ID = 'wphubpro_project_id';
-	/** Option: API key / shared secret. */
+	/** Option: API key / bridge_secret (Hub→Bridge auth). */
 	const OPTION_API_KEY = 'wphubpro_api_key';
+	/** Option: Site secret (Bridge→Hub auth). */
+	const OPTION_SITE_SECRET = 'wphubpro_site_secret';
 	/** Option: Site ID from platform. */
 	const OPTION_SITE_ID = 'wphubpro_site_id';
 	/** Option: User JWT for Appwrite. */
@@ -74,12 +76,26 @@ class WPHubPro_Bridge_Config {
 	}
 
 	/**
-	 * API key / shared secret.
+	 * API key / shared secret (bridge_secret for Hub→Bridge auth).
+	 * Decrypts if stored in encrypted form (wp_salt-based).
 	 *
 	 * @return string
 	 */
 	public static function get_api_key() {
-		return get_option( self::OPTION_API_KEY, '' );
+		return WPHubPro_Bridge_Crypto::retrieve_and_decrypt( self::OPTION_API_KEY );
+	}
+
+	/**
+	 * Site secret (Bridge→Hub auth). Falls back to bridge_secret for legacy.
+	 *
+	 * @return string
+	 */
+	public static function get_site_secret() {
+		$site_secret = WPHubPro_Bridge_Crypto::retrieve_and_decrypt( self::OPTION_SITE_SECRET );
+		if ( ! empty( $site_secret ) ) {
+			return $site_secret;
+		}
+		return self::get_api_key();
 	}
 
 	/**

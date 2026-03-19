@@ -73,6 +73,21 @@ class WPHubPro_Bridge {
 			},
 		) );
 
+		// Exchange one-time token for bridge_secret. Validates token (not WP auth) because
+		// the request is cross-origin from Hub and cookies are not sent.
+		register_rest_route( $namespace, '/exchange-token', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this->connect, 'handle_exchange_token' ),
+			'permission_callback' => array( $this->connect, 'validate_exchange_token_permission' ),
+			'args'                => array(
+				'connect_token' => array(
+					'required'          => true,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		) );
+
 		// Connection status (admin only)
 		register_rest_route( $namespace, '/connection-status', array(
 			'methods'             => 'GET',
@@ -105,8 +120,23 @@ class WPHubPro_Bridge {
 			'callback'            => array( $this->connect, 'handle_save_connection' ),
 			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
 			'args'                => array(
-				'api_key'      => array(
-					'required'          => true,
+				'api_key'        => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'bridge_secret'  => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'site_secret'    => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'encrypted_api_key' => array(
+					'required'          => false,
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 				),

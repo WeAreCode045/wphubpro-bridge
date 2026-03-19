@@ -37,7 +37,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 		// Schedule on init if not already scheduled
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			$site_id = WPHubPro_Bridge_Config::get_site_id();
-			$secret  = WPHubPro_Bridge_Config::get_api_key();
+			$secret  = WPHubPro_Bridge_Config::get_site_secret();
 			if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 				wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
 			}
@@ -68,7 +68,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	public static function send_heartbeat() {
 		// WPHubPro_Bridge_Logger::log_action( 'send_heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => WPHubPro_Bridge_Config::get_site_id() ) );
         try {
-            $response = self::instance()->post('functions/site-heartbeat/executions', ['siteId' => WPHubPro_Bridge_Config::get_site_id(), 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_api_key()]);
+            $response = self::instance()->post('functions/site-heartbeat/executions', ['siteId' => WPHubPro_Bridge_Config::get_site_id(), 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret()]);
         } catch (Exception $e) {
             WPHubPro_Bridge_Logger::log_action('heartbeat', 'error', array(), array(
                 'msg' => $e->getMessage(),
@@ -131,7 +131,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	public static function schedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 		$site_id = WPHubPro_Bridge_Config::get_site_id();
-		$secret  = WPHubPro_Bridge_Config::get_api_key();
+		$secret  = WPHubPro_Bridge_Config::get_site_secret();
 		if ( ! empty( $site_id ) && ! empty( $secret ) ) {
 			self::send_heartbeat();
 			wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
