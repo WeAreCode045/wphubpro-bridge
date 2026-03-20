@@ -50,7 +50,7 @@ class WPHubPro_Bridge {
 		$this->health  = new WPHubPro_Bridge_Health();
 
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
-		add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
+		// add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
 	}
 
 	/**
@@ -284,26 +284,7 @@ class WPHubPro_Bridge {
 		return rest_ensure_response( array( 'lines' => $last_200, 'file' => $log_file ) );
 	}
 
-	/**
-	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
-	 * Excludes /logs to avoid logging the logs request itself.
-	 *
-	 * @param WP_REST_Response|WP_Error $response Result to send.
-	 * @param WP_REST_Server            $server   Server instance.
-	 * @param WP_REST_Request          $request  Request object.
-	 * @return WP_REST_Response|WP_Error Unchanged response.
-	 */
-	public function log_rest_request( $response, $server, $request ) {
-		$route = $request->get_route();
-		if ( ! $route || strpos( $route, 'wphubpro/v1' ) === false ) {
-			return $response;
-		}
-		if ( strpos( $route, '/logs' ) !== false || strpos( $route, '/error-log' ) !== false || strpos( $route, '/connection-status' ) !== false ) {
-			return $response;
-		}
-		WPHubPro_Bridge_Logger::push_api_log( $request, $response );
-		return $response;
-	}
+	
 }
 
 }

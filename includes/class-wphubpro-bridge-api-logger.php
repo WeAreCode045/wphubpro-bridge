@@ -1,0 +1,246 @@
+<?php
+/**
+ * Appwrite action logger for WPHubPro Bridge.
+ *
+ * Uses WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+ *
+ * @package WPHubPro
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Logs actions to Appwrite for audit trail.
+ */
+class WPHubPro_Bridge_Api_Logger extends WPHubPro_Bridge_Api {
+
+	private static $path = '/logs';
+	private static $instance = null;
+
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+
+	/**
+	 * Log an action to the site's action_log in Appwrite.
+	 *
+	 * Uses JWT and Appwrite SDK. Requires WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+	 *
+	 * @param string $action   Action name (e.g. activate, deactivate, update, list).
+	 * @param string $endpoint REST endpoint (e.g. plugins/manage, plugins).
+	 * @param array  $request  Request data.
+	 * @param mixed  $response Response/result.
+	 */
+	public static function send_log_action($action, $endpoint, $request, $response ) {
+		$log_req = is_array( $request ) ? $request : array();
+		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
+		$log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
+		self::strip_sensitive_data( $log_req_copy );
+		self::strip_sensitive_data( $log_res_copy );
+		error_log( '[WPHubPro Bridge] send_log_action: ' . wp_json_encode( array(
+			'action'   => $action,
+			'endpoint' => $endpoint,
+			'request'  => $log_req_copy,
+			'response' => $log_res_copy,
+		) ) );
+			
+		
+		
+		// $appwrite_endpoint = WPHubPro_Bridge_Config::get_base_url();
+		// $appwrite_project  = WPHubPro_Bridge_Config::get_project_id();
+		// $appwrite_jwt      = WPHubPro_Bridge_Config::get_user_jwt();
+
+		// if ( ! $appwrite_endpoint || ! $appwrite_project || ! $appwrite_jwt || ! class_exists( 'Appwrite\Client' ) ) {
+		// 	return;
+		// }
+
+		// try {
+		// 	$client    = new \Appwrite\Client();
+		// 	$client->setEndpoint( $appwrite_endpoint )->setProject( $appwrite_project )->setJWT( $appwrite_jwt );
+		// 	$databases = new \Appwrite\Services\Databases( $client );
+		// 	$site_url = get_site_url();
+		// 	$urls = array( $site_url, untrailingslashit( $site_url ), trailingslashit( $site_url ) );
+		// 	$site = null;
+		// 	foreach ( $urls as $url ) {
+		// 		$resp = $databases->listDocuments( 'platform_db', 'sites', array(
+		// 			\Appwrite\Query::equal( 'site_url', $url ),
+		// 			\Appwrite\Query::limit( 1 ),
+		// 		) );
+		// 		if ( ! empty( $resp['documents'][0] ) ) {
+		// 			$site = $resp['documents'][0];
+		// 			break;
+		// 		}
+		// 	}
+		// 	if ( ! $site ) {
+		// 		return;
+		// 	}
+
+		// 	$site_id    = $site['$id'];
+		// $action_log = isset( $site['action_log'] ) && is_array( $site['action_log'] ) ? $site['action_log'] : array();
+
+		$req_safe  = is_array( $request ) ? $request : array();
+		$res_safe  = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		self::strip_sensitive_data( $req_safe );
+		self::strip_sensitive_data( $res_safe );
+
+		$entry = array(
+			'timestamp' => gmdate( 'c' ),
+			'action'    => $action,
+			'endpoint'  => $endpoint,
+			'request'   => $req_safe,
+			'response'  => $res_safe,
+		);
+		// $action_log[] = $entry;
+
+		try {
+            $response = self::instance()->post('functions/bridge-site-log-action/executions', $entry);
+        } catch (Exception $e) {
+            error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
+				'error'    => $e->getMessage(),
+				'action'   => $action,
+				'endpoint' => $endpoint,
+				'request'  => $log_req_copy,
+				'response' => $log_res_copy,
+			) ) );             
+            return false;
+        }
+		return true;
+
+		// 	$databases->updateDocument(
+		// 		'platform_db',
+		// 		'sites',
+		// 		$site_id,
+		// 		array( 'action_log' => $action_log )
+		// 	);
+		// } catch ( \Exception $e ) {
+		// 	error_log( '[WPHubPro Bridge] log_action failed: ' . $e->getMessage() );
+		// }
+	}
+
+	// /**
+	//  * Log a single request to the wphubpro/v1 API to option WPHUBPRO_LOG (last 20).
+	//  *
+	//  * Entry: time, endpoint, type (GET|POST), code, request, response.
+	//  *
+	//  * @param WP_REST_Request $request  Request object.
+	//  * @param WP_REST_Response|WP_Error $response Response or error.
+	//  */
+	// public static function send_api_log( $request, $response ) {
+	// 	$route = $request->get_route();
+	// 	if ( !$route || strpos( $route, WPHubPro_Bridge_Config::REST_NAMESPACE ) === false || strpos( $route, self::$path ) !== false ) {
+	// 		return;
+	// 	}
+    //     // Get query and body params.
+	// 	$req_data = array(
+	// 		'query' => $request->get_query_params(),
+	// 		'body'  => $request->get_body_params(),
+	// 	);
+	// 	// If body is empty, try to parse it from the request body.
+	// 	if ( empty( $req_data['body'] ) && $request->get_body() ) {
+	// 		$parsed = json_decode( $request->get_body(), true );
+	// 		$req_data['body'] = is_array( $parsed ) ? $parsed : array( '_raw' => substr( $request->get_body(), 0, 500 ) );
+	// 	}
+	// 	// If response is a WP_Error, get the status code and error message.
+	// 	if ( is_wp_error( $response ) ) {
+	// 		$code     = (int) $response->get_error_data( 'status' );
+	// 		$res_data = array( 'error' => $response->get_error_message() );
+	// 	} else {
+	// 		$code     = $response->get_status();
+	// 		$res_data = $response->get_data();
+	// 		$res_data = is_array( $res_data ) ? $res_data : array();
+	// 	}
+	// 	// Strip sensitive data from request and response.
+	// 	self::strip_sensitive_data( $req_data );
+	// 	self::strip_sensitive_data( $res_data );
+	// 	// Cap size of request and response.
+	// 	self::cap_size( $req_data );
+	// 	self::cap_size( $res_data );
+	// 	// Create log entry.
+	// 	$entry = array(
+	// 		'time'     => gmdate( 'c' ),
+	// 		'endpoint' => $route,
+	// 		'type'     => $request->get_method(),
+	// 		'code'     => $code ? $code : 500,
+	// 		'request'  => $req_data,
+	// 		'response' => $res_data,
+	// 	);
+    //     // Get log from option.
+	// 	$log = WPHubPro_Bridge_Config::get_log();
+	// 	// Add new log entry to the beginning of the array.
+	// 	array_unshift( $log, $entry );
+	// 	// Keep only last 20 entries.
+	// 	$log = array_slice( $log, 0, 20 );
+	// 	// Update option with new log.
+	// 	update_option( WPHubPro_Bridge_Config::OPTION_LOG, $log );
+	// }
+
+	/**
+	 * Strip api_key, secret and other sensitive data from arrays before storing/sending.
+	 * WPHUB_DATA (options, logs) must NEVER contain WPHUBPRO_API_KEY.
+	 *
+	 * @param array $data Data to sanitize (modified in place).
+	 */
+	private static function strip_sensitive_data( &$data ) {
+		if ( ! is_array( $data ) ) {
+			return;
+		}
+		$sensitive_keys = array( 'api_key', 'apiKey', 'secret', 'WPHUBPRO_API_KEY', 'password', 'jwt', 'X-WPHub-Key' );
+		foreach ( $sensitive_keys as $key ) {
+			if ( isset( $data[ $key ] ) ) {
+				$data[ $key ] = '[REDACTED]';
+			}
+		}
+		foreach ( $data as $k => &$v ) {
+			if ( is_array( $v ) ) {
+				self::strip_sensitive_data( $v );
+			}
+		}
+	}
+
+	/**
+	 * Cap size of logged value to avoid huge options (e.g. full plugin list).
+	 *
+	 * @param mixed $value Value to cap in place (array/object by reference).
+	 */
+	private static function cap_size( &$value ) {
+		if ( ! is_array( $value ) ) {
+			return;
+		}
+		$n = count( $value );
+		if ( $n > 30 ) {
+			$value = array(
+				'_summary' => 'array',
+				'count'   => $n,
+				'preview' => array_slice( $value, 0, 5 ),
+			);
+		}
+	}
+
+	/**
+	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
+	 * Excludes /logs to avoid logging the logs request itself.
+	 *
+	 * @param WP_REST_Response|WP_Error $response Result to send.
+	 * @param WP_REST_Server            $server   Server instance.
+	 * @param WP_REST_Request          $request  Request object.
+	 * @return WP_REST_Response|WP_Error Unchanged response.
+	 */
+	public function log_rest_request( $response, $server, $request ) {
+		$route = $request->get_route();
+		if ( ! $route || strpos( $route, WPHubPro_Bridge_Config::REST_NAMESPACE ) === false ) {
+			return $response;
+		}
+		if ( strpos( $route, '/logs' ) !== false || strpos( $route, '/error-log' ) !== false || strpos( $route, '/connection-status' ) !== false ) {
+			return $response;
+		}
+		$this->send_log_action( $request, $response );
+		return $response;
+	}
+}

@@ -27,18 +27,24 @@ class WPHubPro_Bridge_Logger {
 	 * @param mixed  $response Response/result.
 	 */
 	public static function log_action($action, $endpoint, $request, $response ) {
-		$log_req = is_array( $request ) ? $request : array();
-		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
-		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
-		$log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
-		self::strip_sensitive_data( $log_req_copy );
-		self::strip_sensitive_data( $log_res_copy );
+		// $log_req = is_array( $request ) ? $request : array();
+		// $log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		// $log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
+		// $log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
+		// self::strip_sensitive_data( $log_req_copy );
+		// self::strip_sensitive_data( $log_res_copy );
 		error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
 			'action'   => $action,
 			'endpoint' => $endpoint,
 			'request'  => $log_req_copy,
 			'response' => $log_res_copy,
 		) ) );
+		
+		try {
+			self::instance()->send_log_action( $action, $endpoint, $request, $response );
+		} catch ( \Exception $e ) {
+			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
+		}
 
 		// $appwrite_endpoint = WPHubPro_Bridge_Config::get_base_url();
 		// $appwrite_project  = WPHubPro_Bridge_Config::get_project_id();
