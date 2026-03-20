@@ -41,7 +41,8 @@ class WPHubPro_Bridge_Logger {
 		) ) );
 		
 		try {
-			self::instance()->send_log_action( $action, $endpoint, $request, $response );
+			// Send log action to Platform.
+			WPHubPro_Bridge_Api_Logger::instance()->send_log_action( $action, $endpoint, $request, $response );
 		} catch ( \Exception $e ) {
 			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
 		}
