@@ -50,6 +50,13 @@ class WPHubPro_Bridge_Config {
 	const DEFAULT_REDIRECT_BASE_URL = 'https://app.wphub.pro';
 	const DEFAULT_STATUS = 'disconnected';
 
+	/** REST API authentication provider. */
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Connect', 'validate_api_key' );
+
+
+	/** REST namespace for bridge routes. */
+	const REST_NAMESPACE = 'wphubpro/v1';
+
 	/**
 	 * Appwrite Base URL.
 	 *
