@@ -10,17 +10,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Handles site connect, API key validation, and admin menu.
+ * Handles site connect and API key validation
  */
 class WPHubPro_Bridge_Connect {
 
+	/**
+	 * Instance of the class.
+	 * @var WPHubPro_Bridge_Connect|null
+	 */
 	private static $instance = null;
 
-	/** @var WPHubPro_Bridge_Sync */
+	/**
+	 * Instance of WPHubPro_Bridge_Sync.
+	 * @var WPHubPro_Bridge_Sync
+	 */
 	private $sync;
 
-
-	public static function instance() {
+	/**
+	 * Get the instance of the class.
+	 *
+	 * @return WPHubPro_Bridge_Connect
+	 */
+	public static function instance() : WPHubPro_Bridge_Connect {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -28,7 +39,6 @@ class WPHubPro_Bridge_Connect {
 	}
 
 	private function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'rest_api_init', array( $this, 'add_save_connection_cors' ) );
 		$this->sync = WPHubPro_Bridge_Sync::instance();
 	}
