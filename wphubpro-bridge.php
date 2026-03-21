@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.3.11
+ * Version: 2.3.12
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -35,6 +35,7 @@ foreach ( array(
 	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-logger.php',
 	'class-wphubpro-bridge-api-logger.php',
+	'class-wphubpro-bridge-auth.php',
 	'class-wphubpro-bridge-connect.php',
 	'class-wphubpro-bridge-connection-status.php',
 	'class-wphubpro-bridge-plugin-bridge-guard.php',

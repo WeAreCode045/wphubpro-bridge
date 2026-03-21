@@ -51,7 +51,7 @@ class WPHubPro_Bridge_Config {
 	const DEFAULT_STATUS = 'disconnected';
 
 	/** REST API authentication provider. */
-	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Connect', 'validate_api_key' );
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
 
 
 	/** REST namespace for bridge routes. */

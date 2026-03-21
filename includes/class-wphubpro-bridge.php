@@ -57,148 +57,15 @@ class WPHubPro_Bridge {
 	 * Register all REST API routes.
 	 */
 	public function register_routes() {
-		$namespace = 'wphubpro/v1';
-		$validate  = array( 'WPHubPro_Bridge_Connect', 'validate_api_key' );
+		$this->connect->register_rest_routes();
 
-		// Connect (requires manage_options)
-		register_rest_route( $namespace, '/connect', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->connect, 'handle_connect' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
-		// Exchange one-time token for bridge_secret. Validates token (not WP auth) because
-		// the request is cross-origin from Hub and cookies are not sent.
-		register_rest_route( $namespace, '/exchange-token', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->connect, 'handle_exchange_token' ),
-			'permission_callback' => array( $this->connect, 'validate_exchange_token_permission' ),
-			'args'                => array(
-				'connect_token' => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-			),
-		) );
-
-		// Connection status (admin only)
-		register_rest_route( $namespace, '/connection-status', array(
-			'methods'             => 'GET',
-			'callback'            => function () {
-				return rest_ensure_response( WPHubPro_Bridge_Connection_Status::fetch() );
-			},
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
-		// Disconnect (remove from hub, admin only)
-		register_rest_route( $namespace, '/disconnect', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_disconnect' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
-		// Redirect URL settings for connect flow (admin only)
-		register_rest_route( $namespace, '/connect/redirect-settings', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->connect, 'get_redirect_settings' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-		register_rest_route( $namespace, '/connect/redirect-settings', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'save_redirect_settings' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-			'args'                => array(
-				'use_default' => array(
-					'required' => true,
-					'type'     => 'boolean',
-				),
-				'custom_url'  => array(
-					'type'              => 'string',
-					'sanitize_callback' => 'esc_url_raw',
-				),
-			),
-		) );
-
-		// Bridge update: check for updates and install (admin only)
-		register_rest_route( $namespace, '/bridge/check-update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_check_for_update' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-		register_rest_route( $namespace, '/bridge/install-update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_install_update' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
+		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
+		$validate  = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
 
 		// Heartbeat poke (platform can call to verify bridge is reachable)
 		register_rest_route( $namespace, '/heartbeat/poke', array(
 			'methods'             => array( 'GET', 'POST' ),
 			'callback'            => array( 'WPHubPro_Bridge_Heartbeat', 'handle_poke' ),
-		) );
-
-		// Save connection (api_key, endpoint, project) from platform - validates via X-WPHub-Key
-		register_rest_route( $namespace, '/save-connection', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_save_connection' ),
-			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
-			'args'                => array(
-				'api_key'        => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'bridge_secret'  => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'site_secret'    => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'encrypted_api_key' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'endpoint'      => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'esc_url_raw',
-				),
-				'project_id'    => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'site_id'       => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'heartbeat_url' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'esc_url_raw',
-				),
-			),
 		) );
 
 		// Plugins (list + manage — single registration point).
