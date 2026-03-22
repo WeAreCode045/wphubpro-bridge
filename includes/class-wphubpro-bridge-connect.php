@@ -194,15 +194,6 @@ class WPHubPro_Bridge_Connect {
 	}
 
 	/**
-	 * Render the connect admin page with tabs.
-	 */
-	public function render_admin_page() {
-		$tab      = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'connect';
-		$base_url = admin_url( 'admin.php?page=wphubpro-bridge' );
-		include WPHUBPRO_BRIDGE_ABSPATH . 'templates/admin-page.php';
-	}
-
-	/**
 	 * Handle disconnect: remove API key and JWT/connection options locally.
 	 *
 	 * @return array{success: bool}

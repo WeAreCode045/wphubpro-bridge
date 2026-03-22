@@ -11,9 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sends heartbeat to Appwrite site-heartbeat function.
- *
- * Static bootstrap: {@see init()} registers hooks via {@see add_hooks()} then schedules cron when configured.
+ * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see WPHubPro_Bridge_Cron} and {@see WPHubPro_Bridge_Cron_Job_Heartbeat}.
  */
 class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 
@@ -26,131 +24,51 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 		return self::$instance;
 	}
 
+	/** @deprecated Use {@see WPHubPro_Bridge_Cron_Job_Heartbeat::get_hook_name()} */
 	const CRON_HOOK = 'wphubpro_bridge_heartbeat';
-	const CRON_INTERVAL = 60; // seconds
+
+	/** @deprecated Use {@see WPHubPro_Bridge_Cron_Job_Heartbeat::get_interval_seconds()} */
+	const CRON_INTERVAL = 60;
 
 	/**
-	 * Register cron and send heartbeat.
+	 * Legacy entry point: delegates to {@see WPHubPro_Bridge_Cron::init()}.
 	 */
 	public static function init() {
-		self::add_hooks();
-
-		// Schedule on init if not already scheduled
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			$site_id = WPHubPro_Bridge_Config::get_site_id();
-			$secret  = WPHubPro_Bridge_Config::get_site_secret();
-			if ( ! empty( $site_id ) && ! empty( $secret ) ) {
-				wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
-			}
-		}
-	}
-
-	/**
-	 * Register WordPress hooks.
-	 */
-	private static function add_hooks() {
-		add_action( self::CRON_HOOK, array( self::instance(), 'send_heartbeat' ) );
-		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_interval' ) );
-	}
-
-	/**
-	 * Add 1-minute cron interval.
-	 *
-	 * @param array $schedules Existing schedules.
-	 * @return array
-	 */
-	public static function add_cron_interval( $schedules ) {
-		$schedules['wphubpro_minute'] = array(
-			'interval' => self::CRON_INTERVAL,
-			'display'   => __( 'Every minute', 'wphubpro-bridge' ),
-		);
-		return $schedules;
+		WPHubPro_Bridge_Cron::init();
 	}
 
 	/**
 	 * Send heartbeat to Appwrite site-heartbeat function.
 	 *
 	 * @return bool True on success, false on failure.
-	 * @throws Exception If the heartbeat fails.
 	 */
 	public static function send_heartbeat() {
-		// WPHubPro_Bridge_Logger::log_action( 'send_heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => WPHubPro_Bridge_Config::get_site_id() ) );
-        try {
-            $response = self::instance()->post('functions/site-heartbeat/executions', array( 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret() ));
-        } catch (Exception $e) {
-            WPHubPro_Bridge_Logger::log_action('heartbeat', 'error', array(), array(
-                'msg' => $e->getMessage(),
-            ));
-            return false;
-        }
-
-
-		// Prefer function domain when configured
-		
-		
-			// // Fallback: executions API
-			// if ( empty( $endpoint ) || empty( $project ) ) {
-			// 	WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
-			// 	return false;
-			// }
-			// $url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
-			// $request_body = wp_json_encode( array(
-			// 	'body'    => wp_json_encode( $payload ),
-			// 	'method'  => 'POST',
-			// 	'headers' => array(
-			// 		'Content-Type' => 'application/json',
-			// 	),
-			// ) );
-			// $response = wp_remote_post(
-			// 	$url,
-			// 	array(
-			// 		'headers' => array(
-			// 			'Content-Type'       => 'application/json',
-			// 			'X-Appwrite-Project' => $project,
-			// 		),
-			// 		'body'    => $request_body,
-			// 		'timeout' => self::$connection_timeout,
-			// 	)
-			// );
-		
-
-		// if ( is_wp_error( $response ) ) {
-		// 	update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
-		// 	WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
-		// 	return false;
-		// }
-
-		// if ( $code < 200 || $code >= 300 ) {
-		// 	update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
-		// 	WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
-		// 	return false;
-		// }
+		try {
+			self::instance()->post( 'functions/site-heartbeat/executions', array( 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret() ) );
+		} catch ( Exception $e ) {
+			WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'error', array(), array(
+				'msg' => $e->getMessage(),
+			) );
+			return false;
+		}
 
 		update_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
-		// WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
 		return true;
 	}
 
 	/**
 	 * Schedule heartbeat (call after save-connection).
-	 * Sends first heartbeat immediately, then schedules cron every minute.
 	 */
 	public static function schedule() {
-		wp_clear_scheduled_hook( self::CRON_HOOK );
-		$site_id = WPHubPro_Bridge_Config::get_site_id();
-		$secret  = WPHubPro_Bridge_Config::get_site_secret();
-		if ( ! empty( $site_id ) && ! empty( $secret ) ) {
-			self::send_heartbeat();
-			wp_schedule_event( time(), 'wphubpro_minute', self::CRON_HOOK );
-		}
+		WPHubPro_Bridge_Cron::schedule_with_immediate_run( 'WPHubPro_Bridge_Cron_Job_Heartbeat' );
 	}
 
 	/**
 	 * Unschedule heartbeat (call on disconnect).
 	 */
 	public static function unschedule() {
-		wp_clear_scheduled_hook( self::CRON_HOOK );
+		WPHubPro_Bridge_Cron::unschedule( 'WPHubPro_Bridge_Cron_Job_Heartbeat' );
 	}
 
 	/**
