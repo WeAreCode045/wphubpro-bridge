@@ -16,11 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
 
-    public static function get_health_status(WP_REST_Request $request) {
-        $t0 = microtime(true);
+    private static $instance = null;
 
-        $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
-        if (!$request_id) $request_id = wp_generate_uuid4();
+    public static function instance() {
+        if ( self::$instance === null ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    public static function get_health_status() {
+        $t0 = microtime(true);
 
         $safe_mode = file_exists(WPHUBPRO_BRIDGE_ABSPATH . '/.wphubpro_safe_mode');
 
@@ -71,8 +77,6 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         $duration_ms = (int) round((microtime(true) - $t0) * 1000);
 
         $payload = [
-            'ok' => true,
-            'request_id' => $request_id,
             'timestamp_utc' => gmdate('c'),
             'response_time_ms' => $duration_ms,
 
@@ -109,17 +113,37 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
             'debug_log_tail' => $debug_tail,
         ];
 
-        return new WP_REST_Response($payload, 200);
+        return $payload;
     }
 
-    public static function send_health_status(WP_REST_Request $request) {
+    /**
+     * POST current health snapshot to the Hub (used by WP-Cron and manual triggers).
+     *
+     * @return array|bool Response data on success, false on handled failure.
+     */
+    public static function send_health_status() {
+        try {
+            return self::instance()->post( 'functions/site-health/executions', self::get_health_status() );
+        } catch ( Exception $e ) {
+            WPHubPro_Bridge_Logger::log_action( 'health', 'error', array(), array(
+                'msg' => $e->getMessage(),
+            ) );
+            return false;
+        }
+    }
 
-        $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
-        if (!$request_id) $request_id = wp_generate_uuid4();
+    /**
+     * Unschedule health cron (call on disconnect).
+     */
+    public static function unschedule() {
+        WPHubPro_Bridge_Cron::unschedule( 'WPHubPro_Bridge_Cron_Job_Health' );
+    }
 
-        $payload = self::get_health_status($request);
-
-        return parent::post('health', $payload);
+    /**
+     * Schedule health push with an immediate run (e.g. after save-connection).
+     */
+    public static function schedule() {
+        WPHubPro_Bridge_Cron::schedule_with_immediate_run( 'WPHubPro_Bridge_Cron_Job_Health' );
     }
 
     private static function get_woo_status(): array {

@@ -1,8 +1,6 @@
 <?php
 /**
- * Site health for WPHubPro Bridge.
- *
- * Placeholder for site health checks (WordPress Site Health, status, etc.).
+ * Base HTTP client for Bridge → Hub (Appwrite-style) requests.
  *
  * @package WPHubPro
  */
@@ -12,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Site health feature (placeholder).
+ * Wraps GET/POST to the configured Hub API with site auth headers.
  */
 class WPHubPro_Bridge_API {
     private $site_secret = '';
@@ -81,14 +79,7 @@ class WPHubPro_Bridge_API {
         
         if (is_wp_error($response)) {
             throw new RequestError($response->get_error_message(), 0, null, array('url' => $url, 'query' => $query));
-            // WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/get', 'error', array(), array(
-            //     'msg'    => $response->get_error_message(),
-            //     'url'    => $url,
-            //     'query'  => $query,
-            // ));
-            // return false;
         }
-        // return $this->resolve_response($response);
         $code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
@@ -171,8 +162,6 @@ class WPHubPro_Bridge_API {
                 'url'   => untrailingslashit( $this->base_url ) . '/' . $this->endpoint,
             ));
             throw new RequestError('Non-2xx response', $code, null, array('code' => $code, 'body' => $resp_body, 'url' => $this->endpoint));
-
-            // return false;
         }
         $json = json_decode($resp_body, true);
         return $json !== null ? $json : $resp_body;
@@ -190,69 +179,4 @@ class WPHubPro_Bridge_API {
         }
         return true;
     }
-
-    // /**
-	//  * Send heartbeat to Appwrite.
-	//  *
-	//  * @return bool True on success, false on failure (logged).
-	//  */
-	// public static function send_heartbeat() {
-		
-        
-    //     try {
-    //         $response = $this->post('/heartbeat');
-    //     } catch (Exception $e) {
-    //         WPHubPro_Bridge_Logger::log_action(get_site_url(), 'heartbeat', 'error', array(), array(
-    //             'msg' => $e->getMessage(),
-    //         ));
-    //         return false;
-    //     }
-
-
-	// 	// Prefer function domain when configured
-		
-		
-	// 		// // Fallback: executions API
-	// 		// if ( empty( $endpoint ) || empty( $project ) ) {
-	// 		// 	WPHubPro_Bridge_Logger::log_action( get_site_url(), 'heartbeat', 'meta', array(), array( 'skipped' => 'Missing endpoint or project_id for executions API' ) );
-	// 		// 	return false;
-	// 		// }
-	// 		// $url = untrailingslashit( $endpoint ) . '/functions/site-heartbeat/executions';
-	// 		// $request_body = wp_json_encode( array(
-	// 		// 	'body'    => wp_json_encode( $payload ),
-	// 		// 	'method'  => 'POST',
-	// 		// 	'headers' => array(
-	// 		// 		'Content-Type' => 'application/json',
-	// 		// 	),
-	// 		// ) );
-	// 		// $response = wp_remote_post(
-	// 		// 	$url,
-	// 		// 	array(
-	// 		// 		'headers' => array(
-	// 		// 			'Content-Type'       => 'application/json',
-	// 		// 			'X-Appwrite-Project' => $project,
-	// 		// 		),
-	// 		// 		'body'    => $request_body,
-	// 		// 		'timeout' => self::$connection_timeout,
-	// 		// 	)
-	// 		// );
-		
-
-	// 	if ( is_wp_error( $response ) ) {
-	// 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
-	// 		WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => $response->get_error_message() ) );
-	// 		return false;
-	// 	}
-
-	// 	if ( $code < 200 || $code >= 300 ) {
-	// 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
-	// 		WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'error' => 'HTTP ' . $code, 'body' => substr( $body_response, 0, 200 ), 'site_id' => $site_id ) );
-	// 		return false;
-	// 	}
-
-	// 	update_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
-	// 	update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
-	// 	WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'meta', array(), array( 'success' => true, 'site_id' => $site_id ) );
-	// 	return true;
-	// }
 }

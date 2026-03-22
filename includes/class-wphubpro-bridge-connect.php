@@ -201,6 +201,7 @@ class WPHubPro_Bridge_Connect {
 	public function handle_disconnect() {
 		WPHubPro_Bridge_Config::remove_options();
 		WPHubPro_Bridge_Heartbeat::unschedule();
+		WPHubPro_Bridge_Health::unschedule();
 		return array( 'success' => true );
 	}
 
@@ -258,8 +259,6 @@ class WPHubPro_Bridge_Connect {
 			delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
 		}
 		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
-
-		// WPHubPro_Bridge_Heartbeat::schedule();
 
 		// Initial plugin/theme sync after connect
 		if ( class_exists( 'WPHubPro_Bridge_Sync' ) ) {

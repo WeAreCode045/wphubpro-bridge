@@ -24,12 +24,6 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 		return self::$instance;
 	}
 
-	/** @deprecated Use {@see WPHubPro_Bridge_Cron_Job_Heartbeat::get_hook_name()} */
-	const CRON_HOOK = 'wphubpro_bridge_heartbeat';
-
-	/** @deprecated Use {@see WPHubPro_Bridge_Cron_Job_Heartbeat::get_interval_seconds()} */
-	const CRON_INTERVAL = 60;
-
 	/**
 	 * Legacy entry point: delegates to {@see WPHubPro_Bridge_Cron::init()}.
 	 */

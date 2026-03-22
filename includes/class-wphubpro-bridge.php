@@ -60,7 +60,6 @@ class WPHubPro_Bridge {
 	 */
 	private function add_hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
-		// add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
 	}
 
 	/**

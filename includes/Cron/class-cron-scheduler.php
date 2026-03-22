@@ -38,6 +38,7 @@ class WPHubPro_Bridge_Cron {
 
 		$default_jobs = array(
 			'WPHubPro_Bridge_Cron_Job_Heartbeat',
+			'WPHubPro_Bridge_Cron_Job_Health',
 		);
 
 		/**
@@ -48,10 +49,6 @@ class WPHubPro_Bridge_Cron {
 		$jobs = apply_filters( 'wphubpro_bridge_cron_jobs', $default_jobs );
 
 		foreach ( $jobs as $class ) {
-			// Legacy: heartbeat job lived on WPHubPro_Bridge_Heartbeat before Cron/Jobs split.
-			if ( 'WPHubPro_Bridge_Heartbeat' === $class ) {
-				$class = 'WPHubPro_Bridge_Cron_Job_Heartbeat';
-			}
 			self::register( $class );
 		}
 
