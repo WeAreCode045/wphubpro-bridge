@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Main bridge class – coordinates feature modules.
+ *
+ * Hook convention (instance-based): private add_hooks() is called from __construct().
+ * Static services (Auth, Sync, Heartbeat) use public static init() → private static add_hooks().
  */
 if ( ! class_exists( 'WPHubPro_Bridge' ) ) {
 
@@ -49,6 +52,13 @@ class WPHubPro_Bridge {
 		$this->details = new WPHubPro_Bridge_Details();
 		$this->health  = new WPHubPro_Bridge_Health();
 
+		$this->add_hooks();
+	}
+
+	/**
+	 * Register WordPress hooks.
+	 */
+	private function add_hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		// add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
 	}

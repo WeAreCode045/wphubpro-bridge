@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Sends heartbeat to Appwrite site-heartbeat function.
+ *
+ * Static bootstrap: {@see init()} registers hooks via {@see add_hooks()} then schedules cron when configured.
  */
 class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 
@@ -31,8 +33,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	 * Register cron and send heartbeat.
 	 */
 	public static function init() {
-		add_action( self::CRON_HOOK, array( self::instance(), 'send_heartbeat' ) );
-		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_interval' ) );
+		self::add_hooks();
 
 		// Schedule on init if not already scheduled
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
@@ -43,9 +44,16 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 			}
 		}
 	}
-	
-	
-		/**
+
+	/**
+	 * Register WordPress hooks.
+	 */
+	private static function add_hooks() {
+		add_action( self::CRON_HOOK, array( self::instance(), 'send_heartbeat' ) );
+		add_filter( 'cron_schedules', array( __CLASS__, 'add_cron_interval' ) );
+	}
+
+	/**
 	 * Add 1-minute cron interval.
 	 *
 	 * @param array $schedules Existing schedules.

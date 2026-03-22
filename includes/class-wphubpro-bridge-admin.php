@@ -8,10 +8,12 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
-// if ( ! class_exists( 'WPHubPro_Bridge_Admin' ) ) {
-	/**
-	 * Plugin WPHubPro_Bridge_Admin Class.
-	 */
+
+/**
+ * Admin UI: menus and assets.
+ *
+ * Bootstrap: init() runs on WordPress {@see 'init'} (see wphubpro-bridge.php) so menus register at the correct time.
+ */
 class WPHubPro_Bridge_Admin {
 	/**
 	 * Instance of the class.
@@ -31,13 +33,18 @@ class WPHubPro_Bridge_Admin {
 		return self::$instance;
 	}
 
-	
+	/**
+	 * Called on WordPress `init` (see main plugin file).
+	 */
 	public function init() {
-		$this->enqueue_assets();
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		$this->add_hooks();
 	}
 
-	private function enqueue_assets() {
+	/**
+	 * Register WordPress hooks.
+	 */
+	private function add_hooks() {
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 	}

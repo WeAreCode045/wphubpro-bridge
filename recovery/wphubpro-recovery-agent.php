@@ -13,11 +13,17 @@ class WPHubProRecoveryAgent {
 
     public function __construct() {
         $this->log_file = WP_CONTENT_DIR . '/wphubpro-fatal-error.json';
-        
+
         // Vang fatale fouten op (registreer dit zo vroeg mogelijk)
         register_shutdown_function([$this, 'capture_fatal_error']);
-        
-        // Luister naar inkomende verzoeken
+
+        $this->add_hooks();
+    }
+
+    /**
+     * Register WordPress hooks.
+     */
+    private function add_hooks() {
         add_action('plugins_loaded', [$this, 'handle_platform_request'], 1);
     }
 

@@ -11,20 +11,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Hub→Bridge REST auth, one-time connect token exchange, and CORS for those routes.
+ *
+ * Static-only: call init() once (e.g. from WPHubPro_Bridge_Connect::register_rest_routes).
  */
 class WPHubPro_Bridge_Auth {
 
 	/**
-	 * Register hooks (CORS for save-connection / exchange-token).
+	 * Bootstrap: attach CORS and related filters.
 	 */
 	public static function init() {
-		self::register_cors();
+		self::add_hooks();
 	}
 
 	/**
-	 * Attach CORS filter on REST bootstrap.
+	 * Register WordPress hooks.
 	 */
-	public static function register_cors() {
+	private static function add_hooks() {
 		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'cors_headers_for_save_connection' ), 5, 4 );
 	}
 

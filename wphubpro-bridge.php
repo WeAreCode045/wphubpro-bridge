@@ -82,6 +82,9 @@ add_action('plugins_loaded', function() {
 	if (class_exists('WPHubPro_Bridge_Sync')) {
 		WPHubPro_Bridge_Sync::init();
 	}
+	if ( class_exists( 'WPHubPro_Bridge_Frontend' ) && ! is_admin() ) {
+		WPHubPro_Bridge_Frontend::instance();
+	}
 });
 
 /**

@@ -231,4 +231,20 @@ class WPHubPro_Bridge_Config {
 		$active = get_option( 'active_plugins', array() );
 		return is_array( $active ) ? $active : array();
 	}
+
+	/**
+	 * 
+	 */
+	public static function remove_options() {
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
+		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+	}
 }

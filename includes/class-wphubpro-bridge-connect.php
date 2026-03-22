@@ -194,21 +194,6 @@ class WPHubPro_Bridge_Connect {
 	}
 
 	/**
-	 * Add admin menu for WPHubPro Bridge.
-	 */
-	public function add_admin_menu() {
-		add_menu_page(
-			'WPHubPro Bridge',
-			'WPHubPro Bridge',
-			'manage_options',
-			'wphubpro-bridge',
-			array( $this, 'render_admin_page' ),
-			'dashicons-admin-links',
-			80
-		);
-	}
-
-	/**
 	 * Render the connect admin page with tabs.
 	 */
 	public function render_admin_page() {
@@ -223,17 +208,7 @@ class WPHubPro_Bridge_Connect {
 	 * @return array{success: bool}
 	 */
 	public function handle_disconnect() {
-		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
-		delete_option( 'wphub_api_key' );
-		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
-		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
-		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
-		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
-		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
-		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+		WPHubPro_Bridge_Config::remove_options();
 		WPHubPro_Bridge_Heartbeat::unschedule();
 		return array( 'success' => true );
 	}
