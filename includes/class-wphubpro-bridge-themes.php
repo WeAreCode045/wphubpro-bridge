@@ -55,6 +55,12 @@ class WPHubPro_Bridge_Themes {
 			'permission_callback' => WPHubPro_Bridge_Config::REST_API_AUTH_PROVIDER,
 			'args'                => $args,
 		) );
+
+		register_rest_route( WPHubPro_Bridge_Config::REST_NAMESPACE, self::$path . 'install-from-zip', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'install_theme_from_zip' ),
+			'permission_callback' => WPHubPro_Bridge_Config::REST_API_AUTH_PROVIDER,
+		) );
 	}
 
 	/**
@@ -100,6 +106,49 @@ class WPHubPro_Bridge_Themes {
 		WPHubPro_Bridge_Logger::log_action( $site_url, 'list', 'themes', array(), $log_resp );
 
 		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Install a theme from a zip URL or zip_base64 (Hub / WPHubPro library).
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return mixed
+	 */
+	public function install_theme_from_zip( $request ) {
+		$endpoint = 'themes/manage/install-from-zip';
+		$site_url = get_site_url();
+
+		$zip        = WPHubPro_Bridge_Plugin_Upgrader_Helper::get_zip_params_from_request( $request );
+		$zip_url    = $zip['zip_url'];
+		$zip_base64 = $zip['zip_base64'];
+
+		if ( empty( $zip_url ) && empty( $zip_base64 ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
+			return new WP_Error( 'invalid_input', __( 'zip_url or zip_base64 is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+		if ( empty( $zip_base64 ) && ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
+			return new WP_Error( 'invalid_zip_url', __( 'A valid HTTPS zip URL is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+		}
+
+		$resolved = WPHubPro_Bridge_Plugin_Upgrader_Helper::resolve_package_from_zip_inputs( $zip_url, $zip_base64 );
+		if ( is_wp_error( $resolved ) ) {
+			WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => $resolved->get_error_message() ) );
+			return $resolved;
+		}
+		$package   = $resolved['package'];
+		$temp_path = $resolved['temp_path'];
+
+		$result = WPHubPro_Bridge_Theme_Upgrader_Helper::run_theme_install_from_package( $package );
+
+		WPHubPro_Bridge_Plugin_Upgrader_Helper::maybe_delete_temp_path( $temp_path );
+
+		$log_source = ! empty( $zip_base64 ) ? 'zip_base64' : 'zip_url';
+		WPHubPro_Bridge_Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		if ( ! is_wp_error( $result ) ) {
+			WPHubPro_Bridge_Sync::schedule_sync();
+		}
+		return $result;
 	}
 
 	/**
