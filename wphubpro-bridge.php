@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.2.43
+ * Version: 2.4.1
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -34,14 +34,25 @@ foreach ( array(
 	'class-wphubpro-bridge-crypto.php',
 	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-logger.php',
+	'class-wphubpro-bridge-api-logger.php',
+	'class-wphubpro-bridge-auth.php',
 	'class-wphubpro-bridge-connect.php',
 	'class-wphubpro-bridge-connection-status.php',
+	'class-wphubpro-bridge-plugin-bridge-guard.php',
+	'class-wphubpro-bridge-plugin-params.php',
+	'class-wphubpro-bridge-plugin-upgrader-helper.php',
 	'class-wphubpro-bridge-plugins.php',
+	'class-wphubpro-bridge-theme-params.php',
+	'class-wphubpro-bridge-theme-upgrader-helper.php',
 	'class-wphubpro-bridge-themes.php',
 	'class-wphubpro-bridge-sync.php',
+	'Cron/interface-cron-job.php',
 	'class-wphubpro-bridge-heartbeat.php',
-	'class-wphubpro-bridge-details.php',
+	'Cron/Jobs/class-cron-job-heartbeat.php',
 	'class-wphubpro-bridge-health.php',
+	'Cron/Jobs/class-cron-job-health.php',
+	'Cron/class-cron-scheduler.php',
+	'class-wphubpro-bridge-details.php',
 	'class-wphubpro-bridge.php',
 	'class-wphubpro-bridge-admin.php',
 	'class-wphubpro-bridge-ajax.php',
@@ -66,11 +77,17 @@ add_action('plugins_loaded', function() {
 	if (class_exists('WPHubPro_Bridge')) {
 		WPHubPro_Bridge::instance();
 	}
-	if (class_exists('WPHubPro_Bridge_Heartbeat')) {
-		WPHubPro_Bridge_Heartbeat::init();
+	if(class_exists('WPHubPro_Bridge_Admin') && is_admin()) {
+		add_action('init', array(WPHubPro_Bridge_Admin::instance(), 'init'));
+	}
+	if ( class_exists( 'WPHubPro_Bridge_Cron' ) ) {
+		WPHubPro_Bridge_Cron::init();
 	}
 	if (class_exists('WPHubPro_Bridge_Sync')) {
 		WPHubPro_Bridge_Sync::init();
+	}
+	if ( class_exists( 'WPHubPro_Bridge_Frontend' ) && ! is_admin() ) {
+		WPHubPro_Bridge_Frontend::instance();
 	}
 });
 

@@ -50,6 +50,13 @@ class WPHubPro_Bridge_Config {
 	const DEFAULT_REDIRECT_BASE_URL = 'https://app.wphub.pro';
 	const DEFAULT_STATUS = 'disconnected';
 
+	/** REST API authentication provider. */
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
+
+
+	/** REST namespace for bridge routes. */
+	const REST_NAMESPACE = 'wphubpro/v1';
+
 	/**
 	 * Appwrite Base URL.
 	 *
@@ -223,5 +230,21 @@ class WPHubPro_Bridge_Config {
 	public static function get_active_plugins() {
 		$active = get_option( 'active_plugins', array() );
 		return is_array( $active ) ? $active : array();
+	}
+
+	/**
+	 * 
+	 */
+	public static function remove_options() {
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
+		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
 	}
 }

@@ -14,7 +14,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs actions to Appwrite for audit trail.
  */
-class WPHubPro_Bridge_Logger {
+class WPHubPro_Bridge_Api_Logger extends WPHubPro_Bridge_API {
+
+	private static $instance = null;
+
+	public static function instance() {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
 
 	/**
 	 * Log an action to the site's action_log in Appwrite.
@@ -26,77 +36,46 @@ class WPHubPro_Bridge_Logger {
 	 * @param array  $request  Request data.
 	 * @param mixed  $response Response/result.
 	 */
-	public static function log_action($action, $endpoint, $request, $response ) {
+	public static function send_log_action($action, $endpoint, $request, $response ) {
 		$log_req = is_array( $request ) ? $request : array();
 		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
 		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
 		$log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
 		self::strip_sensitive_data( $log_req_copy );
 		self::strip_sensitive_data( $log_res_copy );
-		error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
+		error_log( '[WPHubPro Bridge] send_log_action: ' . wp_json_encode( array(
 			'action'   => $action,
 			'endpoint' => $endpoint,
 			'request'  => $log_req_copy,
 			'response' => $log_res_copy,
 		) ) );
-		
-		try {
-			// Send log action to Platform.
-			WPHubPro_Bridge_Api_Logger::instance()->send_log_action( $action, $endpoint, $request, $response );
-		} catch ( \Exception $e ) {
-			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
-		}
-	}
 
-	/**
-	 * Log a single request to the wphubpro/v1 API to option WPHUBPRO_LOG (last 20).
-	 *
-	 * Entry: time, endpoint, type (GET|POST), code, request, response.
-	 *
-	 * @param WP_REST_Request $request  Request object.
-	 * @param WP_REST_Response|WP_Error $response Response or error.
-	 */
-	public static function push_api_log( $request, $response ) {
-		$route = $request->get_route();
-		if ( !$route || strpos( $route, 'wphubpro/v1' ) === false || strpos( $route, '/logs' ) !== false ) {
-			return;
-		}
-
-		$req_data = array(
-			'query' => $request->get_query_params(),
-			'body'  => $request->get_body_params(),
-		);
-		if ( empty( $req_data['body'] ) && $request->get_body() ) {
-			$parsed = json_decode( $request->get_body(), true );
-			$req_data['body'] = is_array( $parsed ) ? $parsed : array( '_raw' => substr( $request->get_body(), 0, 500 ) );
-		}
-
-		if ( is_wp_error( $response ) ) {
-			$code     = (int) $response->get_error_data( 'status' );
-			$res_data = array( 'error' => $response->get_error_message() );
-		} else {
-			$code     = $response->get_status();
-			$res_data = $response->get_data();
-			$res_data = is_array( $res_data ) ? $res_data : array();
-		}
-		self::strip_sensitive_data( $req_data );
-		self::strip_sensitive_data( $res_data );
-		self::cap_size( $req_data );
-		self::cap_size( $res_data );
+		$req_safe  = is_array( $request ) ? $request : array();
+		$res_safe  = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
+		self::strip_sensitive_data( $req_safe );
+		self::strip_sensitive_data( $res_safe );
 
 		$entry = array(
-			'time'     => gmdate( 'c' ),
-			'endpoint' => $route,
-			'type'     => $request->get_method(),
-			'code'     => $code ? $code : 500,
-			'request'  => $req_data,
-			'response' => $res_data,
+			'timestamp' => gmdate( 'c' ),
+			'action'    => $action,
+			'endpoint'  => $endpoint,
+			'request'   => $req_safe,
+			'response'  => $res_safe,
 		);
 
-		$log = WPHubPro_Bridge_Config::get_log();
-		array_unshift( $log, $entry );
-		$log = array_slice( $log, 0, 20 );
-		update_option( WPHubPro_Bridge_Config::OPTION_LOG, $log );
+		try {
+			self::instance()->post( 'functions/bridge-site-log-action/executions', $entry );
+		} catch ( Exception $e ) {
+			error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
+				'error'    => $e->getMessage(),
+				'action'   => $action,
+				'endpoint' => $endpoint,
+				'request'  => $log_req_copy,
+				'response' => $log_res_copy,
+			) ) );
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -139,5 +118,19 @@ class WPHubPro_Bridge_Logger {
 				'preview' => array_slice( $value, 0, 5 ),
 			);
 		}
+	}
+
+	/**
+	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
+	 * Excludes /logs to avoid logging the logs request itself.
+	 *
+	 * @param WP_REST_Response|WP_Error $response Result to send.
+	 * @param WP_REST_Server            $server   Server instance.
+	 * @param WP_REST_Request          $request  Request object.
+	 * @return WP_REST_Response|WP_Error Unchanged response.
+	 */
+	public function log_rest_request( $response, $server, $request ) {
+		WPHubPro_Bridge_Logger::push_api_log( $request, $response );
+		return $response;
 	}
 }

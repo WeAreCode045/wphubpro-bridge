@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Sync plugins and themes meta to Appwrite.
+ *
+ * Static bootstrap: {@see init()} → {@see add_hooks()}. Deferred shutdown sync is registered from {@see schedule_sync()}.
  */
 class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 
@@ -38,6 +40,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 			return;
 		}
 		self::$sync_scheduled = true;
+		// Deferred per-request hook (not part of add_hooks() lifecycle registration).
 		add_action( 'shutdown', array( self::instance(), 'sync_meta_to_appwrite' ), 5 );
 	}
 
@@ -45,6 +48,13 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 	 * Register hooks for plugin/theme/core changes (WP Admin or REST).
 	 */
 	public static function init() {
+		self::add_hooks();
+	}
+
+	/**
+	 * Register WordPress hooks.
+	 */
+	private static function add_hooks() {
 		add_action( 'activated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'deactivated_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'deleted_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
