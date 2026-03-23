@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.4.1
+ * Version: 2.4.2
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -30,21 +30,21 @@ foreach ( array(
 	'Error/ValidationError.php',
 	'Error/NotFoundError.php',
 	'Error/RequestError.php',
-	'class-wphubpro-bridge-api.php',
+	'Api/class-wphubpro-bridge-api.php',
 	'class-wphubpro-bridge-crypto.php',
 	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-logger.php',
-	'class-wphubpro-bridge-api-logger.php',
+	'Api/class-wphubpro-bridge-api-logger.php',
 	'class-wphubpro-bridge-auth.php',
 	'class-wphubpro-bridge-connect.php',
 	'class-wphubpro-bridge-connection-status.php',
 	'class-wphubpro-bridge-plugin-bridge-guard.php',
-	'class-wphubpro-bridge-plugin-params.php',
-	'class-wphubpro-bridge-plugin-upgrader-helper.php',
-	'class-wphubpro-bridge-plugins.php',
-	'class-wphubpro-bridge-theme-params.php',
-	'class-wphubpro-bridge-theme-upgrader-helper.php',
-	'class-wphubpro-bridge-themes.php',
+	'Plugin/class-wphubpro-bridge-plugin-params.php',
+	'Plugin/class-wphubpro-bridge-plugin-upgrader-helper.php',
+	'Plugin/class-wphubpro-bridge-plugins.php',
+	'Theme/class-wphubpro-bridge-theme-params.php',
+	'Theme/class-wphubpro-bridge-theme-upgrader-helper.php',
+	'Theme/class-wphubpro-bridge-themes.php',
 	'class-wphubpro-bridge-sync.php',
 	'Cron/interface-cron-job.php',
 	'class-wphubpro-bridge-heartbeat.php',
