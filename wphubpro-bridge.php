@@ -55,8 +55,6 @@ foreach ( array(
 	'class-wphubpro-bridge-details.php',
 	'class-wphubpro-bridge.php',
 	'class-wphubpro-bridge-admin.php',
-	'class-wphubpro-bridge-ajax.php',
-	'class-wphubpro-bridge-frontend.php',
 ) as $file ) {
 	$inc = __DIR__ . '/includes/' . $file;
 	if ( file_exists( $inc ) ) {
@@ -85,9 +83,6 @@ add_action('plugins_loaded', function() {
 	}
 	if (class_exists('WPHubPro_Bridge_Sync')) {
 		WPHubPro_Bridge_Sync::init();
-	}
-	if ( class_exists( 'WPHubPro_Bridge_Frontend' ) && ! is_admin() ) {
-		WPHubPro_Bridge_Frontend::instance();
 	}
 });
 
