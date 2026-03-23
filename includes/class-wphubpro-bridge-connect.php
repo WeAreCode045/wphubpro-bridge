@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles site connect, connection storage, and admin UI.
  */
-class WPHubPro_Bridge_Connect {
+class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 
 	/**
 	 * Instance of the class.
@@ -118,21 +118,7 @@ class WPHubPro_Bridge_Connect {
 			),
 		) );
 
-		// Bridge update: check for updates and install (admin only)
-		register_rest_route( $namespace, '/bridge/check-update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'handle_check_for_update' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-		register_rest_route( $namespace, '/bridge/install-update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'handle_install_update' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
+		
 
 		// Save connection (api_key, endpoint, project) from platform - validates via X-WPHub-Key
 		register_rest_route( $namespace, '/save-connection', array(
@@ -338,101 +324,5 @@ class WPHubPro_Bridge_Connect {
 		) );
 	}
 
-	/**
-	 * Check for bridge updates: fetch latest version from WPHub (bridge-download-url).
-	 * Does not save to WP options; only returns the result for display.
-	 *
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function handle_check_for_update() {
-		$api_base = untrailingslashit( WPHubPro_Bridge_Config::get_api_base_url() );
-		$project  = WPHubPro_Bridge_Config::get_project_id();
-		if ( empty( $api_base ) || empty( $project ) ) {
-			return new WP_Error( 'config', 'API base URL or project ID not configured.', array( 'status' => 400 ) );
-		}
-		$url = $api_base . '/functions/bridge-download-url/executions';
-		$res = wp_remote_post( $url, array(
-			'headers' => array(
-				'Content-Type'       => 'application/json',
-				'X-Appwrite-Project'  => $project,
-			),
-			'body'    => '{}',
-			'timeout' => 15,
-		) );
-		if ( is_wp_error( $res ) ) {
-			return $res;
-		}
-		$code = wp_remote_retrieve_response_code( $res );
-		$body = wp_remote_retrieve_body( $res );
-		$data = json_decode( $body, true );
-		if ( $code >= 200 && $code < 300 && is_array( $data ) ) {
-			$resp_body = isset( $data['responseBody'] ) ? json_decode( $data['responseBody'], true ) : $data;
-			if ( is_array( $resp_body ) && ! empty( $resp_body['success'] ) && ! empty( $resp_body['version'] ) ) {
-				$latest = sanitize_text_field( $resp_body['version'] );
-				if ( preg_match( '/^\d+\.\d+\.\d+$/', $latest ) ) {
-					$installed = WPHubPro_Bridge_Config::get_bridge_version();
-					$update_available = ! empty( $installed ) && version_compare( $latest, $installed, '>' );
-					return rest_ensure_response( array(
-						'success'          => true,
-						'latest_version'   => $latest,
-						'download_url'     => $resp_body['downloadUrl'] ?? '',
-						'update_available' => $update_available,
-					) );
-				}
-			}
-		}
-		return new WP_Error( 'fetch_failed', 'Could not fetch latest bridge version.', array( 'status' => 502 ) );
-	}
-
-	/**
-	 * Install bridge update: get download URL from Hub, then run install-from-zip.
-	 *
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public function handle_install_update() {
-		$api_base = untrailingslashit( WPHubPro_Bridge_Config::get_api_base_url() );
-		$project  = WPHubPro_Bridge_Config::get_project_id();
-		if ( empty( $api_base ) || empty( $project ) ) {
-			return new WP_Error( 'config', 'API base URL or project ID not configured.', array( 'status' => 400 ) );
-		}
-		$url = $api_base . '/functions/bridge-download-url/executions';
-		$res = wp_remote_post( $url, array(
-			'headers' => array(
-				'Content-Type'       => 'application/json',
-				'X-Appwrite-Project'  => $project,
-			),
-			'body'    => '{}',
-			'timeout' => 15,
-		) );
-		if ( is_wp_error( $res ) ) {
-			return $res;
-		}
-		$code = wp_remote_retrieve_response_code( $res );
-		$body = wp_remote_retrieve_body( $res );
-		$data = json_decode( $body, true );
-		if ( $code < 200 || $code >= 300 || ! is_array( $data ) ) {
-			return new WP_Error( 'fetch_failed', 'Could not fetch bridge download URL.', array( 'status' => 502 ) );
-		}
-		$resp_body = isset( $data['responseBody'] ) ? json_decode( $data['responseBody'], true ) : $data;
-		if ( ! is_array( $resp_body ) || empty( $resp_body['downloadUrl'] ) ) {
-			return new WP_Error( 'fetch_failed', 'Invalid response from Hub.', array( 'status' => 502 ) );
-		}
-		$zip_url = esc_url_raw( $resp_body['downloadUrl'] );
-		if ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) {
-			return new WP_Error( 'invalid_url', 'Invalid download URL.', array( 'status' => 400 ) );
-		}
-		$request = new WP_REST_Request( 'POST', '/wphubpro/v1/plugins/manage/install-from-zip' );
-		$request->set_param( 'zip_url', $zip_url );
-		$request->set_param( 'plugin', 'wphubpro-bridge/wphubpro-bridge.php' );
-		$plugins = new WPHubPro_Bridge_Plugins();
-		$result  = $plugins->install_plugin_from_zip_url( $request );
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-		$new_version = isset( $resp_body['version'] ) ? sanitize_text_field( $resp_body['version'] ) : '';
-		if ( preg_match( '/^\d+\.\d+\.\d+$/', $new_version ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( array( 'installed' => $new_version ) ) );
-		}
-		return rest_ensure_response( array( 'success' => true, 'message' => 'Bridge updated successfully.' ) );
-	}
+	
 }

@@ -26,6 +26,9 @@ class WPHubPro_Bridge {
 	/** @var WPHubPro_Bridge_Connect */
 	private $connect;
 
+	/** @var WPHubPro_Bridge_Updater */
+	private $updater;
+
 	/** @var WPHubPro_Bridge_Plugins */
 	private $plugins;
 
@@ -67,7 +70,8 @@ class WPHubPro_Bridge {
 	 */
 	public function register_routes() {
 		$this->connect->register_rest_routes();
-
+		$this->updater->register_rest_routes();
+		
 		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
 		$validate  = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
 

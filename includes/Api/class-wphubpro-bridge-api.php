@@ -20,6 +20,8 @@ class WPHubPro_Bridge_API {
     private $endpoint = '';
 
     private static int $connection_timeout = 15;
+    private static string $path_prefix = '/functions';
+    private static string $path_postfix = '/executions';
 
 
     public function __construct() {
@@ -54,6 +56,16 @@ class WPHubPro_Bridge_API {
     }
 
     /**
+     * Get the URL for the API request.
+     *
+     * @param string $endpoint The endpoint to get the URL for.
+     * @return string The URL for the API request.
+     */
+    protected function get_url(string $endpoint) {
+        return untrailingslashit( $this->base_url ) . self::$path_prefix . '/' . $endpoint . self::$path_postfix;
+    }
+
+    /**
      * Simple base API class wrapping GET and POST requests for Appwrite endpoints.
      * Uses wp_remote_get and wp_remote_post.
      */
@@ -65,7 +77,7 @@ class WPHubPro_Bridge_API {
             throw new ValidationError('Missing endpoint.', 0, null, array('endpoint' => $endpoint));
         }
 
-        $url = untrailingslashit( $this->base_url ) . '/' . $endpoint;
+        $url = $this->get_url($endpoint);
         if (!empty($query) && is_array($query)) {
             $url = add_query_arg($query, $url);
         }
@@ -122,7 +134,7 @@ class WPHubPro_Bridge_API {
 
         ));
 
-        $url = untrailingslashit( $this->base_url ) . '/' . $endpoint;
+        $url = $this->get_url($endpoint);
 
         $response = wp_remote_post(
             $url,

@@ -123,7 +123,7 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
      */
     public static function send_health_status() {
         try {
-            return self::instance()->post( 'functions/site-health/executions', self::get_health_status() );
+            return self::instance()->post( 'site-health', self::get_health_status() );
         } catch ( Exception $e ) {
             WPHubPro_Bridge_Logger::log_action( 'health', 'error', array(), array(
                 'msg' => $e->getMessage(),
