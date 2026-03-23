@@ -50,6 +50,7 @@ class WPHubPro_Bridge {
 
 	private function __construct() {
 		$this->connect = WPHubPro_Bridge_Connect::instance();
+		$this->updater = WPHubPro_Bridge_Updater::instance();
 		$this->plugins = new WPHubPro_Bridge_Plugins();
 		$this->themes  = new WPHubPro_Bridge_Themes();
 		$this->details = new WPHubPro_Bridge_Details();

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 
 	private static $instance = null;
-	private static $path = '/brdige/';
+	private static $path = '/bridge/';
 
 	public static function instance() {
 		if ( self::$instance === null ) {
