@@ -64,7 +64,7 @@ class WPHubPro_Bridge_Api_Logger extends WPHubPro_Bridge_API {
 		);
 
 		try {
-			self::instance()->post( 'functions/bridge-site-log-action/executions', $entry );
+			self::instance()->post( 'bridge-site-log-action', $entry );
 		} catch ( Exception $e ) {
 			error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
 				'error'    => $e->getMessage(),

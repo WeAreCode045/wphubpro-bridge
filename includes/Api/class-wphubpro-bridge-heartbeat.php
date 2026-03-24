@@ -38,7 +38,7 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	 */
 	public static function send_heartbeat() {
 		try {
-			self::instance()->post( 'functions/site-heartbeat/executions', array( 'site_id' => WPHubPro_Bridge_Config::get_site_id(), 'secret' => WPHubPro_Bridge_Config::get_site_secret() ) );
+			self::instance()->post( 'site-heartbeat');
 		} catch ( Exception $e ) {
 			WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'error', array(), array(
 				'msg' => $e->getMessage(),

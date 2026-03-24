@@ -101,7 +101,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 		);
 
 		try {
-			$this->post( 'functions/sync-site-meta/executions', $payload );
+			$this->post( 'sync-site-meta', $payload );
 		} catch ( Exception $e ) {
 			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;

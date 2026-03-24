@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.4.3
+ * Version: 2.4.53
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -20,7 +20,7 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_ABSPATH' ) ) {
 	define( 'WPHUBPRO_BRIDGE_ABSPATH', plugin_dir_path( __FILE__ ) );
 }
 if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
-	define( 'WPHUBPRO_BRIDGE_VERSION', '2.4.3' );
+	define( 'WPHUBPRO_BRIDGE_VERSION', '2.4.53' );
 }
 
 // Autoload includes
@@ -30,33 +30,32 @@ foreach ( array(
 	'Error/ValidationError.php',
 	'Error/NotFoundError.php',
 	'Error/RequestError.php',
-	'class-wphubpro-bridge-api.php',
+	'Api/class-wphubpro-bridge-api.php',
 	'class-wphubpro-bridge-crypto.php',
 	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-logger.php',
-	'class-wphubpro-bridge-api-logger.php',
+	'Api/class-wphubpro-bridge-api-logger.php',
 	'class-wphubpro-bridge-auth.php',
 	'class-wphubpro-bridge-connect.php',
+	'Api/class-wphubpro-bridge-updater.php',
 	'class-wphubpro-bridge-connection-status.php',
 	'class-wphubpro-bridge-plugin-bridge-guard.php',
-	'class-wphubpro-bridge-plugin-params.php',
-	'class-wphubpro-bridge-plugin-upgrader-helper.php',
-	'class-wphubpro-bridge-plugins.php',
-	'class-wphubpro-bridge-theme-params.php',
-	'class-wphubpro-bridge-theme-upgrader-helper.php',
-	'class-wphubpro-bridge-themes.php',
-	'class-wphubpro-bridge-sync.php',
+	'Plugin/class-wphubpro-bridge-plugin-params.php',
+	'Plugin/class-wphubpro-bridge-plugin-upgrader-helper.php',
+	'Plugin/class-wphubpro-bridge-plugins.php',
+	'Theme/class-wphubpro-bridge-theme-params.php',
+	'Theme/class-wphubpro-bridge-theme-upgrader-helper.php',
+	'Theme/class-wphubpro-bridge-themes.php',
+	'Api/class-wphubpro-bridge-sync.php',
 	'Cron/interface-cron-job.php',
-	'class-wphubpro-bridge-heartbeat.php',
+	'Api/class-wphubpro-bridge-heartbeat.php',
 	'Cron/Jobs/class-cron-job-heartbeat.php',
-	'class-wphubpro-bridge-health.php',
+	'Api/class-wphubpro-bridge-health.php',
 	'Cron/Jobs/class-cron-job-health.php',
 	'Cron/class-cron-scheduler.php',
 	'class-wphubpro-bridge-details.php',
 	'class-wphubpro-bridge.php',
 	'class-wphubpro-bridge-admin.php',
-	'class-wphubpro-bridge-ajax.php',
-	'class-wphubpro-bridge-frontend.php',
 ) as $file ) {
 	$inc = __DIR__ . '/includes/' . $file;
 	if ( file_exists( $inc ) ) {
@@ -85,9 +84,6 @@ add_action('plugins_loaded', function() {
 	}
 	if (class_exists('WPHubPro_Bridge_Sync')) {
 		WPHubPro_Bridge_Sync::init();
-	}
-	if ( class_exists( 'WPHubPro_Bridge_Frontend' ) && ! is_admin() ) {
-		WPHubPro_Bridge_Frontend::instance();
 	}
 });
 

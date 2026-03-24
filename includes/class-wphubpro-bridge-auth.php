@@ -40,12 +40,6 @@ class WPHubPro_Bridge_Auth {
 	 * @return bool
 	 */
 	public static function cors_headers_for_save_connection( $served, $result, $request, $server ) {
-		$route = $request->get_route();
-		$is_save     = $route && strpos( $route, 'wphubpro/v1/save-connection' ) !== false;
-		$is_exchange = $route && strpos( $route, 'wphubpro/v1/exchange-token' ) !== false;
-		if ( ! $is_save && ! $is_exchange ) {
-			return $served;
-		}
 		$origin = $request->get_header( 'Origin' );
 		if ( $origin ) {
 			$origin = str_replace( array( "\r", "\n" ), '', $origin );
