@@ -44,9 +44,18 @@ class WPHubPro_Bridge_Config {
 	const OPTION_RECOVERY_AGENT_VERSION = 'wphubpro_recovery_agent_version';
 	/** Option: Last bridge update timestamp. */
 	const OPTION_LAST_UPDATE = 'wphubpro_last_update';
+	/** Option: Bridge plugin installed version (JSON: { installed }). */
+	const OPTION_BRIDGE_PLUGIN = 'bridge_plugin';
 
-	const DEFAULT_REDIRECT_BASE_URL = 'https://wphub.pro';
+	const DEFAULT_REDIRECT_BASE_URL = 'https://app.wphub.pro';
 	const DEFAULT_STATUS = 'disconnected';
+
+	/** REST API authentication provider. */
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
+
+
+	/** REST namespace for bridge routes. */
+	const REST_NAMESPACE = 'wphubpro/v1';
 
 	/**
 	 * Appwrite Base URL.
@@ -154,7 +163,7 @@ class WPHubPro_Bridge_Config {
 	}
 
 	/**
-	 * Redirect base URL for connect flow (debug).
+	 * Redirect base URL for connect flow.
 	 *
 	 * @return string
 	 */
@@ -181,6 +190,39 @@ class WPHubPro_Bridge_Config {
 	}
 
 	/**
+	 * Bridge plugin version data. WP options store only installed version.
+	 * Latest version is fetched from WPHub when user clicks "Check for updates".
+	 *
+	 * @return array{installed: string, latest: string}
+	 */
+	public static function get_bridge_plugin_data() {
+		$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '';
+		$raw       = get_option( self::OPTION_BRIDGE_PLUGIN, '' );
+		if ( is_string( $raw ) && $raw !== '' ) {
+			$decoded = json_decode( $raw, true );
+			if ( is_array( $decoded ) && ! empty( $decoded['installed'] ) ) {
+				$installed = $decoded['installed'];
+			}
+		} else {
+			$legacy = get_option( 'bridge_version', '' );
+			if ( $legacy ) {
+				$installed = $legacy;
+			}
+		}
+		return array( 'installed' => $installed, 'latest' => $installed );
+	}
+
+	/**
+	 * Installed bridge plugin version.
+	 *
+	 * @return string
+	 */
+	public static function get_bridge_version() {
+		$data = self::get_bridge_plugin_data();
+		return $data['installed'];
+	}
+
+	/**
 	 * WordPress active plugins list (core option).
 	 *
 	 * @return array
@@ -188,5 +230,21 @@ class WPHubPro_Bridge_Config {
 	public static function get_active_plugins() {
 		$active = get_option( 'active_plugins', array() );
 		return is_array( $active ) ? $active : array();
+	}
+
+	/**
+	 * 
+	 */
+	public static function remove_options() {
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
+		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
+		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
+		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
+		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
+		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
 	}
 }

@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Main bridge class – coordinates feature modules.
+ *
+ * Hook convention (instance-based): private add_hooks() is called from __construct().
+ * Static services (Auth, Sync, Heartbeat) use public static init() → private static add_hooks().
  */
 if ( ! class_exists( 'WPHubPro_Bridge' ) ) {
 
@@ -22,6 +25,9 @@ class WPHubPro_Bridge {
 
 	/** @var WPHubPro_Bridge_Connect */
 	private $connect;
+
+	/** @var WPHubPro_Bridge_Updater */
+	private $updater;
 
 	/** @var WPHubPro_Bridge_Plugins */
 	private $plugins;
@@ -35,9 +41,6 @@ class WPHubPro_Bridge {
 	/** @var WPHubPro_Bridge_Health */
 	private $health;
 
-	/** @var WPHubPro_Bridge_Debug */
-	private $debug;
-
 	public static function instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
@@ -47,66 +50,31 @@ class WPHubPro_Bridge {
 
 	private function __construct() {
 		$this->connect = WPHubPro_Bridge_Connect::instance();
+		$this->updater = WPHubPro_Bridge_Updater::instance();
 		$this->plugins = new WPHubPro_Bridge_Plugins();
 		$this->themes  = new WPHubPro_Bridge_Themes();
 		$this->details = new WPHubPro_Bridge_Details();
 		$this->health  = new WPHubPro_Bridge_Health();
-		$this->debug   = new WPHubPro_Bridge_Debug();
 
+		$this->add_hooks();
+	}
+
+	/**
+	 * Register WordPress hooks.
+	 */
+	private function add_hooks() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
-		add_filter( 'rest_post_dispatch', array( $this, 'log_rest_request' ), 10, 3 );
 	}
 
 	/**
 	 * Register all REST API routes.
 	 */
 	public function register_routes() {
-		$namespace = 'wphubpro/v1';
-		$validate  = array( 'WPHubPro_Bridge_Connect', 'validate_api_key' );
-
-		// Connect (requires manage_options)
-		register_rest_route( $namespace, '/connect', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->connect, 'handle_connect' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
-		// Exchange one-time token for bridge_secret. Validates token (not WP auth) because
-		// the request is cross-origin from Hub and cookies are not sent.
-		register_rest_route( $namespace, '/exchange-token', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->connect, 'handle_exchange_token' ),
-			'permission_callback' => array( $this->connect, 'validate_exchange_token_permission' ),
-			'args'                => array(
-				'connect_token' => array(
-					'required'          => true,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-			),
-		) );
-
-		// Connection status (admin only)
-		register_rest_route( $namespace, '/connection-status', array(
-			'methods'             => 'GET',
-			'callback'            => function () {
-				return rest_ensure_response( WPHubPro_Bridge_Connection_Status::fetch() );
-			},
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
-		// Disconnect (remove from hub, admin only)
-		register_rest_route( $namespace, '/disconnect', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_disconnect' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
+		$this->connect->register_rest_routes();
+		$this->updater->register_rest_routes();
+		
+		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
+		$validate  = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
 
 		// Heartbeat poke (platform can call to verify bridge is reachable)
 		register_rest_route( $namespace, '/heartbeat/poke', array(
@@ -114,169 +82,11 @@ class WPHubPro_Bridge {
 			'callback'            => array( 'WPHubPro_Bridge_Heartbeat', 'handle_poke' ),
 		) );
 
-		// Save connection (api_key, endpoint, project) from platform - validates via X-WPHub-Key
-		register_rest_route( $namespace, '/save-connection', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->connect, 'handle_save_connection' ),
-			'permission_callback' => array( 'WPHubPro_Bridge_Connect', 'validate_api_key' ),
-			'args'                => array(
-				'api_key'        => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'bridge_secret'  => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'site_secret'    => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'encrypted_api_key' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'endpoint'      => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'esc_url_raw',
-				),
-				'project_id'    => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'site_id'       => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-				'heartbeat_url' => array(
-					'required'          => false,
-					'type'              => 'string',
-					'sanitize_callback' => 'esc_url_raw',
-				),
-			),
-		) );
+		// Plugins (list + manage — single registration point).
+		$this->plugins->register_rest_routes();
 
-		// Plugins
-		register_rest_route( $namespace, '/plugins', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->plugins, 'get_plugins_list' ),
-			'permission_callback' => $validate,
-		) );
-		$plugin_args = array(
-			'plugin' => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-			'slug'   => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-		);
-
-		register_rest_route( $namespace, '/plugins/manage/activate', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'activate_plugin' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_args,
-		) );
-		register_rest_route( $namespace, '/plugins/manage/deactivate', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'deactivate_plugin' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_args,
-		) );
-		register_rest_route( $namespace, '/plugins/manage/uninstall', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'uninstall_plugin' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_args,
-		) );
-		$plugin_update_args = array_merge( $plugin_args, array(
-			'zip_url' => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'esc_url_raw',
-			),
-			'zip_base64' => array(
-				'type'              => 'string',
-				'sanitize_callback' => function ( $v ) {
-					return is_string( $v ) ? $v : '';
-				},
-			),
-		) );
-		register_rest_route( $namespace, '/plugins/manage/update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'update_plugin' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_update_args,
-		) );
-		$plugin_version_args = array_merge( $plugin_args, array(
-			'version' => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-		) );
-		register_rest_route( $namespace, '/plugins/manage/install-version', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'install_plugin_version' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_version_args,
-		) );
-		$plugin_zip_args = array_merge( $plugin_args, array(
-			'zip_url' => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'esc_url_raw',
-			),
-			'zip_base64' => array(
-				'type'              => 'string',
-				'sanitize_callback' => function ( $v ) {
-					return is_string( $v ) ? $v : '';
-				},
-			),
-		) );
-		register_rest_route( $namespace, '/plugins/manage/install-from-zip', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->plugins, 'install_plugin_from_zip_url' ),
-			'permission_callback' => $validate,
-			'args'                => $plugin_zip_args,
-		) );
-
-		// Themes
-		register_rest_route( $namespace, '/themes', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->themes, 'get_themes_list' ),
-			'permission_callback' => $validate,
-		) );
-		$theme_args = array(
-			'slug' => array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			),
-		);
-		register_rest_route( $namespace, '/themes/manage/activate', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->themes, 'activate_theme' ),
-			'permission_callback' => $validate,
-			'args'                => $theme_args,
-		) );
-		register_rest_route( $namespace, '/themes/manage/update', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->themes, 'update_theme' ),
-			'permission_callback' => $validate,
-			'args'                => $theme_args,
-		) );
-		register_rest_route( $namespace, '/themes/manage/delete', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this->themes, 'delete_theme' ),
-			'permission_callback' => $validate,
-			'args'                => $theme_args,
-		) );
+		// Themes (list + manage — single registration point).
+		$this->themes->register_rest_routes();
 
 		// Site details (WordPress version, plugin/theme counts, PHP info)
 		register_rest_route( $namespace, '/details', array(
@@ -299,8 +109,6 @@ class WPHubPro_Bridge {
 			'permission_callback' => $validate,
 		) );
 
-		// Feature-specific route registration (placeholders)
-		$this->debug->register_routes( $namespace );
 	}
 
 	/**
@@ -357,22 +165,7 @@ class WPHubPro_Bridge {
 		return rest_ensure_response( array( 'lines' => $last_200, 'file' => $log_file ) );
 	}
 
-	/**
-	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
-	 * Excludes /logs to avoid logging the logs request itself.
-	 *
-	 * @param WP_REST_Response|WP_Error $response Result to send.
-	 * @param WP_REST_Server            $server   Server instance.
-	 * @param WP_REST_Request          $request  Request object.
-	 * @return WP_REST_Response|WP_Error Unchanged response.
-	 */
-	public function log_rest_request( $response, $server, $request ) {
-		$route = $request->get_route();
-		if ( is_null($route) || strpos( $route, 'wphubpro/v1' ) !== false && strpos( $route, '/logs' ) === false && strpos( $route, '/error-log' ) === false ) {
-			WPHubPro_Bridge_Logger::push_api_log( $request, $response );
-		}
-		return $response;
-	}
+	
 }
 
 }
