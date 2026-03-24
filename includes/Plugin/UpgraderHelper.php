@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Plugin;
+
 /**
  * Zip/package handling and Plugin_Upgrader runs for bridge plugin flows.
  *
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shared upgrader + zip URL/base64 logic.
  */
-class WPHubPro_Bridge_Plugin_Upgrader_Helper {
+class Upgrader_Helper {
 
 	/**
 	 * Load admin upgrader dependencies.
@@ -56,11 +58,11 @@ class WPHubPro_Bridge_Plugin_Upgrader_Helper {
 		if ( ! empty( $zip_base64 ) ) {
 			$decoded = base64_decode( $zip_base64, true );
 			if ( $decoded === false || strlen( $decoded ) < 100 ) {
-				return new WP_Error( 'invalid_zip_base64', __( 'Invalid zip_base64 data.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
+				return new \WP_Error( 'invalid_zip_base64', __( 'Invalid zip_base64 data.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 			}
 			$tmp = wp_tempnam( 'wphubpro-bridge-' );
 			if ( ! $tmp || file_put_contents( $tmp, $decoded ) === false ) {
-				return new WP_Error( 'temp_file', __( 'Could not write temporary file.', 'wphubpro-bridge' ), array( 'status' => 500 ) );
+				return new \WP_Error( 'temp_file', __( 'Could not write temporary file.', 'wphubpro-bridge' ), array( 'status' => 500 ) );
 			}
 			return array( 'package' => $tmp, 'temp_path' => $tmp );
 		}
@@ -77,8 +79,8 @@ class WPHubPro_Bridge_Plugin_Upgrader_Helper {
 	 */
 	public static function run_plugin_package( $package, $plugin_file, $action = 'update' ) {
 		self::load_upgrader_dependencies();
-		$skin     = new Automatic_Upgrader_Skin();
-		$upgrader = new Plugin_Upgrader( $skin );
+		$skin     = new \Automatic_Upgrader_Skin();
+		$upgrader = new \Plugin_Upgrader( $skin );
 		return $upgrader->run( array(
 			'package'           => $package,
 			'destination'       => WP_PLUGIN_DIR,

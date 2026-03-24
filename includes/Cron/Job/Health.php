@@ -1,6 +1,10 @@
 <?php
+namespace WPHUBPRO\Cron\Job;
+
+use WPHUBPRO\Cron\JobInterface;
+
 /**
- * WP-Cron job: send bridge heartbeat to the platform.
+ * WP-Cron job: push site health payload to the platform.
  *
  * @package WPHubPro
  */
@@ -10,12 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Scheduling metadata + tick; delegates work to {@see WPHubPro_Bridge_Heartbeat::send_heartbeat()}.
+ * Scheduling metadata + tick; delegates work to {@see \WPHUBPRO\Api\Health::send_health_status()}.
  */
-class WPHubPro_Bridge_Cron_Job_Heartbeat implements WPHubPro_Bridge_Cron_Job_Interface {
+class Health implements JobInterface {
 
 	public static function get_hook_name(): string {
-		return 'wphubpro_bridge_heartbeat';
+		return 'wphubpro_bridge_health_status';
 	}
 
 	public static function get_schedule_slug(): string {
@@ -31,12 +35,12 @@ class WPHubPro_Bridge_Cron_Job_Heartbeat implements WPHubPro_Bridge_Cron_Job_Int
 	}
 
 	public static function should_schedule(): bool {
-		$site_id = WPHubPro_Bridge_Config::get_site_id();
-		$secret  = WPHubPro_Bridge_Config::get_site_secret();
+		$site_id = \WPHUBPRO\Config::get_site_id();
+		$secret  = \WPHUBPRO\Config::get_site_secret();
 		return ! empty( $site_id ) && ! empty( $secret );
 	}
 
 	public static function run(): void {
-		WPHubPro_Bridge_Heartbeat::send_heartbeat();
+		\WPHUBPRO\Api\Health::send_health_status();
 	}
 }

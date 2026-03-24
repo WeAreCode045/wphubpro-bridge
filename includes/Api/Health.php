@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Api;
+
 /**
  * Site health for WPHubPro Bridge.
  *
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site health feature (placeholder).
  */
-class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
+class Health extends API {
 
     private static $instance = null;
 
@@ -66,7 +68,7 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = WPHubPro_Bridge_Config::get_last_update();
+        $last_update = \WPHUBPRO\Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);
@@ -124,8 +126,8 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
     public static function send_health_status() {
         try {
             return self::instance()->post( 'site-health', self::get_health_status() );
-        } catch ( Exception $e ) {
-            WPHubPro_Bridge_Logger::log_action( 'health', 'error', array(), array(
+        } catch ( \Exception $e ) {
+            \WPHUBPRO\Logger::log_action( 'health', 'error', array(), array(
                 'msg' => $e->getMessage(),
             ) );
             return false;
@@ -136,14 +138,14 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
      * Unschedule health cron (call on disconnect).
      */
     public static function unschedule() {
-        WPHubPro_Bridge_Cron::unschedule( 'WPHubPro_Bridge_Cron_Job_Health' );
+        \WPHUBPRO\Cron\Scheduler::unschedule( \WPHUBPRO\Cron\Job\Health::class );
     }
 
     /**
      * Schedule health push with an immediate run (e.g. after save-connection).
      */
     public static function schedule() {
-        WPHubPro_Bridge_Cron::schedule_with_immediate_run( 'WPHubPro_Bridge_Cron_Job_Health' );
+        \WPHUBPRO\Cron\Scheduler::schedule_with_immediate_run( \WPHUBPRO\Cron\Job\Health::class );
     }
 
     private static function get_woo_status(): array {

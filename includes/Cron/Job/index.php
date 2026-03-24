@@ -1,4 +1,4 @@
 <?php
-namespace WPHUBPRO\Cron;
+namespace WPHUBPRO\Cron\Job;
 
 // Silence is golden.

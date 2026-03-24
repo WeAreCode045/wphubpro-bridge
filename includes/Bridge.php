@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * WPHubPro Bridge – main orchestrator.
  *
@@ -17,28 +19,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Hook convention (instance-based): private add_hooks() is called from __construct().
  * Static services (Auth, Sync, Heartbeat) use public static init() → private static add_hooks().
  */
-if ( ! class_exists( 'WPHubPro_Bridge' ) ) {
+if ( ! class_exists( Bridge::class ) ) {
 
-class WPHubPro_Bridge {
+class Bridge {
 
 	private static $instance = null;
 
-	/** @var WPHubPro_Bridge_Connect */
+	/** @var Connect */
 	private $connect;
 
-	/** @var WPHubPro_Bridge_Updater */
+	/** @var \WPHUBPRO\Api\Updater */
 	private $updater;
 
-	/** @var WPHubPro_Bridge_Plugins */
+	/** @var \WPHUBPRO\Plugin\Plugins */
 	private $plugins;
 
-	/** @var WPHubPro_Bridge_Themes */
+	/** @var \WPHUBPRO\Theme\Themes */
 	private $themes;
 
-	/** @var WPHubPro_Bridge_Details */
+	/** @var Details */
 	private $details;
 
-	/** @var WPHubPro_Bridge_Health */
+	/** @var \WPHUBPRO\Api\Health */
 	private $health;
 
 	public static function instance() {
@@ -49,12 +51,12 @@ class WPHubPro_Bridge {
 	}
 
 	private function __construct() {
-		$this->connect = WPHubPro_Bridge_Connect::instance();
-		$this->updater = WPHubPro_Bridge_Updater::instance();
-		$this->plugins = new WPHubPro_Bridge_Plugins();
-		$this->themes  = new WPHubPro_Bridge_Themes();
-		$this->details = new WPHubPro_Bridge_Details();
-		$this->health  = new WPHubPro_Bridge_Health();
+		$this->connect = Connect::instance();
+		$this->updater = \WPHUBPRO\Api\Updater::instance();
+		$this->plugins = new \WPHUBPRO\Plugin\Plugins();
+		$this->themes  = new \WPHUBPRO\Theme\Themes();
+		$this->details = new Details();
+		$this->health  = new \WPHUBPRO\Api\Health();
 
 		$this->add_hooks();
 	}
@@ -73,13 +75,13 @@ class WPHubPro_Bridge {
 		$this->connect->register_rest_routes();
 		$this->updater->register_rest_routes();
 		
-		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
-		$validate  = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
+		$namespace = Config::REST_NAMESPACE;
+		$validate  = array( \WPHUBPRO\Auth\Auth::class, 'validate_api_key' );
 
 		// Heartbeat poke (platform can call to verify bridge is reachable)
 		register_rest_route( $namespace, '/heartbeat/poke', array(
 			'methods'             => array( 'GET', 'POST' ),
-			'callback'            => array( 'WPHubPro_Bridge_Heartbeat', 'handle_poke' ),
+			'callback'            => array( \WPHUBPRO\Api\Heartbeat::class, 'handle_poke' ),
 		) );
 
 		// Plugins (list + manage — single registration point).
@@ -126,7 +128,7 @@ class WPHubPro_Bridge {
 	 * @return WP_REST_Response
 	 */
 	public function get_logs( $request ) {
-		$log = WPHubPro_Bridge_Config::get_log();
+		$log = Config::get_log();
 		if ( ! is_array( $log ) ) {
 			$log = array();
 		}

@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Error;
+
 /**
  * Not found error for WPHubPro Bridge.
  *

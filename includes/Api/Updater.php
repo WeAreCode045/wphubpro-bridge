@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Api;
+
 /**
  * Updater: Bridge updates itself.
  *
@@ -10,9 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see WPHubPro_Bridge_Cron} and {@see WPHubPro_Bridge_Cron_Job_Heartbeat}.
+ * REST handlers for checking and applying bridge plugin updates from the platform.
  */
-class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
+class Updater extends API {
 
 	private static $instance = null;
 	private static $path = '/bridge/';
@@ -29,7 +31,7 @@ class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 	 */
 	public function register_rest_routes() {
 
-		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
+		$namespace = \WPHUBPRO\Config::REST_NAMESPACE;
 		register_rest_route( $namespace, self::$path . 'check-update', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'handle_update_check' ),
@@ -55,7 +57,7 @@ class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 		try {
 			$response = self::instance()->post( 'bridge-download-url');
 			$latest_version = self::get_latest_version($response);
-			$installed_version = WPHubPro_Bridge_Config::get_bridge_version();
+			$installed_version = \WPHUBPRO\Config::get_bridge_version();
 			$update_available = ! empty( $installed_version ) && version_compare( $latest_version, $installed_version, '>' );
 			return rest_ensure_response( array(
 				'success'          => true,
@@ -63,8 +65,8 @@ class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 				'download_url'     => $resp_body['downloadUrl'] ?? '',
 				'update_available' => $update_available,
 			) );
-		} catch ( Exception $e ) {
-			WPHubPro_Bridge_Logger::log_action( 'handle_update_check', 'error', array(), array(
+		} catch ( \Exception $e ) {
+			\WPHUBPRO\Logger::log_action( 'handle_update_check', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
@@ -83,22 +85,22 @@ class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 			$download_url = self::get_download_url($response);
 			
 			// Install the bridge from the download URL.
-			$request = new WP_REST_Request( 'POST', '/wphubpro/v1/plugins/manage/install-from-zip' );
+			$request = new \WP_REST_Request( 'POST', '/wphubpro/v1/plugins/manage/install-from-zip' );
 			$request->set_param( 'zip_url', $download_url );
 			$request->set_param( 'plugin', 'wphubpro-bridge/wphubpro-bridge.php' );
-			$plugins = new WPHubPro_Bridge_Plugins();
+			$plugins = new \WPHUBPRO\Plugin\Plugins();
 			$result  = $plugins->install_plugin_from_zip_url( $request );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
 			// Update the bridge version.
 			if ( !self::update_bridge_version($latest_version) ) {
-				return new WP_Error( 'update_failed', 'Could not update bridge version.', array( 'status' => 502 ) );
+				return new \WP_Error( 'update_failed', 'Could not update bridge version.', array( 'status' => 502 ) );
 			}
 
 			return rest_ensure_response( array( 'success' => true, 'message' => 'Bridge updated successfully.' ) );
-		} catch ( Exception $e ) {
-			WPHubPro_Bridge_Logger::log_action( 'handle_update_check', 'error', array(), array(
+		} catch ( \Exception $e ) {
+			\WPHUBPRO\Logger::log_action( 'handle_update_check', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
@@ -115,7 +117,7 @@ class WPHubPro_Bridge_Updater extends WPHubPro_Bridge_API {
 			return false;
 			
 		}
-		update_option( WPHubPro_Bridge_Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( array( 'installed' => $version ) ) );
+		update_option( \WPHUBPRO\Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( array( 'installed' => $version ) ) );
 		return true;
 	}
 

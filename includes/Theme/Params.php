@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Theme;
+
 /**
  * REST args and slug parsing for theme management.
  *
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Theme REST request helpers.
  */
-class WPHubPro_Bridge_Theme_Params {
+class Params {
 
 	/**
 	 * @return array<string, array<string, mixed>>
@@ -60,11 +62,11 @@ class WPHubPro_Bridge_Theme_Params {
 	 */
 	public static function validate_theme_slug( $slug ) {
 		if ( empty( $slug ) ) {
-			return new WP_Error( 'invalid_theme', 'Invalid or missing theme slug' );
+			return new \WP_Error( 'invalid_theme', 'Invalid or missing theme slug' );
 		}
 		$theme = wp_get_theme( $slug );
 		if ( ! $theme->exists() ) {
-			return new WP_Error( 'theme_not_found', 'Theme not found: ' . $slug );
+			return new \WP_Error( 'theme_not_found', 'Theme not found: ' . $slug );
 		}
 		return null;
 	}

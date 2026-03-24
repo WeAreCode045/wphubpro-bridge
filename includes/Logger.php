@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * Appwrite action logger for WPHubPro Bridge.
  *
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs actions to Appwrite for audit trail.
  */
-class WPHubPro_Bridge_Logger {
+class Logger {
 
 	/**
 	 * Log an action to the site's action_log in Appwrite.
@@ -42,7 +44,7 @@ class WPHubPro_Bridge_Logger {
 		
 		try {
 			// Send log action to Platform.
-			WPHubPro_Bridge_Api_Logger::instance()->send_log_action( $action, $endpoint, $request, $response );
+			\WPHUBPRO\Api\ApiLogger::instance()->send_log_action( $action, $endpoint, $request, $response );
 		} catch ( \Exception $e ) {
 			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
 		}
@@ -93,10 +95,10 @@ class WPHubPro_Bridge_Logger {
 			'response' => $res_data,
 		);
 
-		$log = WPHubPro_Bridge_Config::get_log();
+		$log = Config::get_log();
 		array_unshift( $log, $entry );
 		$log = array_slice( $log, 0, 20 );
-		update_option( WPHubPro_Bridge_Config::OPTION_LOG, $log );
+		update_option( Config::OPTION_LOG, $log );
 	}
 
 	/**

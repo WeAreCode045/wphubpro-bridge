@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Api;
+
 /**
  * Sync plugins_meta, themes_meta, and wp_meta to Appwrite sites collection.
  *
@@ -17,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Static bootstrap: {@see init()} → {@see add_hooks()}. Deferred shutdown sync is registered from {@see schedule_sync()}.
  */
-class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
+class Sync extends API {
 
 	private static $instance = null;
 
@@ -93,7 +95,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 		$plugins_meta = self::get_plugins_meta();
 		error_log(print_r($plugins_meta, true));
 		$themes_meta  = self::get_themes_meta();
-		$wp_meta      = class_exists( 'WPHubPro_Bridge_Details' ) ? WPHubPro_Bridge_Details::get_wp_meta_array() : array();
+		$wp_meta      = class_exists( \WPHUBPRO\Details::class ) ? \WPHUBPRO\Details::get_wp_meta_array() : array();
 
 		$payload = array(
 			'plugins_meta' => $plugins_meta,
@@ -103,13 +105,13 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 
 		try {
 			$this->post( 'sync-site-meta', $payload );
-		} catch ( Exception $e ) {
-			WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
+		} catch ( \Exception $e ) {
+			\WPHUBPRO\Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;
 		}
 		
 
-		WPHubPro_Bridge_Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ), 'wp_meta' => ! empty( $wp_meta ) ) );
+		\WPHUBPRO\Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ), 'wp_meta' => ! empty( $wp_meta ) ) );
 		return true;
 	}
 
@@ -123,7 +125,7 @@ class WPHubPro_Bridge_Sync extends WPHubPro_Bridge_API {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all_plugins   = get_plugins();
-		$active_plugins = WPHubPro_Bridge_Config::get_active_plugins();
+		$active_plugins = \WPHUBPRO\Config::get_active_plugins();
 		if ( function_exists( 'wp_update_plugins' ) ) {
 			wp_update_plugins();
 		}

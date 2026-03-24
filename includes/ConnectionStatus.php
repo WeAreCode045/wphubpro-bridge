@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * Simple connection status for WPHubPro Bridge admin.
  * Returns wphub_status from options (connected/disconnected). No Appwrite fetch.
@@ -13,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns local connection state from options.
  */
-class WPHubPro_Bridge_Connection_Status {
+class ConnectionStatus {
 
 	/**
 	 * Compare two semantic versions. Returns 1 if a > b, -1 if a < b, 0 if equal.
@@ -46,18 +48,18 @@ class WPHubPro_Bridge_Connection_Status {
 	 * @return array{connected: bool, last_heartbeat_at?: string, site_id?: string, bridge_version?: string, latest_version?: string, update_available?: bool}
 	 */
 	public static function fetch() {
-		$site_id   = WPHubPro_Bridge_Config::get_site_id();
-		$status    = WPHubPro_Bridge_Config::get_status();
+		$site_id   = Config::get_site_id();
+		$status    = Config::get_status();
 		$connected = $status === 'connected' && ! empty( $site_id );
 
-		$plugin_data = WPHubPro_Bridge_Config::get_bridge_plugin_data();
+		$plugin_data = Config::get_bridge_plugin_data();
 		$installed   = $plugin_data['installed'];
 		$latest      = $plugin_data['latest'];
 		$update_available = ! empty( $latest ) && ! empty( $installed ) && self::compare_versions( $latest, $installed ) > 0;
 
 		return array(
 			'connected'         => $connected,
-			'last_heartbeat_at' => WPHubPro_Bridge_Config::get_last_heartbeat_at(),
+			'last_heartbeat_at' => Config::get_last_heartbeat_at(),
 			'site_id'           => $site_id ?: '',
 			'bridge_version'    => $installed,
 			'latest_version'    => $latest,

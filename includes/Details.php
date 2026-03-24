@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * Site details for WPHubPro Bridge.
  *
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site details: WordPress version, plugin/theme counts, PHP info.
  */
-class WPHubPro_Bridge_Details {
+class Details {
 
 	/**
 	 * Get site details as array (for sync to Hub wp_meta).
@@ -61,7 +63,7 @@ class WPHubPro_Bridge_Details {
 			'php_check'         => $php_info,
 		);
 
-		WPHubPro_Bridge_Logger::log_action( 'get', 'details', array(), $response );
+		Logger::log_action( 'get', 'details', array(), $response );
 
 		return rest_ensure_response( $response );
 	}

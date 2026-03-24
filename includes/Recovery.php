@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * Site recovery for WPHubPro Bridge.
  *
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site recovery feature (placeholder).
  */
-class WPHubPro_Bridge_Recovery {
+class Recovery {
 
     public function backup_plugin(string $slug) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -28,7 +30,7 @@ class WPHubPro_Bridge_Recovery {
             delete_transient($lock_key);
 
             // Throw hier een exception die die later dit response teruggeeft
-            return new WP_REST_Response([ 'ok' => false, 'error' => 'backup_failed' ], 500);
+            return new \WP_REST_Response([ 'ok' => false, 'error' => 'backup_failed' ], 500);
         }
 
         $rolled_back = false;
@@ -68,7 +70,7 @@ class WPHubPro_Bridge_Recovery {
     }
 
 
-    public static function get_health_status(WP_REST_Request $request) {
+    public static function get_health_status( \WP_REST_Request $request ) {
         $t0 = microtime(true);
 
         $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
@@ -112,7 +114,7 @@ class WPHubPro_Bridge_Recovery {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = WPHubPro_Bridge_Config::get_last_update();
+        $last_update = Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);
@@ -161,7 +163,7 @@ class WPHubPro_Bridge_Recovery {
             'debug_log_tail' => $debug_tail,
         ];
 
-        return new WP_REST_Response($payload, 200);
+        return new \WP_REST_Response($payload, 200);
     }
 
     private static function get_woo_status(): array {

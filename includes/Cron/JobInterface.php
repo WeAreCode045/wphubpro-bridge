@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Cron;
+
 /**
  * Contract for a recurring WP-Cron job (static job class).
  *
@@ -10,9 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Implement on a small class under includes/Cron/Jobs/; keep domain logic in feature classes.
+ * Implement on a small class under includes/Cron/Job/; keep domain logic in feature classes.
  */
-interface WPHubPro_Bridge_Cron_Job_Interface {
+interface JobInterface {
 
 	public static function get_hook_name(): string;
 

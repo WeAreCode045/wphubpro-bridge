@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO;
+
 /**
  * Connect & site linking for WPHubPro Bridge.
  *
@@ -12,26 +14,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles site connect, connection storage, and admin UI.
  */
-class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
+class Connect extends \WPHUBPRO\Api\API {
 
 	/**
 	 * Instance of the class.
-	 * @var WPHubPro_Bridge_Connect|null
+	 * @var Connect|null
 	 */
 	private static $instance = null;
 
 	/**
-	 * Instance of WPHubPro_Bridge_Sync.
-	 * @var WPHubPro_Bridge_Sync
+	 * Instance of \WPHUBPRO\Api\Sync.
+	 * @var \WPHUBPRO\Api\Sync
 	 */
 	private $sync;
 
 	/**
 	 * Get the instance of the class.
 	 *
-	 * @return WPHubPro_Bridge_Connect
+	 * @return Connect
 	 */
-	public static function instance() : WPHubPro_Bridge_Connect {
+	public static function instance() : Connect {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -39,16 +41,16 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	}
 
 	private function __construct() {
-		$this->sync = WPHubPro_Bridge_Sync::instance();
+		$this->sync = \WPHUBPRO\Api\Sync::instance();
 	}
 
 	/**
 	 * Register REST routes for connect, disconnect, save-connection, redirect settings, and bridge updates.
 	 */
 	public function register_rest_routes() {
-		WPHubPro_Bridge_Auth::init();
+		\WPHUBPRO\Auth\Auth::init();
 
-		$namespace = WPHubPro_Bridge_Config::REST_NAMESPACE;
+		$namespace = Config::REST_NAMESPACE;
 
 		// Connect (requires manage_options)
 		register_rest_route( $namespace, '/connect', array(
@@ -63,8 +65,8 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 		// the request is cross-origin from Hub and cookies are not sent.
 		register_rest_route( $namespace, '/exchange-token', array(
 			'methods'             => 'GET',
-			'callback'            => array( 'WPHubPro_Bridge_Auth', 'handle_exchange_token' ),
-			'permission_callback' => array( 'WPHubPro_Bridge_Auth', 'validate_exchange_token_permission' ),
+			'callback'            => array( \WPHUBPRO\Auth\Auth::class, 'handle_exchange_token' ),
+			'permission_callback' => array( \WPHUBPRO\Auth\Auth::class, 'validate_exchange_token_permission' ),
 			'args'                => array(
 				'connect_token' => array(
 					'required'          => true,
@@ -124,7 +126,7 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 		register_rest_route( $namespace, '/save-connection', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'handle_save_connection' ),
-			'permission_callback' => array( 'WPHubPro_Bridge_Auth', 'validate_api_key' ),
+			'permission_callback' => array( \WPHUBPRO\Auth\Auth::class, 'validate_api_key' ),
 			'args'                => array(
 				'api_key'           => array(
 					'required'          => false,
@@ -176,7 +178,7 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	 * @return WP_REST_Response
 	 */
 	public function handle_connection_status() {
-		return rest_ensure_response( WPHubPro_Bridge_Connection_Status::fetch() );
+		return rest_ensure_response( ConnectionStatus::fetch() );
 	}
 
 	/**
@@ -185,9 +187,9 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	 * @return array{success: bool}
 	 */
 	public function handle_disconnect() {
-		WPHubPro_Bridge_Config::remove_options();
-		WPHubPro_Bridge_Heartbeat::unschedule();
-		WPHubPro_Bridge_Health::unschedule();
+		Config::remove_options();
+		\WPHUBPRO\Api\Heartbeat::unschedule();
+		\WPHUBPRO\Api\Health::unschedule();
 		return array( 'success' => true );
 	}
 
@@ -211,44 +213,44 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 
 		$bridge_secret_to_store = $bridge_secret ?: $api_key;
 		if ( empty( $bridge_secret_to_store ) ) {
-			return new WP_Error( 'missing_api_key', 'api_key or bridge_secret is required', array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_api_key', 'api_key or bridge_secret is required', array( 'status' => 400 ) );
 		}
-		// Store plaintext only – WPHubPro_Bridge_Auth::validate_api_key compares X-WPHub-Key with stored. encrypted_api_key is for Hub storage.
+		// Store plaintext only – \WPHUBPRO\Auth\Auth::validate_api_key compares X-WPHub-Key with stored. encrypted_api_key is for Hub storage.
 		$bridge_secret_to_store = sanitize_text_field( $bridge_secret_to_store );
-		if ( class_exists( 'WPHubPro_Bridge_Crypto' ) ) {
-			WPHubPro_Bridge_Crypto::encrypt_and_store( WPHubPro_Bridge_Config::OPTION_API_KEY, $bridge_secret_to_store );
+		if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+			Crypto::encrypt_and_store( Config::OPTION_API_KEY, $bridge_secret_to_store );
 		} else {
-			update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, $bridge_secret_to_store );
+			update_option( Config::OPTION_API_KEY, $bridge_secret_to_store );
 		}
 		if ( ! empty( $site_secret ) ) {
 			$site_secret = sanitize_text_field( $site_secret );
-			if ( class_exists( 'WPHubPro_Bridge_Crypto' ) ) {
-				WPHubPro_Bridge_Crypto::encrypt_and_store( WPHubPro_Bridge_Config::OPTION_SITE_SECRET, $site_secret );
+			if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+				Crypto::encrypt_and_store( Config::OPTION_SITE_SECRET, $site_secret );
 			} else {
-				update_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET, $site_secret );
+				update_option( Config::OPTION_SITE_SECRET, $site_secret );
 			}
 		} else {
-			delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
+			delete_option( Config::OPTION_SITE_SECRET );
 		}
 		if ( ! empty( $endpoint ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL, untrailingslashit( $endpoint ) );
+			update_option( Config::OPTION_API_BASE_URL, untrailingslashit( $endpoint ) );
 		}
 		if ( ! empty( $project_id ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID, $project_id );
+			update_option( Config::OPTION_PROJECT_ID, $project_id );
 		}
 		if ( ! empty( $site_id ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
+			update_option( Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
 		}
 		if ( ! empty( $heartbeat_url ) ) {
-			update_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL, esc_url_raw( untrailingslashit( $heartbeat_url ) ) );
+			update_option( Config::OPTION_HEARTBEAT_URL, esc_url_raw( untrailingslashit( $heartbeat_url ) ) );
 		} else {
-			delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
+			delete_option( Config::OPTION_HEARTBEAT_URL );
 		}
-		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
+		update_option( Config::OPTION_STATUS, 'connected' );
 
 		// Initial plugin/theme sync after connect
-		if ( class_exists( 'WPHubPro_Bridge_Sync' ) ) {
-			WPHubPro_Bridge_Sync::schedule_sync();
+		if ( class_exists( \WPHUBPRO\Api\Sync::class ) ) {
+			\WPHUBPRO\Api\Sync::schedule_sync();
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );
@@ -262,10 +264,10 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	public function handle_connect() {
 		$bridge_secret = wp_generate_password( 64, true, true );
 		$connect_token = wp_generate_password( 32, false );
-		if ( class_exists( 'WPHubPro_Bridge_Crypto' ) ) {
-			WPHubPro_Bridge_Crypto::encrypt_and_store( WPHubPro_Bridge_Config::OPTION_API_KEY, $bridge_secret );
+		if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+			Crypto::encrypt_and_store( Config::OPTION_API_KEY, $bridge_secret );
 		} else {
-			update_option( WPHubPro_Bridge_Config::OPTION_API_KEY, $bridge_secret );
+			update_option( Config::OPTION_API_KEY, $bridge_secret );
 		}
 		set_transient( 'wphubpro_connect_' . $connect_token, $bridge_secret, 5 * MINUTE_IN_SECONDS );
 		$params = array(
@@ -273,7 +275,7 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 			'user_login'    => wp_get_current_user()->user_login,
 			'connect_token' => $connect_token,
 		);
-		$base    = WPHubPro_Bridge_Config::get_redirect_base_url();
+		$base    = Config::get_redirect_base_url();
 		$base    = untrailingslashit( $base );
 		$redirect = $base . '/#' . add_query_arg( $params, '/connect-success' );
 		return array( 'redirect' => $redirect );
@@ -285,8 +287,8 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	 * @return WP_REST_Response
 	 */
 	public function get_redirect_settings() {
-		$current = get_option( WPHubPro_Bridge_Config::OPTION_REDIRECT_BASE_URL, '' );
-		$default = WPHubPro_Bridge_Config::DEFAULT_REDIRECT_BASE_URL;
+		$current = get_option( Config::OPTION_REDIRECT_BASE_URL, '' );
+		$default = Config::DEFAULT_REDIRECT_BASE_URL;
 		$use_default = ( $current === '' || $current === $default );
 		return rest_ensure_response( array(
 			'use_default'  => $use_default,
@@ -304,7 +306,7 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 	public function save_redirect_settings( $request ) {
 		$use_default = $request->get_param( 'use_default' );
 		if ( $use_default ) {
-			delete_option( WPHubPro_Bridge_Config::OPTION_REDIRECT_BASE_URL );
+			delete_option( Config::OPTION_REDIRECT_BASE_URL );
 			return rest_ensure_response( array(
 				'success'     => true,
 				'use_default' => true,
@@ -314,9 +316,9 @@ class WPHubPro_Bridge_Connect extends WPHubPro_Bridge_API {
 		$custom_url = is_string( $custom_url ) ? trim( $custom_url ) : '';
 		$custom_url = untrailingslashit( esc_url_raw( $custom_url ) );
 		if ( empty( $custom_url ) || strpos( $custom_url, 'https://' ) !== 0 ) {
-			return new WP_Error( 'invalid_url', 'Custom URL must be a valid HTTPS URL.', array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_url', 'Custom URL must be a valid HTTPS URL.', array( 'status' => 400 ) );
 		}
-		update_option( WPHubPro_Bridge_Config::OPTION_REDIRECT_BASE_URL, $custom_url );
+		update_option( Config::OPTION_REDIRECT_BASE_URL, $custom_url );
 		return rest_ensure_response( array(
 			'success'     => true,
 			'use_default' => false,

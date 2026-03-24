@@ -1,4 +1,6 @@
 <?php
+namespace WPHUBPRO\Auth;
+
 /**
  * REST authentication for WPHubPro Bridge (X-WPHub-Key, connect-token exchange, CORS).
  *
@@ -12,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Hub→Bridge REST auth, one-time connect token exchange, and CORS for those routes.
  *
- * Static-only: call init() once (e.g. from WPHubPro_Bridge_Connect::register_rest_routes).
+ * Static-only: call init() once (e.g. from \WPHUBPRO\Connect::register_rest_routes).
  */
-class WPHubPro_Bridge_Auth {
+class Auth {
 
 	/**
 	 * Bootstrap: attach CORS and related filters.
@@ -62,7 +64,7 @@ class WPHubPro_Bridge_Auth {
 	 * @return bool
 	 */
 	public static function validate_api_key() {
-		$stored_key   = WPHubPro_Bridge_Config::get_api_key();
+		$stored_key   = \WPHUBPRO\Config::get_api_key();
 		$provided_key = isset( $_SERVER['HTTP_X_WPHUB_KEY'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_WPHUB_KEY'] ) ) : '';
 		if ( empty( $stored_key ) || empty( $provided_key ) ) {
 			return false;
@@ -118,12 +120,12 @@ class WPHubPro_Bridge_Auth {
 	public static function handle_exchange_token( $request ) {
 		$connect_token = $request->get_param( 'connect_token' );
 		if ( empty( $connect_token ) ) {
-			return new WP_Error( 'missing_token', 'connect_token is required', array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_token', 'connect_token is required', array( 'status' => 400 ) );
 		}
 		$transient_key = 'wphubpro_connect_' . sanitize_text_field( $connect_token );
 		$bridge_secret = get_transient( $transient_key );
 		if ( $bridge_secret === false ) {
-			return new WP_Error( 'invalid_token', 'Token expired or invalid', array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_token', 'Token expired or invalid', array( 'status' => 400 ) );
 		}
 		delete_transient( $transient_key );
 		return rest_ensure_response( array( 'bridge_secret' => $bridge_secret ) );
