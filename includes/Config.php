@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
 
 /**
  * Central config for WPHubPro Bridge options.
@@ -53,7 +53,7 @@ class Config {
 	const DEFAULT_STATUS = 'disconnected';
 
 	/** REST API authentication provider. */
-	const REST_API_AUTH_PROVIDER = array( 'WPHUBPRO\\Auth\\Auth', 'validate_api_key' );
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro\\Auth\\Auth', 'validate_api_key' );
 
 
 	/** REST namespace for bridge routes. */

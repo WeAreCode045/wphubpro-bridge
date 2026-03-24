@@ -1,7 +1,7 @@
 <?php
-namespace WPHUBPRO\Error;
+namespace WPHubPro\Error;
 
-use WPHUBPRO\Logger;
+use WPHubPro\Logger;
 
 /**
  * Base exception for WPHubPro Bridge that logs via Logger.
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Base error class. On construction, logs the error via \WPHUBPRO\Logger::log_action().
+ * Base error class. On construction, logs the error via Logger::log_action().
  */
 class BaseError extends \Exception {
 

@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
 
 /**
  * Encrypt/decrypt helpers using WordPress wp_salt().

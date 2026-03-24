@@ -1,5 +1,9 @@
 <?php
-namespace WPHUBPRO\Api;
+namespace WPHubPro\Api;
+
+use WPHubPro\Config;
+use WPHubPro\Logger;
+use WPHubPro\Plugin\Plugins;
 
 /**
  * Updater: Bridge updates itself.
@@ -14,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * REST handlers for checking and applying bridge plugin updates from the platform.
  */
-class Updater extends API {
+class Updater extends Api_Base {
 
 	private static $instance = null;
 	private static $path = '/bridge/';
@@ -31,7 +35,7 @@ class Updater extends API {
 	 */
 	public function register_rest_routes() {
 
-		$namespace = \WPHUBPRO\Config::REST_NAMESPACE;
+		$namespace = Config::REST_NAMESPACE;
 		register_rest_route( $namespace, self::$path . 'check-update', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'handle_update_check' ),
@@ -57,7 +61,7 @@ class Updater extends API {
 		try {
 			$response = self::instance()->post( 'bridge-download-url');
 			$latest_version = self::get_latest_version($response);
-			$installed_version = \WPHUBPRO\Config::get_bridge_version();
+			$installed_version = Config::get_bridge_version();
 			$update_available = ! empty( $installed_version ) && version_compare( $latest_version, $installed_version, '>' );
 			return rest_ensure_response( array(
 				'success'          => true,
@@ -66,7 +70,7 @@ class Updater extends API {
 				'update_available' => $update_available,
 			) );
 		} catch ( \Exception $e ) {
-			\WPHUBPRO\Logger::log_action( 'handle_update_check', 'error', array(), array(
+			Logger::log_action( 'handle_update_check', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
@@ -88,7 +92,7 @@ class Updater extends API {
 			$request = new \WP_REST_Request( 'POST', '/wphubpro/v1/plugins/manage/install-from-zip' );
 			$request->set_param( 'zip_url', $download_url );
 			$request->set_param( 'plugin', 'wphubpro-bridge/wphubpro-bridge.php' );
-			$plugins = new \WPHUBPRO\Plugin\Plugins();
+			$plugins = new Plugins();
 			$result  = $plugins->install_plugin_from_zip_url( $request );
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -100,7 +104,7 @@ class Updater extends API {
 
 			return rest_ensure_response( array( 'success' => true, 'message' => 'Bridge updated successfully.' ) );
 		} catch ( \Exception $e ) {
-			\WPHUBPRO\Logger::log_action( 'handle_update_check', 'error', array(), array(
+			Logger::log_action( 'handle_update_check', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
@@ -117,7 +121,7 @@ class Updater extends API {
 			return false;
 			
 		}
-		update_option( \WPHUBPRO\Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( array( 'installed' => $version ) ) );
+		update_option( Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( array( 'installed' => $version ) ) );
 		return true;
 	}
 

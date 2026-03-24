@@ -1,7 +1,9 @@
 <?php
-namespace WPHUBPRO\Cron\Job;
+namespace WPHubPro\Cron\Job;
 
-use WPHUBPRO\Cron\JobInterface;
+use WPHubPro\Api\Heartbeat as ApiHeartbeat;
+use WPHubPro\Config;
+use WPHubPro\Cron\JobInterface;
 
 /**
  * WP-Cron job: send bridge heartbeat to the platform.
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Scheduling metadata + tick; delegates work to {@see \WPHUBPRO\Api\Heartbeat::send_heartbeat()}.
+ * Scheduling metadata + tick; delegates work to {@see ApiHeartbeat::send_heartbeat()}.
  */
 class Heartbeat implements JobInterface {
 
@@ -35,12 +37,12 @@ class Heartbeat implements JobInterface {
 	}
 
 	public static function should_schedule(): bool {
-		$site_id = \WPHUBPRO\Config::get_site_id();
-		$secret  = \WPHUBPRO\Config::get_site_secret();
+		$site_id = Config::get_site_id();
+		$secret  = Config::get_site_secret();
 		return ! empty( $site_id ) && ! empty( $secret );
 	}
 
 	public static function run(): void {
-		\WPHUBPRO\Api\Heartbeat::send_heartbeat();
+		ApiHeartbeat::send_heartbeat();
 	}
 }

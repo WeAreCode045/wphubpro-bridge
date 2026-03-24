@@ -8,6 +8,12 @@
  * Author URI: https://wphub.pro
  */
 
+use WPHubPro\Admin\Admin;
+use WPHubPro\Api\Sync;
+use WPHubPro\Autoloader;
+use WPHubPro\Bridge;
+use WPHubPro\Config;
+use WPHubPro\Cron\Scheduler;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -25,21 +31,21 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
 
 require_once WPHUBPRO_BRIDGE_ABSPATH . 'src/Autoloader.php';
 
-\WPHUBPRO\Autoloader::register();
+Autoloader::register();
 
 // Main loader
 add_action('plugins_loaded', function() {
-	if ( class_exists( \WPHUBPRO\Bridge::class ) ) {
-		\WPHUBPRO\Bridge::instance();
+	if ( class_exists( Bridge::class ) ) {
+		Bridge::instance();
 	}
-	if ( class_exists( \WPHUBPRO\Admin\Admin::class ) && is_admin() ) {
-		add_action( 'init', array( \WPHUBPRO\Admin\Admin::instance(), 'init' ) );
+	if ( class_exists( Admin::class ) && is_admin() ) {
+		add_action( 'init', array( Admin::instance(), 'init' ) );
 	}
-	if ( class_exists( \WPHUBPRO\Cron\Scheduler::class ) ) {
-		\WPHUBPRO\Cron\Scheduler::init();
+	if ( class_exists( Scheduler::class ) ) {
+		Scheduler::init();
 	}
-	if ( class_exists( \WPHUBPRO\Api\Sync::class ) ) {
-		\WPHUBPRO\Api\Sync::init();
+	if ( class_exists( Sync::class ) ) {
+		Sync::init();
 	}
 });
 
@@ -58,7 +64,7 @@ register_deactivation_hook(__FILE__, function() {
 function wphubpro_bridge_ensure_recovery_agent() {
 	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
 	$data = array( 'installed' => $bridge_version );
-	update_option( \WPHUBPRO\Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
+	update_option( Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
 
 	$source = WPHUBPRO_BRIDGE_ABSPATH . 'recovery/wphubpro-recovery-agent.php';
 	if ( ! file_exists( $source ) ) {
@@ -72,12 +78,12 @@ function wphubpro_bridge_ensure_recovery_agent() {
 		return;
 	}
 	$dest = $mu_dir . '/wphubpro-recovery-agent.php';
-	$installed = \WPHUBPRO\Config::get_recovery_agent_version();
+	$installed = Config::get_recovery_agent_version();
 	if ( $installed === $bridge_version && file_exists( $dest ) ) {
 		return;
 	}
 	if ( copy( $source, $dest ) ) {
-		update_option( \WPHUBPRO\Config::OPTION_RECOVERY_AGENT_VERSION, $bridge_version );
+		update_option( Config::OPTION_RECOVERY_AGENT_VERSION, $bridge_version );
 	}
 }
 

@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Plugin;
+namespace WPHubPro\Plugin;
 
 /**
  * REST argument definitions and plugin/slug parsing for plugin management.

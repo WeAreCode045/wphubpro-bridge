@@ -1,5 +1,8 @@
 <?php
-namespace WPHUBPRO\Auth;
+namespace WPHubPro\Auth;
+
+use WPHubPro\Config;
+use WPHubPro\Connect;
 
 /**
  * REST authentication for WPHubPro Bridge (X-WPHub-Key, connect-token exchange, CORS).
@@ -14,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Hub→Bridge REST auth, one-time connect token exchange, and CORS for those routes.
  *
- * Static-only: call init() once (e.g. from \WPHUBPRO\Connect::register_rest_routes).
+ * Static-only: call init() once (e.g. from Connect::register_rest_routes).
  */
 class Auth {
 
@@ -64,7 +67,7 @@ class Auth {
 	 * @return bool
 	 */
 	public static function validate_api_key() {
-		$stored_key   = \WPHUBPRO\Config::get_api_key();
+		$stored_key   = Config::get_api_key();
 		$provided_key = isset( $_SERVER['HTTP_X_WPHUB_KEY'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_WPHUB_KEY'] ) ) : '';
 		if ( empty( $stored_key ) || empty( $provided_key ) ) {
 			return false;

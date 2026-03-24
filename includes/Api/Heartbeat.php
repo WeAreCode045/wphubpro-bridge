@@ -1,5 +1,10 @@
 <?php
-namespace WPHUBPRO\Api;
+namespace WPHubPro\Api;
+
+use WPHubPro\Config;
+use WPHubPro\Cron\Job\Heartbeat as CronHeartbeatJob;
+use WPHubPro\Cron\Scheduler;
+use WPHubPro\Logger;
 
 /**
  * Heartbeat: Bridge sends heartbeat to Appwrite every minute.
@@ -13,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see \WPHUBPRO\Cron\Scheduler} and {@see \WPHUBPRO\Cron\Job\Heartbeat}.
+ * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see Scheduler} and {@see CronHeartbeatJob}.
  */
-class Heartbeat extends API {
+class Heartbeat extends Api_Base {
 
 	private static $instance = null;
 
@@ -27,10 +32,10 @@ class Heartbeat extends API {
 	}
 
 	/**
-	 * Legacy entry point: delegates to {@see \WPHUBPRO\Cron\Scheduler::init()}.
+	 * Legacy entry point: delegates to {@see Scheduler::init()}.
 	 */
 	public static function init() {
-		\WPHUBPRO\Cron\Scheduler::init();
+		Scheduler::init();
 	}
 
 	/**
@@ -42,14 +47,14 @@ class Heartbeat extends API {
 		try {
 			self::instance()->post( 'site-heartbeat');
 		} catch ( \Exception $e ) {
-			\WPHUBPRO\Logger::log_action( 'heartbeat', 'error', array(), array(
+			Logger::log_action( 'heartbeat', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
 		}
 
-		update_option( \WPHUBPRO\Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
-		update_option( \WPHUBPRO\Config::OPTION_STATUS, 'connected' );
+		update_option( Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
+		update_option( Config::OPTION_STATUS, 'connected' );
 		return true;
 	}
 
@@ -57,14 +62,14 @@ class Heartbeat extends API {
 	 * Schedule heartbeat (call after save-connection).
 	 */
 	public static function schedule() {
-		\WPHUBPRO\Cron\Scheduler::schedule_with_immediate_run( \WPHUBPRO\Cron\Job\Heartbeat::class );
+		Scheduler::schedule_with_immediate_run( CronHeartbeatJob::class );
 	}
 
 	/**
 	 * Unschedule heartbeat (call on disconnect).
 	 */
 	public static function unschedule() {
-		\WPHUBPRO\Cron\Scheduler::unschedule( \WPHUBPRO\Cron\Job\Heartbeat::class );
+		Scheduler::unschedule( CronHeartbeatJob::class );
 	}
 
 	/**

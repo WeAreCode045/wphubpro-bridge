@@ -1,5 +1,12 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
+
+use WPHubPro\Api\Api_Base;
+use WPHubPro\Api\Health;
+use WPHubPro\Api\Heartbeat;
+use WPHubPro\Api\Sync;
+use WPHubPro\Auth\Auth;
+use WPHubPro\Crypto;
 
 /**
  * Connect & site linking for WPHubPro Bridge.
@@ -14,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles site connect, connection storage, and admin UI.
  */
-class Connect extends \WPHUBPRO\Api\API {
+class Connect extends Api_Base {
 
 	/**
 	 * Instance of the class.
@@ -23,8 +30,7 @@ class Connect extends \WPHUBPRO\Api\API {
 	private static $instance = null;
 
 	/**
-	 * Instance of \WPHUBPRO\Api\Sync.
-	 * @var \WPHUBPRO\Api\Sync
+	 * @var Sync
 	 */
 	private $sync;
 
@@ -41,14 +47,14 @@ class Connect extends \WPHUBPRO\Api\API {
 	}
 
 	private function __construct() {
-		$this->sync = \WPHUBPRO\Api\Sync::instance();
+		$this->sync = Sync::instance();
 	}
 
 	/**
 	 * Register REST routes for connect, disconnect, save-connection, redirect settings, and bridge updates.
 	 */
 	public function register_rest_routes() {
-		\WPHUBPRO\Auth\Auth::init();
+		Auth::init();
 
 		$namespace = Config::REST_NAMESPACE;
 
@@ -65,8 +71,8 @@ class Connect extends \WPHUBPRO\Api\API {
 		// the request is cross-origin from Hub and cookies are not sent.
 		register_rest_route( $namespace, '/exchange-token', array(
 			'methods'             => 'GET',
-			'callback'            => array( \WPHUBPRO\Auth\Auth::class, 'handle_exchange_token' ),
-			'permission_callback' => array( \WPHUBPRO\Auth\Auth::class, 'validate_exchange_token_permission' ),
+			'callback'            => array( Auth::class, 'handle_exchange_token' ),
+			'permission_callback' => array( Auth::class, 'validate_exchange_token_permission' ),
 			'args'                => array(
 				'connect_token' => array(
 					'required'          => true,
@@ -126,7 +132,7 @@ class Connect extends \WPHUBPRO\Api\API {
 		register_rest_route( $namespace, '/save-connection', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'handle_save_connection' ),
-			'permission_callback' => array( \WPHUBPRO\Auth\Auth::class, 'validate_api_key' ),
+			'permission_callback' => array( Auth::class, 'validate_api_key' ),
 			'args'                => array(
 				'api_key'           => array(
 					'required'          => false,
@@ -188,8 +194,8 @@ class Connect extends \WPHUBPRO\Api\API {
 	 */
 	public function handle_disconnect() {
 		Config::remove_options();
-		\WPHUBPRO\Api\Heartbeat::unschedule();
-		\WPHUBPRO\Api\Health::unschedule();
+		Heartbeat::unschedule();
+		Health::unschedule();
 		return array( 'success' => true );
 	}
 
@@ -215,16 +221,16 @@ class Connect extends \WPHUBPRO\Api\API {
 		if ( empty( $bridge_secret_to_store ) ) {
 			return new \WP_Error( 'missing_api_key', 'api_key or bridge_secret is required', array( 'status' => 400 ) );
 		}
-		// Store plaintext only – \WPHUBPRO\Auth\Auth::validate_api_key compares X-WPHub-Key with stored. encrypted_api_key is for Hub storage.
+		// Store plaintext only – Auth::validate_api_key compares X-WPHub-Key with stored. encrypted_api_key is for Hub storage.
 		$bridge_secret_to_store = sanitize_text_field( $bridge_secret_to_store );
-		if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+		if ( class_exists( Crypto::class ) ) {
 			Crypto::encrypt_and_store( Config::OPTION_API_KEY, $bridge_secret_to_store );
 		} else {
 			update_option( Config::OPTION_API_KEY, $bridge_secret_to_store );
 		}
 		if ( ! empty( $site_secret ) ) {
 			$site_secret = sanitize_text_field( $site_secret );
-			if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+			if ( class_exists( Crypto::class ) ) {
 				Crypto::encrypt_and_store( Config::OPTION_SITE_SECRET, $site_secret );
 			} else {
 				update_option( Config::OPTION_SITE_SECRET, $site_secret );
@@ -249,8 +255,8 @@ class Connect extends \WPHUBPRO\Api\API {
 		update_option( Config::OPTION_STATUS, 'connected' );
 
 		// Initial plugin/theme sync after connect
-		if ( class_exists( \WPHUBPRO\Api\Sync::class ) ) {
-			\WPHUBPRO\Api\Sync::schedule_sync();
+		if ( class_exists( Sync::class ) ) {
+			Sync::schedule_sync();
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );
@@ -264,7 +270,7 @@ class Connect extends \WPHUBPRO\Api\API {
 	public function handle_connect() {
 		$bridge_secret = wp_generate_password( 64, true, true );
 		$connect_token = wp_generate_password( 32, false );
-		if ( class_exists( \WPHUBPRO\Crypto::class ) ) {
+		if ( class_exists( Crypto::class ) ) {
 			Crypto::encrypt_and_store( Config::OPTION_API_KEY, $bridge_secret );
 		} else {
 			update_option( Config::OPTION_API_KEY, $bridge_secret );

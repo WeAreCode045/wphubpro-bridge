@@ -1,5 +1,9 @@
 <?php
-namespace WPHUBPRO\Cron;
+namespace WPHubPro\Cron;
+
+use WPHubPro\Cron\Job\Health;
+use WPHubPro\Cron\Job\Heartbeat;
+use WPHubPro\Cron\JobInterface;
 
 /**
  * Registers cron job classes and wires WordPress pseudo-cron.
@@ -12,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Central scheduler for {@see \WPHUBPRO\Cron\JobInterface} implementations.
+ * Central scheduler for {@see JobInterface} implementations.
  */
 class Scheduler {
 
@@ -39,12 +43,12 @@ class Scheduler {
 		self::$init_done = true;
 
 		$default_jobs = array(
-			\WPHUBPRO\Cron\Job\Heartbeat::class,
-			\WPHUBPRO\Cron\Job\Health::class,
+			Heartbeat::class,
+			Health::class,
 		);
 
 		/**
-		 * Add or reorder cron job classes (must implement {@see \WPHUBPRO\Cron\JobInterface}).
+		 * Add or reorder cron job classes (must implement {@see JobInterface}).
 		 *
 		 * @param string[] $job_classes Fully-qualified class names.
 		 */
@@ -148,6 +152,6 @@ class Scheduler {
 	private static function is_valid_job( $job_class ) {
 		return is_string( $job_class )
 			&& class_exists( $job_class )
-			&& in_array( \WPHUBPRO\Cron\JobInterface::class, class_implements( $job_class ), true );
+			&& in_array( JobInterface::class, class_implements( $job_class ), true );
 	}
 }

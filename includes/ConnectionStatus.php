@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
 
 /**
  * Simple connection status for WPHubPro Bridge admin.

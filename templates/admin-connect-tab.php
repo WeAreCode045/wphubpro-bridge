@@ -7,10 +7,13 @@
  * @package WPHubPro
  */
 
+use WPHubPro\Config;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-$bridge_version = $bridge_version ?? ( class_exists( \WPHUBPRO\Config::class ) ? \WPHUBPRO\Config::get_bridge_version() : '' );
+
+$bridge_version = $bridge_version ?? ( class_exists( Config::class ) ? Config::get_bridge_version() : '' );
 $redirect_settings_url = $redirect_settings_url ?? '';
 $check_update_url = $check_update_url ?? '';
 $install_update_url = $install_update_url ?? '';

@@ -1,5 +1,10 @@
 <?php
-namespace WPHUBPRO\Api;
+namespace WPHubPro\Api;
+
+use WPHubPro\Config;
+use WPHubPro\Cron\Job\Health as CronHealthJob;
+use WPHubPro\Cron\Scheduler;
+use WPHubPro\Logger;
 
 /**
  * Site health for WPHubPro Bridge.
@@ -16,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site health feature (placeholder).
  */
-class Health extends API {
+class Health extends Api_Base {
 
     private static $instance = null;
 
@@ -68,7 +73,7 @@ class Health extends API {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = \WPHUBPRO\Config::get_last_update();
+        $last_update = Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);
@@ -127,7 +132,7 @@ class Health extends API {
         try {
             return self::instance()->post( 'site-health', self::get_health_status() );
         } catch ( \Exception $e ) {
-            \WPHUBPRO\Logger::log_action( 'health', 'error', array(), array(
+            Logger::log_action( 'health', 'error', array(), array(
                 'msg' => $e->getMessage(),
             ) );
             return false;
@@ -138,14 +143,14 @@ class Health extends API {
      * Unschedule health cron (call on disconnect).
      */
     public static function unschedule() {
-        \WPHUBPRO\Cron\Scheduler::unschedule( \WPHUBPRO\Cron\Job\Health::class );
+        Scheduler::unschedule( CronHealthJob::class );
     }
 
     /**
      * Schedule health push with an immediate run (e.g. after save-connection).
      */
     public static function schedule() {
-        \WPHUBPRO\Cron\Scheduler::schedule_with_immediate_run( \WPHUBPRO\Cron\Job\Health::class );
+        Scheduler::schedule_with_immediate_run( CronHealthJob::class );
     }
 
     private static function get_woo_status(): array {

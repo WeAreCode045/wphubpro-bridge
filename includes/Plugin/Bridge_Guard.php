@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Plugin;
+namespace WPHubPro\Plugin;
 
 /**
  * Bridge plugin identity checks (cannot deactivate/uninstall from platform, etc.).

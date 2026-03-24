@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
 
 /**
  * Site details for WPHubPro Bridge.

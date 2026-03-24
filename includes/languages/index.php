@@ -1,4 +1,4 @@
 <?php
-namespace WPHUBPRO\Languages;
+namespace WPHubPro\Languages;
 
 // Silence is golden.

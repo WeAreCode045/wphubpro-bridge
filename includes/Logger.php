@@ -1,5 +1,7 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
+
+use WPHubPro\Api\ApiLogger;
 
 /**
  * Appwrite action logger for WPHubPro Bridge.
@@ -44,7 +46,7 @@ class Logger {
 		
 		try {
 			// Send log action to Platform.
-			\WPHUBPRO\Api\ApiLogger::instance()->send_log_action( $action, $endpoint, $request, $response );
+			ApiLogger::instance()->send_log_action( $action, $endpoint, $request, $response );
 		} catch ( \Exception $e ) {
 			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
 		}

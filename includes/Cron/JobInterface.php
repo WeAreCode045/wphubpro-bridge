@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Cron;
+namespace WPHubPro\Cron;
 
 /**
  * Contract for a recurring WP-Cron job (static job class).

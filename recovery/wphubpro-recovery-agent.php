@@ -5,6 +5,8 @@
  * Version: 1.1.0
  */
 
+use WPHubPro\Config;
+
 if (!defined('ABSPATH')) exit;
 
 class WPHubProRecoveryAgent {
@@ -36,7 +38,7 @@ class WPHubProRecoveryAgent {
         $token = substr($auth_header, 7);
         
         // Haal de gedeelde sleutel uit de WP database (Config when bridge loaded, else get_option for mu-plugin)
-        $shared_secret = class_exists( \WPHUBPRO\Config::class ) ? \WPHUBPRO\Config::get_api_key() : get_option( 'WPHUBPRO_API_KEY', '' );
+        $shared_secret = class_exists( Config::class ) ? Config::get_api_key() : get_option( 'WPHUBPRO_API_KEY', '' );
         if ( ! $shared_secret ) return;
 
         $payload = $this->validate_jwt($token, $shared_secret);

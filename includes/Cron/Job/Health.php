@@ -1,7 +1,9 @@
 <?php
-namespace WPHUBPRO\Cron\Job;
+namespace WPHubPro\Cron\Job;
 
-use WPHUBPRO\Cron\JobInterface;
+use WPHubPro\Api\Health as ApiHealth;
+use WPHubPro\Config;
+use WPHubPro\Cron\JobInterface;
 
 /**
  * WP-Cron job: push site health payload to the platform.
@@ -14,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Scheduling metadata + tick; delegates work to {@see \WPHUBPRO\Api\Health::send_health_status()}.
+ * Scheduling metadata + tick; delegates work to {@see ApiHealth::send_health_status()}.
  */
 class Health implements JobInterface {
 
@@ -35,12 +37,12 @@ class Health implements JobInterface {
 	}
 
 	public static function should_schedule(): bool {
-		$site_id = \WPHUBPRO\Config::get_site_id();
-		$secret  = \WPHUBPRO\Config::get_site_secret();
+		$site_id = Config::get_site_id();
+		$secret  = Config::get_site_secret();
 		return ! empty( $site_id ) && ! empty( $secret );
 	}
 
 	public static function run(): void {
-		\WPHUBPRO\Api\Health::send_health_status();
+		ApiHealth::send_health_status();
 	}
 }

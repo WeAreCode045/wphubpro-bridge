@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Error;
+namespace WPHubPro\Error;
 
 /**
  * Authentication error for WPHubPro Bridge.

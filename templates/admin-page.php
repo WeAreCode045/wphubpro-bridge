@@ -7,6 +7,8 @@
  * @package WPHubPro
  */
 
+use WPHubPro\Config;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -28,7 +30,7 @@ $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 		$check_update_url      = get_rest_url( null, 'wphubpro/v1/bridge/check-update' );
 		$install_update_url    = get_rest_url( null, 'wphubpro/v1/bridge/install-update' );
 		$nonce            = wp_create_nonce( 'wp_rest' );
-		$bridge_version   = \WPHUBPRO\Config::get_bridge_version();
+		$bridge_version   = Config::get_bridge_version();
 		include $template_dir . 'admin-connect-tab.php';
 		?>
 	<?php endif; ?>

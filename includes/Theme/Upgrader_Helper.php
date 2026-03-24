@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Theme;
+namespace WPHubPro\Theme;
 
 /**
  * Theme_Upgrader wrapper for theme updates via REST.

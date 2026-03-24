@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Admin;
+namespace WPHubPro\Admin;
 
 /**
  * The admin-specific functionality of the plugin.

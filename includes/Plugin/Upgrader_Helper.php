@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Plugin;
+namespace WPHubPro\Plugin;
 
 /**
  * Zip/package handling and Plugin_Upgrader runs for bridge plugin flows.

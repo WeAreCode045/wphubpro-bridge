@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO\Theme;
+namespace WPHubPro\Theme;
 
 /**
  * REST args and slug parsing for theme management.

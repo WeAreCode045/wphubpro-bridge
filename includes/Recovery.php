@@ -1,5 +1,5 @@
 <?php
-namespace WPHUBPRO;
+namespace WPHubPro;
 
 /**
  * Site recovery for WPHubPro Bridge.
