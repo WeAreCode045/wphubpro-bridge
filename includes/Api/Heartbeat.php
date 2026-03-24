@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see Scheduler} and {@see CronHeartbeatJob}.
  */
-class Heartbeat extends Api_Base {
+class Heartbeat extends ApiBase {
 
 	private static $instance = null;
 

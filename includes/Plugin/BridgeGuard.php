@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Helpers for detecting the WPHubPro Bridge plugin file.
  */
-class Bridge_Guard {
+class BridgeGuard {
 
 	/**
 	 * Plugin file path for the bridge (e.g. wphubpro-bridge/wphubpro-bridge.php).

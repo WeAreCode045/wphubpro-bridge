@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wraps GET/POST to the configured Hub API with site auth headers.
  */
-class Api_Base {
+class ApiBase {
     private $site_secret = '';
     private $site_id = '';
     private $base_url = '';

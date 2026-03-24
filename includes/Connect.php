@@ -1,7 +1,7 @@
 <?php
 namespace WPHubPro;
 
-use WPHubPro\Api\Api_Base;
+use WPHubPro\Api\ApiBase;
 use WPHubPro\Api\Health;
 use WPHubPro\Api\Heartbeat;
 use WPHubPro\Api\Sync;
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles site connect, connection storage, and admin UI.
  */
-class Connect extends Api_Base {
+class Connect extends ApiBase {
 
 	/**
 	 * Instance of the class.

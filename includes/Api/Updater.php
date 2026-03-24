@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * REST handlers for checking and applying bridge plugin updates from the platform.
  */
-class Updater extends Api_Base {
+class Updater extends ApiBase {
 
 	private static $instance = null;
 	private static $path = '/bridge/';

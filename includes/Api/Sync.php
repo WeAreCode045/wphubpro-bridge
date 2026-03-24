@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Static bootstrap: {@see init()} → {@see add_hooks()}. Deferred shutdown sync is registered from {@see schedule_sync()}.
  */
-class Sync extends Api_Base {
+class Sync extends ApiBase {
 
 	private static $instance = null;
 

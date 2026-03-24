@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Shared upgrader + zip URL/base64 logic.
  */
-class Upgrader_Helper {
+class UpgraderHelper {
 
 	/**
 	 * Load admin upgrader dependencies.

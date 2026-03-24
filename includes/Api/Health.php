@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site health feature (placeholder).
  */
-class Health extends Api_Base {
+class Health extends ApiBase {
 
     private static $instance = null;
 

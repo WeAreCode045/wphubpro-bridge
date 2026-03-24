@@ -4,7 +4,7 @@ namespace WPHubPro\Theme;
 use WPHubPro\Api\Sync;
 use WPHubPro\Config;
 use WPHubPro\Logger;
-use WPHubPro\Plugin\Upgrader_Helper as PluginUpgraderHelper;
+use WPHubPro\Plugin\UpgraderHelper as PluginUpgraderHelper;
 
 /**
  * Theme management for WPHubPro Bridge.
@@ -146,7 +146,7 @@ class Themes {
 		$package   = $resolved['package'];
 		$temp_path = $resolved['temp_path'];
 
-		$result = Upgrader_Helper::run_theme_install_from_package( $package );
+		$result = UpgraderHelper::run_theme_install_from_package( $package );
 
 		PluginUpgraderHelper::maybe_delete_temp_path( $temp_path );
 
@@ -199,7 +199,7 @@ class Themes {
 			return $err;
 		}
 		do_action( 'wphub_theme_action_pre', 'update', $slug, array( 'slug' => $slug ) );
-		$resp = apply_filters( 'wphub_theme_update', Upgrader_Helper::run_theme_update( $slug ), $slug, array( 'slug' => $slug ) );
+		$resp = apply_filters( 'wphub_theme_update', UpgraderHelper::run_theme_update( $slug ), $slug, array( 'slug' => $slug ) );
 		Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();

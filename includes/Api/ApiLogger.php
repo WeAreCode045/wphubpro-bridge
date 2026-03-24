@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs actions to Appwrite for audit trail.
  */
-class ApiLogger extends Api_Base {
+class ApiLogger extends ApiBase {
 
 	private static $instance = null;
 

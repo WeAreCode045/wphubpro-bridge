@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Load admin dependencies and run Theme_Upgrader::update.
  */
-class Upgrader_Helper {
+class UpgraderHelper {
 
 	/**
 	 * Load theme upgrader dependencies.
