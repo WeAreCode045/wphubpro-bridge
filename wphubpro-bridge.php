@@ -35,7 +35,7 @@ foreach ( array(
 	'class-wphubpro-bridge-config.php',
 	'class-wphubpro-bridge-logger.php',
 	'Api/class-wphubpro-bridge-api-logger.php',
-	'class-wphubpro-bridge-auth.php',
+	'Auth/class-wphubpro-bridge-auth.php',
 	'class-wphubpro-bridge-connect.php',
 	'Api/class-wphubpro-bridge-updater.php',
 	'class-wphubpro-bridge-connection-status.php',
