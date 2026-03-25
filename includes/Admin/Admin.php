@@ -47,6 +47,11 @@ class Admin {
 	 * Register WordPress hooks.
 	 */
 	private function add_hooks() {
+
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );

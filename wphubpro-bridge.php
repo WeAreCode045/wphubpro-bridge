@@ -33,13 +33,11 @@ require_once WPHUBPRO_BRIDGE_ABSPATH . 'src/Autoloader.php';
 
 Autoloader::register();
 
+
 // Main loader
 add_action('plugins_loaded', function() {
 	if ( class_exists( Bridge::class ) ) {
 		Bridge::instance();
-	}
-	if ( class_exists( Admin::class ) && is_admin() ) {
-		add_action( 'init', array( Admin::instance(), 'init' ) );
 	}
 	if ( class_exists( Scheduler::class ) ) {
 		Scheduler::init();

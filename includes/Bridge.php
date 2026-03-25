@@ -76,6 +76,7 @@ class Bridge {
 	 * Register WordPress hooks.
 	 */
 	private function add_hooks() {
+		add_action( 'init', array( Admin::instance(), 'init' ) );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 

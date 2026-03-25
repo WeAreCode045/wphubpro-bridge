@@ -38,23 +38,10 @@ class Sync extends ApiBase {
 	}
 
 	/**
-	 * Schedule sync to run at shutdown. Idempotent: only one shutdown hook per request.
-	 * Call from Connect, Plugins, Themes, or on_plugin_or_theme_change.
-	 */
-	public static function schedule_sync() {
-		if ( self::$sync_scheduled ) {
-			return;
-		}
-		self::$sync_scheduled = true;
-		// Deferred per-request hook (not part of add_hooks() lifecycle registration).
-		add_action( 'shutdown', array( self::instance(), 'sync_meta_to_appwrite' ), 5 );
-	}
-
-	/**
 	 * Register hooks for plugin/theme/core changes (WP Admin or REST).
 	 */
 	public static function init() {
-		self::add_hooks();
+		self::instance()->add_hooks();
 	}
 
 	/**
@@ -66,6 +53,19 @@ class Sync extends ApiBase {
 		add_action( 'deleted_plugin', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'switch_theme', array( __CLASS__, 'on_plugin_or_theme_change' ), 10, 0 );
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'on_upgrader_complete' ), 10, 2 );
+	}
+
+	/**
+	 * Schedule sync to run at shutdown. Idempotent: only one shutdown hook per request.
+	 * Call from Connect, Plugins, Themes, or on_plugin_or_theme_change.
+	 */
+	public static function schedule_sync() {
+		if ( self::$sync_scheduled ) {
+			return;
+		}
+		self::$sync_scheduled = true;
+		// Deferred per-request hook (not part of add_hooks() lifecycle registration).
+		add_action( 'shutdown', array( self::instance(), 'sync_meta_to_appwrite' ), 5 );
 	}
 
 	/**
