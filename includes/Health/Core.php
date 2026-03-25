@@ -41,16 +41,16 @@ class Core {
             require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
         }
     
-        $site_health = WP_Site_Health::get_instance();
+        $site_health = \WP_Site_Health::get_instance();
         
         // 2. Verzamel de verschillende onderdelen van de gezondheidscheck
         
         // Systeeminformatie (PHP versie, Server, Database, etc.)
-        $info = $site_health->get_test_directory_sizes(); // Optioneel: mapgroottes
+        // $info = $site_health->get_test_directory_sizes(); // Optioneel: mapgroottes
         
         // Voer de standaard tests uit
         // Let op: sommige tests zijn asynchroon (zoals loopback requests)
-        $tests = WP_Site_Health::get_tests();
+        $tests = \WP_Site_Health::get_tests();
         
         $results = [
             'status' => 'success',
