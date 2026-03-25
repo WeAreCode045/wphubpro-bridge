@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Admin;
+
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -14,19 +16,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Bootstrap: init() runs on WordPress {@see 'init'} (see wphubpro-bridge.php) so menus register at the correct time.
  */
-class WPHubPro_Bridge_Admin {
+class Admin {
 	/**
 	 * Instance of the class.
-	 * @var WPHubPro_Bridge_Admin|null
+	 *
+	 * @var Admin|null
 	 */
 	private static $instance = null;
 
 	/**
 	 * Get the instance of the class.
 	 *
-	 * @return WPHubPro_Bridge_Admin
+	 * @return Admin
 	 */
-	public static function instance() : WPHubPro_Bridge_Admin {
+	public static function instance() : Admin {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -44,6 +47,11 @@ class WPHubPro_Bridge_Admin {
 	 * Register WordPress hooks.
 	 */
 	private function add_hooks() {
+
+		if ( ! is_admin() ) {
+			return;
+		}
+
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -91,4 +99,3 @@ class WPHubPro_Bridge_Admin {
 		include WPHUBPRO_BRIDGE_ABSPATH . 'templates/admin-page.php';
 	}
 }
-

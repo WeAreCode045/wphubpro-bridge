@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Auth;
+
 /**
  * Encrypt/decrypt helpers using WordPress wp_salt().
  * Used to securely store API secrets in wp_options.
@@ -13,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Crypto helper using wp_salt() for key derivation.
  */
-class WPHubPro_Bridge_Crypto {
+class Crypto {
 
 	/**
 	 * Derive a 256-bit key from WordPress salts.

@@ -3,11 +3,17 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.4.55
+ * Version: 2.5.0
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
 
+use WPHubPro\Admin\Admin;
+use WPHubPro\Api\Sync;
+use WPHubPro\Autoloader;
+use WPHubPro\Bridge;
+use WPHubPro\Config;
+use WPHubPro\Cron\Scheduler;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,67 +29,21 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
 	define( 'WPHUBPRO_BRIDGE_VERSION', '2.4.53' );
 }
 
-// Autoload includes
-foreach ( array(
-	'Error/BaseError.php',
-	'Error/AuthenticationError.php',
-	'Error/ValidationError.php',
-	'Error/NotFoundError.php',
-	'Error/RequestError.php',
-	'Api/class-wphubpro-bridge-api.php',
-	'class-wphubpro-bridge-crypto.php',
-	'class-wphubpro-bridge-config.php',
-	'class-wphubpro-bridge-logger.php',
-	'Api/class-wphubpro-bridge-api-logger.php',
-	'Auth/class-wphubpro-bridge-auth.php',
-	'class-wphubpro-bridge-connect.php',
-	'Api/class-wphubpro-bridge-updater.php',
-	'class-wphubpro-bridge-connection-status.php',
-	'class-wphubpro-bridge-plugin-bridge-guard.php',
-	'Plugin/class-wphubpro-bridge-plugin-params.php',
-	'Plugin/class-wphubpro-bridge-plugin-upgrader-helper.php',
-	'Plugin/class-wphubpro-bridge-plugins.php',
-	'Theme/class-wphubpro-bridge-theme-params.php',
-	'Theme/class-wphubpro-bridge-theme-upgrader-helper.php',
-	'Theme/class-wphubpro-bridge-themes.php',
-	'Api/class-wphubpro-bridge-sync.php',
-	'Cron/interface-cron-job.php',
-	'Api/class-wphubpro-bridge-heartbeat.php',
-	'Cron/Jobs/class-cron-job-heartbeat.php',
-	'Api/class-wphubpro-bridge-health.php',
-	'Cron/Jobs/class-cron-job-health.php',
-	'Cron/class-cron-scheduler.php',
-	'class-wphubpro-bridge-details.php',
-	'class-wphubpro-bridge.php',
-	'class-wphubpro-bridge-admin.php',
-) as $file ) {
-	$inc = __DIR__ . '/includes/' . $file;
-	if ( file_exists( $inc ) ) {
-		require_once $inc;
-	}
-}
+require_once WPHUBPRO_BRIDGE_ABSPATH . 'src/Autoloader.php';
 
-// Error classes (require Logger first)
-foreach ( array( 'BaseError.php', 'AuthenticationError.php', 'ValidationError.php', 'NotFoundError.php' ) as $err_file ) {
-	$inc = __DIR__ . '/includes/Error/' . $err_file;
-	if ( file_exists( $inc ) ) {
-		require_once $inc;
-	}
-}
+Autoloader::register();
+
 
 // Main loader
 add_action('plugins_loaded', function() {
-	if (class_exists('WPHubPro_Bridge')) {
-		WPHubPro_Bridge::instance();
+	if ( class_exists( Bridge::class ) ) {
+		Bridge::instance();
 	}
-	if(class_exists('WPHubPro_Bridge_Admin') && is_admin()) {
-		add_action('init', array(WPHubPro_Bridge_Admin::instance(), 'init'));
+	if ( class_exists( Scheduler::class ) ) {
+		Scheduler::init();
 	}
-	if ( class_exists( 'WPHubPro_Bridge_Cron' ) ) {
-		WPHubPro_Bridge_Cron::init();
-	}
-	if (class_exists('WPHubPro_Bridge_Sync')) {
-		WPHubPro_Bridge_Sync::init();
+	if ( class_exists( Sync::class ) ) {
+		Sync::init();
 	}
 });
 
@@ -102,7 +62,7 @@ register_deactivation_hook(__FILE__, function() {
 function wphubpro_bridge_ensure_recovery_agent() {
 	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
 	$data = array( 'installed' => $bridge_version );
-	update_option( WPHubPro_Bridge_Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
+	update_option( Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
 
 	$source = WPHUBPRO_BRIDGE_ABSPATH . 'recovery/wphubpro-recovery-agent.php';
 	if ( ! file_exists( $source ) ) {
@@ -116,12 +76,12 @@ function wphubpro_bridge_ensure_recovery_agent() {
 		return;
 	}
 	$dest = $mu_dir . '/wphubpro-recovery-agent.php';
-	$installed = WPHubPro_Bridge_Config::get_recovery_agent_version();
+	$installed = Config::get_recovery_agent_version();
 	if ( $installed === $bridge_version && file_exists( $dest ) ) {
 		return;
 	}
 	if ( copy( $source, $dest ) ) {
-		update_option( WPHubPro_Bridge_Config::OPTION_RECOVERY_AGENT_VERSION, $bridge_version );
+		update_option( Config::OPTION_RECOVERY_AGENT_VERSION, $bridge_version );
 	}
 }
 
@@ -131,4 +91,3 @@ add_action( 'plugins_loaded', function() {
 	// Ensure recovery agent is up to date after bridge updates (activation runs only on activate).
 	wphubpro_bridge_ensure_recovery_agent();
 }, 1 );
-

@@ -1,4 +1,11 @@
 <?php
+namespace WPHubPro\Api;
+
+use WPHubPro\Config;
+use WPHubPro\Cron\Job\Heartbeat as CronHeartbeatJob;
+use WPHubPro\Cron\Scheduler;
+use WPHubPro\Logger;
+
 /**
  * Heartbeat: Bridge sends heartbeat to Appwrite every minute.
  * Updates sites.heartbeat_updated_at and bridge_status. On success: wphub_status=connected. On failure: wphub_status=disconnected.
@@ -11,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see WPHubPro_Bridge_Cron} and {@see WPHubPro_Bridge_Cron_Job_Heartbeat}.
+ * Domain logic for heartbeat (HTTP + options). Cron wiring: {@see Scheduler} and {@see CronHeartbeatJob}.
  */
-class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
+class Heartbeat extends ApiBase {
 
 	private static $instance = null;
 
@@ -25,10 +32,10 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	}
 
 	/**
-	 * Legacy entry point: delegates to {@see WPHubPro_Bridge_Cron::init()}.
+	 * Legacy entry point: delegates to {@see Scheduler::init()}.
 	 */
 	public static function init() {
-		WPHubPro_Bridge_Cron::init();
+		Scheduler::init();
 	}
 
 	/**
@@ -39,15 +46,15 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	public static function send_heartbeat() {
 		try {
 			self::instance()->post( 'site-heartbeat');
-		} catch ( Exception $e ) {
-			WPHubPro_Bridge_Logger::log_action( 'heartbeat', 'error', array(), array(
+		} catch ( \Exception $e ) {
+			Logger::log_action( 'heartbeat', 'error', array(), array(
 				'msg' => $e->getMessage(),
 			) );
 			return false;
 		}
 
-		update_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
-		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'connected' );
+		update_option( Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
+		update_option( Config::OPTION_STATUS, 'connected' );
 		return true;
 	}
 
@@ -55,14 +62,14 @@ class WPHubPro_Bridge_Heartbeat extends WPHubPro_Bridge_API {
 	 * Schedule heartbeat (call after save-connection).
 	 */
 	public static function schedule() {
-		WPHubPro_Bridge_Cron::schedule_with_immediate_run( 'WPHubPro_Bridge_Cron_Job_Heartbeat' );
+		Scheduler::schedule_with_immediate_run( CronHeartbeatJob::class );
 	}
 
 	/**
 	 * Unschedule heartbeat (call on disconnect).
 	 */
 	public static function unschedule() {
-		WPHubPro_Bridge_Cron::unschedule( 'WPHubPro_Bridge_Cron_Job_Heartbeat' );
+		Scheduler::unschedule( CronHeartbeatJob::class );
 	}
 
 	/**
