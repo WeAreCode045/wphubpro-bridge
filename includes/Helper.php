@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Site details: WordPress version, plugin/theme counts, PHP info.
  */
-class Details {
+class Helper {
 
 	/**
 	 * Get site details as array (for sync to Hub wp_meta).
@@ -41,6 +41,17 @@ class Details {
 		);
 	}
 
+	// public static function get_details() {
+	// 	return array(
+	// 		'wp_version'        => get_bloginfo( 'version' ),
+	// 		'wp_version_latest' => self::get_latest_wp_version(),
+	// 		'plugins_count'     => self::get_plugins_count(),
+	// 		'themes_count'      => self::get_themes_count(),
+	// 		'php_version'       => PHP_VERSION,
+	// 		'php_check'         => self::get_php_version_info(),
+	// 	);
+	// }
+
 	/**
 	 * Get site details.
 	 *
@@ -49,10 +60,10 @@ class Details {
 	 */
 	public function get_details( $request ) {
 		$wp_installed  = get_bloginfo( 'version' );
-		$wp_latest     = $this->get_latest_wp_version();
-		$plugins_count = $this->get_plugins_count();
-		$themes_count  = $this->get_themes_count();
-		$php_info      = $this->get_php_version_info();
+		$wp_latest     = self::get_latest_wp_version();
+		$plugins_count = self::get_plugins_count();
+		$themes_count  = self::get_themes_count();
+		$php_info      = self::get_php_version_info();
 
 		$response = array(
 			'wp_version'        => $wp_installed,
@@ -73,7 +84,7 @@ class Details {
 	 *
 	 * @return string|null
 	 */
-	private function get_latest_wp_version() {
+	private static function get_latest_wp_version() {
 		require_once ABSPATH . 'wp-admin/includes/update.php';
 		wp_version_check();
 
@@ -102,7 +113,7 @@ class Details {
 	 *
 	 * @return int
 	 */
-	private function get_plugins_count() {
+	private static function get_plugins_count() {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
@@ -115,7 +126,7 @@ class Details {
 	 *
 	 * @return int
 	 */
-	private function get_themes_count() {
+	private static function get_themes_count() {
 		$all = wp_get_themes();
 		return is_array( $all ) ? count( $all ) : 0;
 	}
@@ -125,7 +136,7 @@ class Details {
 	 *
 	 * @return array|false
 	 */
-	private function get_php_version_info() {
+	private static function get_php_version_info() {
 		if ( ! function_exists( 'wp_check_php_version' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/misc.php';
 		}
