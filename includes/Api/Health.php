@@ -233,6 +233,9 @@ class Health extends ApiBase {
         }
 
         $size = filesize( $file );
+        if ( ! is_numeric( $size ) || $size <= 0 ) {
+            return null;
+        }
         $read = min( $max_bytes, $size );
         $fp = @fopen( $file, 'rb' );
         if ( ! $fp ) {
