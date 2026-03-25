@@ -1,7 +1,7 @@
 <?php
 namespace WPHubPro;
 
-use WPHubPro\Api\ApiLogger;
+use WPHubPro\Api\Logger as ApiLogger;
 
 /**
  * Appwrite action logger for WPHubPro Bridge.

@@ -1,8 +1,6 @@
 <?php
 namespace WPHubPro\Api;
 
-use WPHubPro\Logger;
-
 /**
  * Appwrite action logger for WPHubPro Bridge.
  *
@@ -18,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Logs actions to Appwrite for audit trail.
  */
-class ApiLogger extends ApiBase {
+class Logger extends ApiBase {
 
 	private static $instance = null;
 
@@ -134,7 +132,7 @@ class ApiLogger extends ApiBase {
 	 * @return WP_REST_Response|WP_Error Unchanged response.
 	 */
 	public function log_rest_request( $response, $server, $request ) {
-		Logger::push_api_log( $request, $response );
+		\WPHubPro\Logger::push_api_log( $request, $response );
 		return $response;
 	}
 }
