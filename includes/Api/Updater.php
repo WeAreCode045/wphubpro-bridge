@@ -116,7 +116,7 @@ class Updater extends ApiBase {
 	 * @param string $version The version to update.
 	 * @return bool True on success, false on failure.
 	 */
-	private function update_bridge_version($version) {
+	private static function update_bridge_version($version) {
 		if ( !preg_match( '/^\d+\.\d+\.\d+$/', $version ) ) {
 			return false;
 			
