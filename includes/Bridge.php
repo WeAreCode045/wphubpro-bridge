@@ -50,6 +50,9 @@ class Bridge {
 	/** @var Health */
 	private $health;
 
+	/** @var Heartbeat */
+	private $heartbeat;
+
 	public static function instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
@@ -63,7 +66,8 @@ class Bridge {
 		$this->plugins = new Plugins();
 		$this->themes  = new Themes();
 		$this->details = new Details();
-		$this->health  = new Health();
+		$this->health     = new Health();
+		$this->heartbeat = new Heartbeat();
 
 		$this->add_hooks();
 	}
@@ -85,11 +89,7 @@ class Bridge {
 		$namespace = Config::REST_NAMESPACE;
 		$validate  = array( Auth::class, 'validate_api_key' );
 
-		// Heartbeat poke (platform can call to verify bridge is reachable)
-		register_rest_route( $namespace, '/heartbeat/poke', array(
-			'methods'             => array( 'GET', 'POST' ),
-			'callback'            => array( Heartbeat::class, 'handle_poke' ),
-		) );
+		$this->heartbeat->register_rest_routes();
 
 		// Plugins (list + manage — single registration point).
 		$this->plugins->register_rest_routes();
