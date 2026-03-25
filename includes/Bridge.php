@@ -7,7 +7,7 @@ use WPHubPro\Api\Updater;
 use WPHubPro\Auth\Auth;
 use WPHubPro\Plugin\Plugins;
 use WPHubPro\Theme\Themes;
-
+use WPHubPro\Admin\Admin;
 /**
  * WPHubPro Bridge – main orchestrator.
  *

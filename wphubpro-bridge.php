@@ -8,7 +8,6 @@
  * Author URI: https://wphub.pro
  */
 
-use WPHubPro\Admin\Admin;
 use WPHubPro\Api\Sync;
 use WPHubPro\Autoloader;
 use WPHubPro\Bridge;
