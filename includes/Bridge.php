@@ -96,7 +96,7 @@ class Bridge {
 
 		// Themes (list + manage — single registration point).
 		$this->themes->register_rest_routes();
-
+		
 		// Site details (WordPress version, plugin/theme counts, PHP info)
 		register_rest_route( $namespace, '/details', array(
 			'methods'             => 'GET',
