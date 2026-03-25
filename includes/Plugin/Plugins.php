@@ -119,7 +119,6 @@ class Plugins {
 			);
 		}
 
-		$site_url = get_site_url();
 		$log_resp = array(
 			'count'   => count( $response ),
 			'plugins' => array_slice( array_map( function ( $p ) {
@@ -129,7 +128,7 @@ class Plugins {
 		if ( count( $response ) > 10 ) {
 			$log_resp['_truncated'] = count( $response ) . ' total';
 		}
-		Logger::log_action( $site_url, 'list', 'plugins', array(), $log_resp );
+		Logger::log_action('list', 'plugins', array(), $log_resp );
 
 		return rest_ensure_response( $response );
 	}
@@ -142,7 +141,6 @@ class Plugins {
 	 */
 	public function activate_plugin( $request ) {
 		$endpoint = 'plugins/manage/activate';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 		$slug     = $params['slug'];
@@ -152,7 +150,7 @@ class Plugins {
 		}
 		$err = Params::validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'activate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
+			Logger::log_action( 'activate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
 			return $err;
 		}
 
@@ -161,7 +159,7 @@ class Plugins {
 		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
 
 		$resp = apply_filters( 'wphub_plugin_activate', activate_plugin( $plugin ), $plugin, $slug, $params );
-		Logger::log_action( $site_url, 'activate', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'activate', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
@@ -176,7 +174,6 @@ class Plugins {
 	 */
 	public function deactivate_plugin( $request ) {
 		$endpoint = 'plugins/manage/deactivate';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 		$slug     = $params['slug'];
@@ -186,11 +183,11 @@ class Plugins {
 		}
 		$err = Params::validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			Logger::log_action( 'deactivate', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
 		}
 		if ( BridgeGuard::is_bridge_plugin( $plugin ) ) {
-			Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'error' => 'Cannot deactivate WPHubPro Bridge from platform.' ) );
+			Logger::log_action( 'deactivate', $endpoint, $params, array( 'error' => 'Cannot deactivate WPHubPro Bridge from platform.' ) );
 			return new \WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be deactivated from the platform. Deactivate it in WordPress Admin > Plugins to manage the connection.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
@@ -199,7 +196,7 @@ class Plugins {
 		error_log( '[WPHubPro Bridge] ' . $endpoint . ' INCOMING: ' . wp_json_encode( array( 'plugin' => $plugin, 'slug' => $slug ) ) );
 
 		apply_filters( 'wphub_plugin_deactivate', deactivate_plugins( $plugin ), $plugin, $slug, $params );
-		Logger::log_action( $site_url, 'deactivate', $endpoint, $params, array( 'success' => true ) );
+		Logger::log_action( 'deactivate', $endpoint, $params, array( 'success' => true ) );
 		Sync::schedule_sync();
 		return true;
 	}
@@ -214,7 +211,6 @@ class Plugins {
 	 */
 	public function update_plugin( $request ) {
 		$endpoint = 'plugins/manage/update';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 		$slug     = $params['slug'];
@@ -224,11 +220,11 @@ class Plugins {
 		}
 		$err = Params::validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			Logger::log_action( 'update', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
 		}
 		if ( empty( $plugin ) ) {
-			Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Plugin not found' ) );
+			Logger::log_action( 'update', $endpoint, $params, array( 'error' => 'Plugin not found' ) );
 			return new \WP_Error( 'plugin_not_found', __( 'Plugin not found.', 'wphubpro-bridge' ), array( 'status' => 404 ) );
 		}
 
@@ -238,11 +234,11 @@ class Plugins {
 
 		$is_bridge = BridgeGuard::is_bridge_plugin( $plugin );
 		if ( $is_bridge && empty( $zip_url ) && empty( $zip_base64 ) ) {
-			Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'Bridge update requires zip_url or zip_base64' ) );
+			Logger::log_action( 'update', $endpoint, $params, array( 'error' => 'Bridge update requires zip_url or zip_base64' ) );
 			return new \WP_Error( 'missing_package', __( 'Bridge update requires zip_url from the platform.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 		if ( ! $is_bridge && ( ! empty( $zip_url ) || ! empty( $zip_base64 ) ) ) {
-			Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => 'zip_url/zip_base64 only allowed for bridge plugin' ) );
+			Logger::log_action( 'update', $endpoint, $params, array( 'error' => 'zip_url/zip_base64 only allowed for bridge plugin' ) );
 			return new \WP_Error( 'forbidden', __( 'zip_url is only for the WPHubPro Bridge plugin.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
@@ -255,7 +251,7 @@ class Plugins {
 		if ( $is_bridge ) {
 			$resolved = UpgraderHelper::resolve_package_from_zip_inputs( $zip_url, $zip_base64 );
 			if ( is_wp_error( $resolved ) ) {
-				Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'error' => $resolved->get_error_message() ) );
+				Logger::log_action( 'update', $endpoint, $params, array( 'error' => $resolved->get_error_message() ) );
 				return $resolved;
 			}
 			$resp = UpgraderHelper::run_plugin_package( $resolved['package'], $plugin, 'update' );
@@ -271,11 +267,11 @@ class Plugins {
 		if ( ! is_wp_error( $resp ) && $was_active ) {
 			$activate_result = activate_plugin( $plugin );
 			if ( is_wp_error( $activate_result ) ) {
-				Logger::log_action( $site_url, 'update', $endpoint, $params, array( 'warning' => 'Upgrade succeeded but reactivation failed: ' . $activate_result->get_error_message() ) );
+				Logger::log_action( 'update', $endpoint, $params, array( 'warning' => 'Upgrade succeeded but reactivation failed: ' . $activate_result->get_error_message() ) );
 			}
 		}
 
-		Logger::log_action( $site_url, 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
+		Logger::log_action( 'update', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
@@ -290,7 +286,6 @@ class Plugins {
 	 */
 	public function uninstall_plugin( $request ) {
 		$endpoint = 'plugins/manage/uninstall';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 		$slug     = $params['slug'];
@@ -300,11 +295,11 @@ class Plugins {
 		}
 		$err = Params::validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
+			Logger::log_action( 'delete', $endpoint, $params, array( 'error' => 'Invalid or missing plugin param' ) );
 			return $err;
 		}
 		if ( BridgeGuard::is_bridge_plugin( $plugin ) ) {
-			Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Cannot uninstall WPHubPro Bridge from platform.' ) );
+			Logger::log_action( 'delete', $endpoint, $params, array( 'error' => 'Cannot uninstall WPHubPro Bridge from platform.' ) );
 			return new \WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be uninstalled from the platform. Use WordPress Admin > Plugins to remove it.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
@@ -315,13 +310,13 @@ class Plugins {
 		if ( is_plugin_active( $plugin ) ) {
 			$deact = deactivate_plugins( $plugin );
 			if ( is_wp_error( $deact ) ) {
-				Logger::log_action( $site_url, 'delete', $endpoint, $params, array( 'error' => 'Deactivate before uninstall failed: ' . $deact->get_error_message() ) );
+				Logger::log_action( 'delete', $endpoint, $params, array( 'error' => 'Deactivate before uninstall failed: ' . $deact->get_error_message() ) );
 				return $deact;
 			}
 		}
 		uninstall_plugin( $plugin );
 		$resp = apply_filters( 'wphub_plugin_delete', delete_plugins( array( $plugin ) ), $plugin, $slug, $params );
-		Logger::log_action( $site_url, 'delete', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'delete', $endpoint, $params, is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
@@ -336,7 +331,6 @@ class Plugins {
 	 */
 	public function install_plugin_version( $request ) {
 		$endpoint = 'plugins/manage/install-version';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 		$slug     = $params['slug'];
@@ -348,17 +342,17 @@ class Plugins {
 		$plugin_slug = $plugin && strpos( $plugin, '/' ) !== false ? dirname( $plugin ) : ( $slug ?: '' );
 
 		if ( empty( $plugin_slug ) || empty( $version ) ) {
-			Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Missing plugin slug or version' ) );
+			Logger::log_action( 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Missing plugin slug or version' ) );
 			return new \WP_Error( 'missing_params', __( 'Plugin slug and version are required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 
 		$err = Params::validate_plugin_file( $plugin );
 		if ( is_wp_error( $err ) && ! $plugin ) {
-			Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
+			Logger::log_action( 'install-version', $endpoint, $params, array( 'error' => 'Invalid or missing plugin parameter' ) );
 			return $err;
 		}
 		if ( ! empty( $plugin ) && BridgeGuard::is_bridge_plugin( $plugin ) ) {
-			Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'error' => 'Cannot change WPHubPro Bridge version from platform.' ) );
+			Logger::log_action( 'install-version', $endpoint, $params, array( 'error' => 'Cannot change WPHubPro Bridge version from platform.' ) );
 			return new \WP_Error( 'forbidden', __( 'WPHubPro Bridge cannot be modified from the platform.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 
@@ -372,7 +366,7 @@ class Plugins {
 		$versions = isset( $info->versions ) ? (array) $info->versions : array();
 		if ( is_wp_error( $info ) || empty( $versions ) || ! isset( $versions[ $version ] ) ) {
 			$versions_available = array_keys( $versions );
-			Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Version not found', 'available' => array_slice( $versions_available, -20 ) ) );
+			Logger::log_action( 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), array( 'error' => 'Version not found', 'available' => array_slice( $versions_available, -20 ) ) );
 			return new \WP_Error( 'version_not_found', __( 'Version not found in WordPress.org. Plugin may not be in the official library.', 'wphubpro-bridge' ), array( 'status' => 404 ) );
 		}
 
@@ -394,11 +388,11 @@ class Plugins {
 		if ( ! is_wp_error( $result ) && $was_active ) {
 			$reactivate = activate_plugin( $target_plugin );
 			if ( is_wp_error( $reactivate ) ) {
-				Logger::log_action( $site_url, 'install-version', $endpoint, $params, array( 'warning' => 'Install succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
+				Logger::log_action( 'install-version', $endpoint, $params, array( 'warning' => 'Install succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
 			}
 		}
 
-		Logger::log_action( $site_url, 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'install-version', $endpoint, array_merge( $params, array( 'version' => $version ) ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
 			Sync::schedule_sync();
 		}
@@ -413,7 +407,6 @@ class Plugins {
 	 */
 	public function install_plugin_from_zip_url( $request ) {
 		$endpoint = 'plugins/manage/install-from-zip';
-		$site_url = get_site_url();
 		$params   = Params::parse_from_request( $request );
 		$plugin   = $params['plugin'];
 
@@ -425,21 +418,21 @@ class Plugins {
 			$plugin = BridgeGuard::get_bridge_plugin_file();
 		}
 		if ( ! BridgeGuard::is_bridge_plugin( $plugin ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( 'plugin' => $plugin ), array( 'error' => 'Only the WPHubPro Bridge plugin can be updated via zip URL.' ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array( 'plugin' => $plugin ), array( 'error' => 'Only the WPHubPro Bridge plugin can be updated via zip URL.' ) );
 			return new \WP_Error( 'forbidden', __( 'Only the WPHubPro Bridge plugin can be updated from a zip URL.', 'wphubpro-bridge' ), array( 'status' => 403 ) );
 		}
 		if ( empty( $zip_url ) && empty( $zip_base64 ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
 			return new \WP_Error( 'invalid_input', __( 'zip_url or zip_base64 is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 		if ( empty( $zip_base64 ) && ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
 			return new \WP_Error( 'invalid_zip_url', __( 'A valid HTTPS zip URL is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 
 		$resolved = UpgraderHelper::resolve_package_from_zip_inputs( $zip_url, $zip_base64 );
 		if ( is_wp_error( $resolved ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => $resolved->get_error_message() ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => $resolved->get_error_message() ) );
 			return $resolved;
 		}
 		$package   = $resolved['package'];
@@ -453,12 +446,12 @@ class Plugins {
 		if ( ! is_wp_error( $result ) && $was_active ) {
 			$reactivate = activate_plugin( $plugin );
 			if ( is_wp_error( $reactivate ) ) {
-				Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'warning' => 'Update succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
+				Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'warning' => 'Update succeeded but reactivation failed: ' . $reactivate->get_error_message() ) );
 			}
 		}
 
 		$log_source = ! empty( $zip_base64 ) ? 'zip_base64' : 'zip_url';
-		Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
 			Sync::schedule_sync();
 		}

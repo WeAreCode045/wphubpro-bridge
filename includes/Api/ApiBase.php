@@ -104,7 +104,7 @@ class ApiBase {
         $code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
-            Logger::log_action(get_site_url(), 'api/get', 'http_error', array(), array(
+            Logger::log_action('api/get', 'http_error', array(), array(
                 'msg'   => 'Non-2xx response',
                 'code'  => $code,
                 'body'  => $body,

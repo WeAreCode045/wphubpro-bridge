@@ -100,7 +100,6 @@ class Themes {
 			);
 		}
 
-		$site_url = get_site_url();
 		$log_resp = array(
 			'count'  => count( $response ),
 			'themes' => array_slice( array_map( function ( $t ) {
@@ -110,7 +109,7 @@ class Themes {
 		if ( count( $response ) > 10 ) {
 			$log_resp['_truncated'] = count( $response ) . ' total';
 		}
-		Logger::log_action( $site_url, 'list', 'themes', array(), $log_resp );
+		Logger::log_action( 'list', 'themes', array(), $log_resp );
 
 		return rest_ensure_response( $response );
 	}
@@ -123,24 +122,22 @@ class Themes {
 	 */
 	public function install_theme_from_zip( $request ) {
 		$endpoint = 'themes/manage/install-from-zip';
-		$site_url = get_site_url();
-
 		$zip        = PluginUpgraderHelper::get_zip_params_from_request( $request );
 		$zip_url    = $zip['zip_url'];
 		$zip_base64 = $zip['zip_base64'];
 
 		if ( empty( $zip_url ) && empty( $zip_base64 ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => 'zip_url or zip_base64 is required.' ) );
 			return new \WP_Error( 'invalid_input', __( 'zip_url or zip_base64 is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 		if ( empty( $zip_base64 ) && ( empty( $zip_url ) || strpos( $zip_url, 'https://' ) !== 0 ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => 'Valid HTTPS zip_url is required when zip_base64 is not provided.' ) );
 			return new \WP_Error( 'invalid_zip_url', __( 'A valid HTTPS zip URL is required.', 'wphubpro-bridge' ), array( 'status' => 400 ) );
 		}
 
 		$resolved = PluginUpgraderHelper::resolve_package_from_zip_inputs( $zip_url, $zip_base64 );
 		if ( is_wp_error( $resolved ) ) {
-			Logger::log_action( $site_url, 'install-from-zip', $endpoint, array(), array( 'error' => $resolved->get_error_message() ) );
+			Logger::log_action( 'install-from-zip', $endpoint, array(), array( 'error' => $resolved->get_error_message() ) );
 			return $resolved;
 		}
 		$package   = $resolved['package'];
@@ -151,7 +148,7 @@ class Themes {
 		PluginUpgraderHelper::maybe_delete_temp_path( $temp_path );
 
 		$log_source = ! empty( $zip_base64 ) ? 'zip_base64' : 'zip_url';
-		Logger::log_action( $site_url, 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'install-from-zip', $endpoint, array( $log_source => $log_source ), is_wp_error( $result ) ? array( 'error' => $result->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $result ) ) {
 			Sync::schedule_sync();
 		}
@@ -166,17 +163,16 @@ class Themes {
 	 */
 	public function activate_theme( $request ) {
 		$endpoint = 'themes/manage/activate';
-		$site_url = get_site_url();
 		$slug     = Params::parse_slug_from_request( $request );
 		$err      = Params::validate_theme_slug( $slug );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			Logger::log_action( 'activate', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
 			return $err;
 		}
 		require_once ABSPATH . 'wp-admin/includes/theme.php';
 		do_action( 'wphub_theme_action_pre', 'activate', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_activate', switch_theme( $slug ), $slug, array( 'slug' => $slug ) );
-		Logger::log_action( $site_url, 'activate', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'activate', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
@@ -191,16 +187,15 @@ class Themes {
 	 */
 	public function update_theme( $request ) {
 		$endpoint = 'themes/manage/update';
-		$site_url = get_site_url();
 		$slug     = Params::parse_slug_from_request( $request );
 		$err      = Params::validate_theme_slug( $slug );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			Logger::log_action( 'update', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
 			return $err;
 		}
 		do_action( 'wphub_theme_action_pre', 'update', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_update', UpgraderHelper::run_theme_update( $slug ), $slug, array( 'slug' => $slug ) );
-		Logger::log_action( $site_url, 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
+		Logger::log_action( 'update', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => $resp ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
@@ -215,17 +210,16 @@ class Themes {
 	 */
 	public function delete_theme( $request ) {
 		$endpoint = 'themes/manage/delete';
-		$site_url = get_site_url();
 		$slug     = Params::parse_slug_from_request( $request );
 		$err      = Params::validate_theme_slug( $slug );
 		if ( is_wp_error( $err ) ) {
-			Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
+			Logger::log_action( 'delete', $endpoint, array( 'slug' => $slug ), array( 'error' => $err->get_error_message() ) );
 			return $err;
 		}
 		require_once ABSPATH . 'wp-admin/includes/theme.php';
 		do_action( 'wphub_theme_action_pre', 'delete', $slug, array( 'slug' => $slug ) );
 		$resp = apply_filters( 'wphub_theme_delete', delete_theme( $slug ), $slug, array( 'slug' => $slug ) );
-		Logger::log_action( $site_url, 'delete', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
+		Logger::log_action( 'delete', $endpoint, array( 'slug' => $slug ), is_wp_error( $resp ) ? array( 'error' => $resp->get_error_message() ) : array( 'success' => true ) );
 		if ( ! is_wp_error( $resp ) ) {
 			Sync::schedule_sync();
 		}
