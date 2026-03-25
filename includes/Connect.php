@@ -82,15 +82,6 @@ class Connect extends ApiBase {
 			),
 		) );
 
-		// Connection status (admin only)
-		register_rest_route( $namespace, '/connection-status', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'handle_connection_status' ),
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-		) );
-
 		// Disconnect (remove from hub, admin only)
 		register_rest_route( $namespace, '/disconnect', array(
 			'methods'             => 'POST',
@@ -176,15 +167,6 @@ class Connect extends ApiBase {
 				),
 			),
 		) );
-	}
-
-	/**
-	 * REST callback: connection status payload.
-	 *
-	 * @return WP_REST_Response
-	 */
-	public function handle_connection_status() {
-		return rest_ensure_response( ConnectionStatus::fetch() );
 	}
 
 	/**
