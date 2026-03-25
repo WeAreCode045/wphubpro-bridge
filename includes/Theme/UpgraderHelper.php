@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Theme;
+
 /**
  * Theme_Upgrader wrapper for theme updates via REST.
  *
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Load admin dependencies and run Theme_Upgrader::update.
  */
-class WPHubPro_Bridge_Theme_Upgrader_Helper {
+class UpgraderHelper {
 
 	/**
 	 * Load theme upgrader dependencies.
@@ -31,8 +33,8 @@ class WPHubPro_Bridge_Theme_Upgrader_Helper {
 	 */
 	public static function run_theme_update( $slug ) {
 		self::load_upgrader_dependencies();
-		$skin     = new Automatic_Upgrader_Skin();
-		$upgrader = new Theme_Upgrader( $skin );
+		$skin     = new \Automatic_Upgrader_Skin();
+		$upgrader = new \Theme_Upgrader( $skin );
 		return $upgrader->update( $slug );
 	}
 
@@ -45,8 +47,8 @@ class WPHubPro_Bridge_Theme_Upgrader_Helper {
 	public static function run_theme_install_from_package( $package ) {
 		self::load_upgrader_dependencies();
 		require_once ABSPATH . 'wp-admin/includes/class-theme-upgrader.php';
-		$skin     = new Automatic_Upgrader_Skin();
-		$upgrader = new Theme_Upgrader( $skin );
+		$skin     = new \Automatic_Upgrader_Skin();
+		$upgrader = new \Theme_Upgrader( $skin );
 		return $upgrader->install( $package );
 	}
 }

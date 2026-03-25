@@ -1,4 +1,13 @@
 <?php
+namespace WPHubPro\Api;
+
+use Exception;
+use WPHubPro\Config;
+use WPHubPro\Error\AuthenticationError;
+use WPHubPro\Error\RequestError;
+use WPHubPro\Error\ValidationError;
+use WPHubPro\Logger;
+
 /**
  * Base HTTP client for Bridge → Hub (Appwrite-style) requests.
  *
@@ -12,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wraps GET/POST to the configured Hub API with site auth headers.
  */
-class WPHubPro_Bridge_API {
+class ApiBase {
     private $site_secret = '';
     private $site_id = '';
     private $base_url = '';
@@ -33,10 +42,10 @@ class WPHubPro_Bridge_API {
 	 * site_id/site_secret after save_connection (sync runs on shutdown).
 	 */
 	protected function refresh_config() {
-		$this->base_url    = WPHubPro_Bridge_Config::get_api_base_url();
-		$this->site_secret = WPHubPro_Bridge_Config::get_site_secret();
-		$this->site_id     = WPHubPro_Bridge_Config::get_site_id();
-		$this->project_id  = WPHubPro_Bridge_Config::get_project_id();
+		$this->base_url    = Config::get_api_base_url();
+		$this->site_secret = Config::get_site_secret();
+		$this->site_id     = Config::get_site_id();
+		$this->project_id  = Config::get_project_id();
 	}
 
     /**
@@ -95,7 +104,7 @@ class WPHubPro_Bridge_API {
         $code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
-            WPHubPro_Bridge_Logger::log_action(get_site_url(), 'api/get', 'http_error', array(), array(
+            Logger::log_action('api/get', 'http_error', array(), array(
                 'msg'   => 'Non-2xx response',
                 'code'  => $code,
                 'body'  => $body,
@@ -119,7 +128,7 @@ class WPHubPro_Bridge_API {
         $this->refresh_config();
         $this->endpoint = $endpoint;
         if (empty($this->endpoint)) {
-            WPHubPro_Bridge_Logger::log_action($endpoint, 'error', array(), array(
+            Logger::log_action($endpoint, 'error', array(), array(
                 'msg'      => 'Missing endpoint.',
                 'endpoint' => $endpoint,
             ));
@@ -145,7 +154,7 @@ class WPHubPro_Bridge_API {
             )
         );
         if (is_wp_error($response)) {
-            WPHubPro_Bridge_Logger::log_action($url, 'error', array(), array(
+            Logger::log_action($url, 'error', array(), array(
                 'msg'    => $response->get_error_message(),
                 'url'    => $url,
                 'body'   => $body,
@@ -167,7 +176,7 @@ class WPHubPro_Bridge_API {
         $code = wp_remote_retrieve_response_code($response);
         $resp_body = wp_remote_retrieve_body($response);
         if ($code < 200 || $code >= 300) {
-            WPHubPro_Bridge_Logger::log_action('api/post', 'http_error', array(), array(
+            Logger::log_action('api/post', 'http_error', array(), array(
                 'msg'   => 'Non-2xx response',
                 'code'  => $code,
                 'body'  => $resp_body,

@@ -1,4 +1,8 @@
 <?php
+namespace WPHubPro;
+
+use WPHubPro\Auth\Crypto;
+
 /**
  * Central config for WPHubPro Bridge options.
  *
@@ -14,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Config class: read-only access to bridge options.
  */
-class WPHubPro_Bridge_Config {
+class Config {
 
 	/** Option: Base URL. */
 	const OPTION_BASE_URL = 'wphubpro_base_url';
@@ -51,7 +55,7 @@ class WPHubPro_Bridge_Config {
 	const DEFAULT_STATUS = 'disconnected';
 
 	/** REST API authentication provider. */
-	const REST_API_AUTH_PROVIDER = array( 'WPHubPro_Bridge_Auth', 'validate_api_key' );
+	const REST_API_AUTH_PROVIDER = array( 'WPHubPro\\Auth\\Auth', 'validate_api_key' );
 
 
 	/** REST namespace for bridge routes. */
@@ -91,7 +95,7 @@ class WPHubPro_Bridge_Config {
 	 * @return string
 	 */
 	public static function get_api_key() {
-		return WPHubPro_Bridge_Crypto::retrieve_and_decrypt( self::OPTION_API_KEY );
+		return Crypto::retrieve_and_decrypt( self::OPTION_API_KEY );
 	}
 
 	/**
@@ -100,7 +104,7 @@ class WPHubPro_Bridge_Config {
 	 * @return string
 	 */
 	public static function get_site_secret() {
-		$site_secret = WPHubPro_Bridge_Crypto::retrieve_and_decrypt( self::OPTION_SITE_SECRET );
+		$site_secret = Crypto::retrieve_and_decrypt( self::OPTION_SITE_SECRET );
 		if ( ! empty( $site_secret ) ) {
 			return $site_secret;
 		}
@@ -236,15 +240,15 @@ class WPHubPro_Bridge_Config {
 	 * 
 	 */
 	public static function remove_options() {
-		delete_option( WPHubPro_Bridge_Config::OPTION_API_KEY );
-		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_SECRET );
-		delete_option( WPHubPro_Bridge_Config::OPTION_USER_JWT );
-		delete_option( WPHubPro_Bridge_Config::OPTION_BASE_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_PROJECT_ID );
-		delete_option( WPHubPro_Bridge_Config::OPTION_SITE_ID );
-		delete_option( WPHubPro_Bridge_Config::OPTION_HEARTBEAT_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_API_BASE_URL );
-		delete_option( WPHubPro_Bridge_Config::OPTION_LAST_HEARTBEAT_AT );
-		update_option( WPHubPro_Bridge_Config::OPTION_STATUS, 'disconnected' );
+		delete_option( Config::OPTION_API_KEY );
+		delete_option( Config::OPTION_SITE_SECRET );
+		delete_option( Config::OPTION_USER_JWT );
+		delete_option( Config::OPTION_BASE_URL );
+		delete_option( Config::OPTION_PROJECT_ID );
+		delete_option( Config::OPTION_SITE_ID );
+		delete_option( Config::OPTION_HEARTBEAT_URL );
+		delete_option( Config::OPTION_API_BASE_URL );
+		delete_option( Config::OPTION_LAST_HEARTBEAT_AT );
+		update_option( Config::OPTION_STATUS, 'disconnected' );
 	}
 }

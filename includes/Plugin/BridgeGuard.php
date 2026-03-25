@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Plugin;
+
 /**
  * Bridge plugin identity checks (cannot deactivate/uninstall from platform, etc.).
  *
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Helpers for detecting the WPHubPro Bridge plugin file.
  */
-class WPHubPro_Bridge_Plugin_Bridge_Guard {
+class BridgeGuard {
 
 	/**
 	 * Plugin file path for the bridge (e.g. wphubpro-bridge/wphubpro-bridge.php).

@@ -1,6 +1,10 @@
 <?php
+namespace WPHubPro\Error;
+
+use WPHubPro\Logger;
+
 /**
- * Base exception for WPHubPro Bridge that logs via WPHubPro_Bridge_Logger.
+ * Base exception for WPHubPro Bridge that logs via Logger.
  *
  * @package WPHubPro
  */
@@ -10,14 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Base error class. On construction, logs the error via WPHubPro_Bridge_Logger::log_action().
+ * Base error class. On construction, logs the error via Logger::log_action().
  */
-class BaseError extends Exception {
+class BaseError extends \Exception {
 
 	/**
-	 * @param string         $message     Exception message.
-	 * @param int            $code        Exception code.
-	 * @param Throwable|null $previous    Previous throwable.
+	 * @param string           $message     Exception message.
+	 * @param int              $code        Exception code.
+	 * @param \Throwable|null $previous    Previous throwable.
 	 * @param array          $log_context Optional context for log_action: site_url, action, endpoint, request.
 	 */
 	public function __construct( $message = '', $code = 0, $previous = null, array $log_context = array() ) {
@@ -32,8 +36,8 @@ class BaseError extends Exception {
 			'type'  => static::class,
 		);
 
-		if ( class_exists( 'WPHubPro_Bridge_Logger' ) ) {
-			WPHubPro_Bridge_Logger::log_action( $action, $endpoint, $request, $response );
+		if ( class_exists( Logger::class ) ) {
+			Logger::log_action( $action, $endpoint, $request, $response );
 		}
 	}
 

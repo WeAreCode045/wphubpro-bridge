@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Error;
+
 /**
  * Validation error for WPHubPro Bridge.
  *

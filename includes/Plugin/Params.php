@@ -1,4 +1,6 @@
 <?php
+namespace WPHubPro\Plugin;
+
 /**
  * REST argument definitions and plugin/slug parsing for plugin management.
  *
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Parse plugin parameters from REST requests and REST route args.
  */
-class WPHubPro_Bridge_Plugin_Params {
+class Params {
 
 	/**
 	 * @return array<string, array<string, mixed>>
@@ -133,7 +135,7 @@ class WPHubPro_Bridge_Plugin_Params {
 	 */
 	public static function validate_plugin_file( $plugin ) {
 		if ( empty( $plugin ) || strpos( $plugin, '/' ) === false ) {
-			return new WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
+			return new \WP_Error( 'invalid_plugin', 'Invalid or missing plugin param: expected plugin file path (e.g. akismet/akismet.php)' );
 		}
 		return null;
 	}

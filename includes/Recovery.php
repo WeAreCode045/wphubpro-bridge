@@ -1,8 +1,10 @@
 <?php
+namespace WPHubPro;
+
 /**
- * Site health for WPHubPro Bridge.
+ * Site recovery for WPHubPro Bridge.
  *
- * Placeholder for site health checks (WordPress Site Health, status, etc.).
+ * Recovery features for plugin & theme updates
  *
  * @package WPHubPro
  */
@@ -12,21 +14,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Site health feature (placeholder).
+ * Site recovery feature (placeholder).
  */
-class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
+class Recovery {
 
-    private static $instance = null;
-
-    public static function instance() {
-        if ( self::$instance === null ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
+    public function backup_plugin(string $slug) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
     }
 
-    public static function get_health_status() {
+    public static function recover_backup() {
+        // 1) Snapshot
+        $backup_ok = self::recursive_copy($plugin_dir, $backup_dir);
+        if ( ! $backup_ok ) {
+            delete_transient($lock_key);
+
+            // Throw hier een exception die die later dit response teruggeeft
+            return new \WP_REST_Response([ 'ok' => false, 'error' => 'backup_failed' ], 500);
+        }
+
+        $rolled_back = false;
+    }
+
+    public static function recovery_latest_backup_dir(string $slug): ?string {
+        $base = WPHUBPRO_BRIDGE_ABSPATH . '/upgrade-backups/' . $slug;
+        if (!is_dir($base)) return null;
+
+        $dirs = glob($base . '/*', GLOB_ONLYDIR) ?: [];
+        if (!$dirs) return null;
+
+        rsort($dirs); // newest first if timestamp naming
+        return $dirs[0] ?? null;
+    }
+
+    public static function recursive_copy(string $src, string $dst): bool {
+        if (!file_exists($src)) return false;
+        if (!is_dir($dst)) wp_mkdir_p($dst);
+
+        $dir = opendir($src);
+        if (!$dir) return false;
+
+        while (false !== ($file = readdir($dir))) {
+            if ($file === '.' || $file === '..') continue;
+            $src_path = $src . '/' . $file;
+            $dst_path = $dst . '/' . $file;
+
+            if (is_dir($src_path)) {
+                if (!self::recursive_copy($src_path, $dst_path)) { closedir($dir); return false; }
+            } else {
+                if (!@copy($src_path, $dst_path)) { closedir($dir); return false; }
+            }
+        }
+        closedir($dir);
+        return true;
+    }
+
+
+    public static function get_health_status( \WP_REST_Request $request ) {
         $t0 = microtime(true);
+
+        $request_id = sanitize_text_field($request->get_param('request_id') ?? '');
+        if (!$request_id) $request_id = wp_generate_uuid4();
 
         $safe_mode = file_exists(WPHUBPRO_BRIDGE_ABSPATH . '/.wphubpro_safe_mode');
 
@@ -66,7 +114,7 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         $disk = self::get_disk_status();
 
         // Last update attempt (jij kunt dit tijdens update flow zelf zetten)
-        $last_update = WPHubPro_Bridge_Config::get_last_update();
+        $last_update = Config::get_last_update();
 
         // Backups summary (optioneel, beperkt tot max slugs)
         $backups = self::summarize_backups(WP_CONTENT_DIR . '/upgrade-backups', 10);
@@ -77,6 +125,8 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
         $duration_ms = (int) round((microtime(true) - $t0) * 1000);
 
         $payload = [
+            'ok' => true,
+            'request_id' => $request_id,
             'timestamp_utc' => gmdate('c'),
             'response_time_ms' => $duration_ms,
 
@@ -113,37 +163,7 @@ class WPHubPro_Bridge_Health extends WPHubPro_Bridge_API {
             'debug_log_tail' => $debug_tail,
         ];
 
-        return $payload;
-    }
-
-    /**
-     * POST current health snapshot to the Hub (used by WP-Cron and manual triggers).
-     *
-     * @return array|bool Response data on success, false on handled failure.
-     */
-    public static function send_health_status() {
-        try {
-            return self::instance()->post( 'site-health', self::get_health_status() );
-        } catch ( Exception $e ) {
-            WPHubPro_Bridge_Logger::log_action( 'health', 'error', array(), array(
-                'msg' => $e->getMessage(),
-            ) );
-            return false;
-        }
-    }
-
-    /**
-     * Unschedule health cron (call on disconnect).
-     */
-    public static function unschedule() {
-        WPHubPro_Bridge_Cron::unschedule( 'WPHubPro_Bridge_Cron_Job_Health' );
-    }
-
-    /**
-     * Schedule health push with an immediate run (e.g. after save-connection).
-     */
-    public static function schedule() {
-        WPHubPro_Bridge_Cron::schedule_with_immediate_run( 'WPHubPro_Bridge_Cron_Job_Health' );
+        return new \WP_REST_Response($payload, 200);
     }
 
     private static function get_woo_status(): array {
