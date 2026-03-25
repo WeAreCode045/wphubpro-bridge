@@ -43,9 +43,6 @@ class Bridge {
 	/** @var Themes */
 	private $themes;
 
-	/** @var Details */
-	private $details;
-
 	/** @var Health */
 	private $health;
 
@@ -64,7 +61,6 @@ class Bridge {
 		$this->updater = Updater::instance();
 		$this->plugins = new Plugins();
 		$this->themes  = new Themes();
-		$this->details = new Details();
 		$this->health     = new Health();
 		$this->heartbeat = new Heartbeat();
 
@@ -97,12 +93,6 @@ class Bridge {
 		// Themes (list + manage — single registration point).
 		$this->themes->register_rest_routes();
 
-		// Site details (WordPress version, plugin/theme counts, PHP info)
-		register_rest_route( $namespace, '/details', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this->details, 'get_details' ),
-			'permission_callback' => $validate,
-		) );
 
 		// Bridge logs (from option WPHUBPRO_LOG; this call is not logged)
 		register_rest_route( $namespace, '/logs', array(
