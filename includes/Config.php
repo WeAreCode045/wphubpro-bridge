@@ -1,6 +1,8 @@
 <?php
 namespace WPHubPro;
 
+use WPHubPro\Auth\Crypto;
+
 /**
  * Central config for WPHubPro Bridge options.
  *

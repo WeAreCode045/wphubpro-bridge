@@ -6,7 +6,7 @@ use WPHubPro\Api\Health;
 use WPHubPro\Api\Heartbeat;
 use WPHubPro\Api\Sync;
 use WPHubPro\Auth\Auth;
-use WPHubPro\Crypto;
+use WPHubPro\Auth\Crypto;
 
 /**
  * Connect & site linking for WPHubPro Bridge.
