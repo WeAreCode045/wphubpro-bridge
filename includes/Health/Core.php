@@ -40,6 +40,10 @@ class Core {
         if ( ! class_exists( 'WP_Site_Health' ) ) {
             require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
         }
+        require_once ABSPATH . 'wp-admin/includes/update.php';
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        require_once ABSPATH . 'wp-admin/includes/theme.php';
+        require_once ABSPATH . 'wp-admin/includes/misc.php';
     
         $site_health = \WP_Site_Health::get_instance();
         
@@ -55,7 +59,7 @@ class Core {
         $results = [
             'status' => 'success',
             'timestamp' => current_time('mysql'),
-            'site_info' => $site_health->enqueue_scripts(), // Dit triggert ook interne data verzameling
+            // 'site_info' => $site_health->enqueue_scripts(), // Dit triggert ook interne data verzameling
             'data' => [
                 'direct_tests' => [],
                 'async_tests'  => []
@@ -64,16 +68,18 @@ class Core {
     
         // Voer de directe (synchronous) tests uit
         foreach ( $tests['direct'] as $test_name => $test ) {
-            if ( is_callable( $test['test'] ) ) {
-                $results['data']['direct_tests'][$test_name] = call_user_func( $test['test'] );
+            $callable = [ $site_health, 'get_test_'.$test['test'] ];
+            if ( is_callable( $callable ) ) {
+                $results['data']['direct_tests'][$test_name] = call_user_func( $callable );
             }
         }
+    
     
         // Voor de async tests kun je in een API vaak alleen de namen/urls teruggeven, 
         // omdat deze normaal via AJAX in de admin worden afgehandeld.
         $results['data']['async_tests'] = array_keys($tests['async']);
     
-        return results;
+        return $results;
     }
 
     public static function get_wp_version() {
