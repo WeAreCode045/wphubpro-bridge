@@ -42,7 +42,7 @@ class ConnectionStatus {
      */
     public function register_rest_routes() : void {
         // Connection status (admin only)
-		register_rest_route( $namespace, '/connection-status', array(
+		register_rest_route( Config::REST_NAMESPACE, '/connection-status', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'handle_connection_status' ),
 			'permission_callback' => function () {
