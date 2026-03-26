@@ -54,9 +54,9 @@ class ConnectionStatus {
     /**
      * Handle connection status request.
      *
-     * @return WP_REST_Response
+     * @return \WP_REST_Response
      */
-    public function handle_connection_status() : WP_REST_Response {
+    public function handle_connection_status() : \WP_REST_Response {
         return rest_ensure_response( self::get_connection_status() );
     }
     

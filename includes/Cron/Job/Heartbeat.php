@@ -4,7 +4,7 @@ namespace WPHubPro\Cron\Job;
 use WPHubPro\Api\Heartbeat as ApiHeartbeat;
 use WPHubPro\Config;
 use WPHubPro\Cron\JobInterface;
-
+use WPHubPro\Cron\Scheduler;
 /**
  * WP-Cron job: send bridge heartbeat to the platform.
  *
