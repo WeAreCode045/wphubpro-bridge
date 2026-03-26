@@ -31,6 +31,9 @@ class Bridge {
 
 	private static $instance = null;
 
+	/** @var ConnectionStatus */
+	private $connection_status;
+
 	/** @var Connect */
 	private $connect;
 
@@ -49,7 +52,7 @@ class Bridge {
 	/** @var Heartbeat */
 	private $heartbeat;
 
-	public static function instance(): self {
+	public static function instance() : self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -58,6 +61,7 @@ class Bridge {
 
 	private function __construct() {
 		$this->connect = Connect::instance();
+		$this->connection_status = ConnectionStatus::instance();
 		$this->updater = Updater::instance();
 		$this->plugins = new Plugins();
 		$this->themes  = new Themes();
@@ -78,7 +82,8 @@ class Bridge {
 	/**
 	 * Register all REST API routes.
 	 */
-	public function register_routes() {
+	public function register_routes() : void {
+		$this->connection_status->register_rest_routes();
 		$this->connect->register_rest_routes();
 		$this->updater->register_rest_routes();
 		
@@ -160,9 +165,8 @@ class Bridge {
 		if ( ! is_array( $lines ) ) {
 			return rest_ensure_response( array( 'lines' => array(), 'file' => $log_file, 'error' => __( 'Could not read log file.', 'wphubpro-bridge' ) ) );
 		}
-		$last_lines = array_slice( $lines, -400 );
-
-		return rest_ensure_response( array( 'lines' => $last_lines, 'file' => (string) $log_file ) );
+		$last_200 = array_slice( $lines, -400 );
+		return rest_ensure_response( array( 'lines' => $last_200, 'file' => $log_file ) );
 	}
 
 	
