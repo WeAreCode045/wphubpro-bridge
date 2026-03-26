@@ -20,15 +20,17 @@ class Core {
 	 *
 	 * @return array
 	 */
-	public static function get_info() {
+	public static function get_info(): array {
+		$server = $_SERVER['SERVER_SOFTWARE'] ?? null;
+
 		return array(
-			'wp_version'          => get_bloginfo( 'version' ),
+			'wp_version'          => (string) get_bloginfo( 'version' ),
 			'php_version'         => PHP_VERSION,
-			'server_software'     => $_SERVER['SERVER_SOFTWARE'] ?? null,
-			'memory_limit'        => ini_get( 'memory_limit' ),
-			'max_execution_time'  => ini_get( 'max_execution_time' ),
-			'upload_max_filesize' => ini_get( 'upload_max_filesize' ),
-			'post_max_size'       => ini_get( 'post_max_size' ),
+			'server_software'     => is_string( $server ) ? $server : null,
+			'memory_limit'        => (string) ini_get( 'memory_limit' ),
+			'max_execution_time'  => (string) ini_get( 'max_execution_time' ),
+			'upload_max_filesize' => (string) ini_get( 'upload_max_filesize' ),
+			'post_max_size'       => (string) ini_get( 'post_max_size' ),
 		);
 	}
 
@@ -52,38 +54,43 @@ class Core {
 		return HealthSnapshot::append_module( $payload, $module );
 	}
 
-	public static function get_wp_version() {
-		return get_bloginfo( 'version' );
+	public static function get_wp_version(): string {
+		return (string) get_bloginfo( 'version' );
 	}
 
-	public static function get_php_version() {
+	public static function get_php_version(): string {
 		return PHP_VERSION;
 	}
 
-	public static function get_server_software() {
-		return $_SERVER['SERVER_SOFTWARE'] ?? null;
+	public static function get_server_software(): ?string {
+		$s = $_SERVER['SERVER_SOFTWARE'] ?? null;
+
+		return is_string( $s ) ? $s : null;
 	}
 
-	public static function get_memory_limit() {
-		return ini_get( 'memory_limit' );
+	public static function get_memory_limit(): string {
+		return (string) ini_get( 'memory_limit' );
 	}
 
-	public static function get_max_execution_time() {
-		return ini_get( 'max_execution_time' );
+	public static function get_max_execution_time(): string {
+		return (string) ini_get( 'max_execution_time' );
 	}
 
-	public static function get_upload_max_filesize() {
-		return ini_get( 'upload_max_filesize' );
+	public static function get_upload_max_filesize(): string {
+		return (string) ini_get( 'upload_max_filesize' );
 	}
 
-	public static function get_post_max_size() {
-		return ini_get( 'post_max_size' );
+	public static function get_post_max_size(): string {
+		return (string) ini_get( 'post_max_size' );
 	}
 
-	public static function get_disk_status() {
+	public static function get_disk_status(): array {
+		$total = disk_total_space( ABSPATH );
+		$free  = disk_free_space( ABSPATH );
+
 		return array(
-			'total' => disk_total_space( ABSPATH ),
-			'free'  => disk_free_space( ABSPATH ),
+			'total' => false !== $total ? (int) $total : false,
+			'free'  => false !== $free ? (int) $free : false,
 		);
 	}
 
@@ -121,16 +128,18 @@ class Core {
 	}
 
 	private static function client_ip(): string {
-		if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-			return $_SERVER['HTTP_CF_CONNECTING_IP'];
+		if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) && is_string( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+			return (string) $_SERVER['HTTP_CF_CONNECTING_IP'];
 		}
-		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && is_string( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			$parts = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
 
-			return trim( $parts[0] );
+			return trim( (string) ( $parts[0] ?? '' ) );
 		}
 
-		return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$ra = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
+		return is_string( $ra ) ? $ra : 'unknown';
 	}
 
 	/**
@@ -138,13 +147,13 @@ class Core {
 	 *
 	 * @return int
 	 */
-	private function get_plugins_count() {
+	private function get_plugins_count(): int {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all = get_plugins();
 
-		return is_array( $all ) ? count( $all ) : 0;
+		return is_array( $all ) ? (int) count( $all ) : 0;
 	}
 
 	/**
@@ -152,9 +161,9 @@ class Core {
 	 *
 	 * @return int
 	 */
-	private function get_themes_count() {
+	private function get_themes_count(): int {
 		$all = wp_get_themes();
 
-		return is_array( $all ) ? count( $all ) : 0;
+		return is_array( $all ) ? (int) count( $all ) : 0;
 	}
 }

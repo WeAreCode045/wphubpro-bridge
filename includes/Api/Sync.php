@@ -2,7 +2,7 @@
 namespace WPHubPro\Api;
 
 use WPHubPro\Config;
-use WPHubPro\Details;
+use WPHubPro\Helper;
 use WPHubPro\Logger;
 
 /**
@@ -30,10 +30,11 @@ class Sync extends ApiBase {
 	/** @var bool True if sync already scheduled for this request (avoids double sync on shutdown). */
 	private static $sync_scheduled = false;
 
-	public static function instance() {
+	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
+
 		return self::$instance;
 	}
 
@@ -82,7 +83,7 @@ class Sync extends ApiBase {
 	 * @param array       $options  Options (type: 'plugin'|'theme'|'core', action: 'install'|'update').
 	 */
 	public static function on_upgrader_complete( $upgrader, $options ) {
-		$type = isset( $options['type'] ) ? $options['type'] : '';
+		$type = isset( $options['type'] ) ? (string) $options['type'] : '';
 		if ( $type === 'plugin' || $type === 'theme' || $type === 'core' ) {
 			self::on_plugin_or_theme_change();
 		}
@@ -97,9 +98,8 @@ class Sync extends ApiBase {
 	 */
 	public function sync_meta_to_appwrite() {
 		$plugins_meta = self::get_plugins_meta();
-		error_log(print_r($plugins_meta, true));
 		$themes_meta  = self::get_themes_meta();
-		$wp_meta      = class_exists( Details::class ) ? Details::get_wp_meta_array() : array();
+		$wp_meta      = Helper::get_wp_meta_array();
 
 		$payload = array(
 			'plugins_meta' => $plugins_meta,
@@ -115,7 +115,7 @@ class Sync extends ApiBase {
 		}
 		
 
-		Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => count( $plugins_meta ), 'themes' => count( $themes_meta ), 'wp_meta' => ! empty( $wp_meta ) ) );
+		Logger::log_action( 'sync', 'meta', array(), array( 'success' => true, 'plugins' => (int) count( $plugins_meta ), 'themes' => (int) count( $themes_meta ), 'wp_meta' => ! empty( $wp_meta ) ) );
 		return true;
 	}
 
@@ -142,11 +142,11 @@ class Sync extends ApiBase {
 				? $updates_response[ $file ]->new_version
 				: null;
 			$meta[] = array(
-				'file'    => $file,
-				'name'    => $data['Name'],
-				'version' => $data['Version'],
+				'file'    => (string) $file,
+				'name'    => isset( $data['Name'] ) ? (string) $data['Name'] : '',
+				'version' => isset( $data['Version'] ) ? (string) $data['Version'] : '',
 				'active'  => in_array( $file, (array) $active_plugins, true ),
-				'update'  => $update_version,
+				'update'  => null !== $update_version ? (string) $update_version : null,
 			);
 		}
 		return $meta;
@@ -165,14 +165,21 @@ class Sync extends ApiBase {
 		}
 		$updates = get_site_transient( 'update_themes' );
 		$meta    = array();
+		$resp    = ( is_object( $updates ) && isset( $updates->response ) && is_array( $updates->response ) )
+			? $updates->response
+			: array();
 
 		foreach ( $all_themes as $slug => $theme ) {
+			$upd = null;
+			if ( isset( $resp[ $slug ]['new_version'] ) ) {
+				$upd = (string) $resp[ $slug ]['new_version'];
+			}
 			$meta[] = array(
-				'stylesheet' => $slug,
-				'name'       => $theme->get( 'Name' ),
-				'version'    => $theme->get( 'Version' ),
-				'active'     => ( $slug === $current ),
-				'update'     => isset( $updates->response[ $slug ]['new_version'] ) ? $updates->response[ $slug ]['new_version'] : null,
+				'stylesheet' => (string) $slug,
+				'name'       => (string) $theme->get( 'Name' ),
+				'version'    => (string) $theme->get( 'Version' ),
+				'active'     => ( (string) $slug === (string) $current ),
+				'update'     => $upd,
 			);
 		}
 		return $meta;

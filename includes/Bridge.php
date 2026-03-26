@@ -49,7 +49,7 @@ class Bridge {
 	/** @var Heartbeat */
 	private $heartbeat;
 
-	public static function instance() {
+	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -144,8 +144,8 @@ class Bridge {
 			$log_file = WP_CONTENT_DIR . '/debug.log';
 		}
 		if ( ! $log_file || ! is_readable( $log_file ) ) {
-			$php_log = ini_get( 'error_log' );
-			if ( $php_log && is_readable( $php_log ) ) {
+			$php_log = (string) ini_get( 'error_log' );
+			if ( $php_log !== '' && is_readable( $php_log ) ) {
 				$log_file = $php_log;
 			}
 		}
@@ -160,8 +160,9 @@ class Bridge {
 		if ( ! is_array( $lines ) ) {
 			return rest_ensure_response( array( 'lines' => array(), 'file' => $log_file, 'error' => __( 'Could not read log file.', 'wphubpro-bridge' ) ) );
 		}
-		$last_200 = array_slice( $lines, -400 );
-		return rest_ensure_response( array( 'lines' => $last_200, 'file' => $log_file ) );
+		$last_lines = array_slice( $lines, -400 );
+
+		return rest_ensure_response( array( 'lines' => $last_lines, 'file' => (string) $log_file ) );
 	}
 
 	

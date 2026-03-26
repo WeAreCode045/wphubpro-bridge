@@ -21,7 +21,7 @@ class BridgeGuard {
 	 *
 	 * @return string
 	 */
-	public static function get_bridge_plugin_file() {
+	public static function get_bridge_plugin_file() : string {
 		if ( defined( 'WPHUBPRO_BRIDGE_PLUGIN_FILE' ) ) {
 			return plugin_basename( WPHUBPRO_BRIDGE_PLUGIN_FILE );
 		}
@@ -34,7 +34,7 @@ class BridgeGuard {
 	 * @param string $plugin Plugin file (e.g. wphubpro-bridge/wphubpro-bridge.php).
 	 * @return bool
 	 */
-	public static function is_bridge_plugin( $plugin ) {
+	public static function is_bridge_plugin( string $plugin ) : bool {
 		if ( empty( $plugin ) ) {
 			return false;
 		}
