@@ -23,10 +23,11 @@ class Updater extends ApiBase {
 	private static $instance = null;
 	private static $path = '/bridge/';
 
-	public static function instance() {
+	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
+
 		return self::$instance;
 	}
 

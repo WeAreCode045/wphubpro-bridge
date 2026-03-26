@@ -23,16 +23,15 @@ class Helper {
 	 *
 	 * @return array
 	 */
-	public static function get_wp_meta_array() {
-		$instance = new self();
-		$wp_installed  = get_bloginfo( 'version' );
-		$wp_latest     = $instance->get_latest_wp_version();
-		$plugins_count = $instance->get_plugins_count();
-		$themes_count  = $instance->get_themes_count();
-		$php_info      = $instance->get_php_version_info();
+	public static function get_wp_meta_array(): array {
+		$wp_installed  = (string) get_bloginfo( 'version' );
+		$wp_latest     = (string) self::get_latest_wp_version();
+		$plugins_count = self::get_plugins_count();
+		$themes_count  = self::get_themes_count();
+		$php_info      = self::get_php_version_info();
 
 		return array(
-			'wp_version'        => $wp_installed,
+			'wp_version'         => $wp_installed,
 			'wp_version_latest'  => $wp_latest,
 			'plugins_count'      => $plugins_count,
 			'themes_count'       => $themes_count,
@@ -59,8 +58,8 @@ class Helper {
 	 * @return WP_REST_Response
 	 */
 	public function get_details( $request ) {
-		$wp_installed  = get_bloginfo( 'version' );
-		$wp_latest     = self::get_latest_wp_version();
+		$wp_installed  = (string) get_bloginfo( 'version' );
+		$wp_latest     = (string) self::get_latest_wp_version();
 		$plugins_count = self::get_plugins_count();
 		$themes_count  = self::get_themes_count();
 		$php_info      = self::get_php_version_info();
@@ -84,28 +83,27 @@ class Helper {
 	 *
 	 * @return string|null
 	 */
-	private static function get_latest_wp_version() {
+	private static function get_latest_wp_version(): string {
 		require_once ABSPATH . 'wp-admin/includes/update.php';
 		wp_version_check();
 
 		$core_updates = get_site_transient( 'update_core' );
 		if ( ! $core_updates || ! isset( $core_updates->updates ) || ! is_array( $core_updates->updates ) ) {
-			return get_bloginfo( 'version' );
+			return (string) get_bloginfo( 'version' );
 		}
 
 		foreach ( $core_updates->updates as $update ) {
 			if ( 'latest' === ( $update->response ?? '' ) && isset( $update->current ) ) {
-				return $update->current;
+				return (string) $update->current;
 			}
 		}
 
-		// Upgrade available: first update has the target version
 		$updates = get_core_updates();
 		if ( is_array( $updates ) && ! empty( $updates ) && isset( $updates[0]->current ) ) {
-			return $updates[0]->current;
+			return (string) $updates[0]->current;
 		}
 
-		return get_bloginfo( 'version' );
+		return (string) get_bloginfo( 'version' );
 	}
 
 	/**
@@ -113,12 +111,13 @@ class Helper {
 	 *
 	 * @return int
 	 */
-	private static function get_plugins_count() {
+	private static function get_plugins_count(): int {
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$all = get_plugins();
-		return is_array( $all ) ? count( $all ) : 0;
+
+		return is_array( $all ) ? (int) count( $all ) : 0;
 	}
 
 	/**
@@ -126,17 +125,18 @@ class Helper {
 	 *
 	 * @return int
 	 */
-	private static function get_themes_count() {
+	private static function get_themes_count(): int {
 		$all = wp_get_themes();
-		return is_array( $all ) ? count( $all ) : 0;
+
+		return is_array( $all ) ? (int) count( $all ) : 0;
 	}
 
 	/**
 	 * Get PHP version check result from wp_check_php_version().
 	 *
-	 * @return array|false
+	 * @return array<string, mixed>|null
 	 */
-	private static function get_php_version_info() {
+	private static function get_php_version_info(): ?array {
 		if ( ! function_exists( 'wp_check_php_version' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/misc.php';
 		}

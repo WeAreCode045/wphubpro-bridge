@@ -26,12 +26,13 @@ class Health extends ApiBase {
 
     private static $instance = null;
 
-    public static function instance() {
-        if ( self::$instance === null ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
+	public static function instance(): self {
+		if ( self::$instance === null ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
 
     // public static function get_health_status() {
     //     $t0 = microtime(true);
@@ -129,7 +130,7 @@ class Health extends ApiBase {
      *
      * @return array|bool Response data on success, false on handled failure.
      */
-    public static function send_health_status() {
+	public static function send_health_status(): array|bool {
         try {
             return self::instance()->post( 'site-health', Core::get_health_status() );
         } catch ( \Exception $e ) {
@@ -169,11 +170,11 @@ class Health extends ApiBase {
             $snapshots = glob( $slug_dir . '/*', GLOB_ONLYDIR ) ?: array();
             rsort( $snapshots );
 
-            $slugs[] = array(
-                'slug'   => $slug,
-                'count'  => count( $snapshots ),
-                'latest' => $snapshots[0] ?? null,
-            );
+			$slugs[] = array(
+				'slug'   => (string) $slug,
+				'count'  => (int) count( $snapshots ),
+				'latest' => isset( $snapshots[0] ) ? (string) $snapshots[0] : null,
+			);
         }
 
         return array(

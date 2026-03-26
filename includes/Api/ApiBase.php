@@ -33,15 +33,15 @@ class ApiBase {
     private static string $path_postfix = '/executions';
 
 
-    public function __construct() {
+	public function __construct() {
 		$this->refresh_config();
-    }
+	}
 
 	/**
 	 * Refresh config from options. Call before each request so we use fresh
 	 * site_id/site_secret after save_connection (sync runs on shutdown).
 	 */
-	protected function refresh_config() {
+	protected function refresh_config(): void {
 		$this->base_url    = Config::get_api_base_url();
 		$this->site_secret = Config::get_site_secret();
 		$this->site_id     = Config::get_site_id();
@@ -54,7 +54,7 @@ class ApiBase {
      *
      * @return array The headers for the API request.
      */
-    protected function get_headers() {
+	protected function get_headers(): array {
         return array(
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
@@ -70,9 +70,9 @@ class ApiBase {
      * @param string $endpoint The endpoint to get the URL for.
      * @return string The URL for the API request.
      */
-    protected function get_url(string $endpoint) {
-        return untrailingslashit( $this->base_url ) . self::$path_prefix . '/' . $endpoint . self::$path_postfix;
-    }
+	protected function get_url( string $endpoint ): string {
+		return untrailingslashit( $this->base_url ) . self::$path_prefix . '/' . $endpoint . self::$path_postfix;
+	}
 
     /**
      * Simple base API class wrapping GET and POST requests for Appwrite endpoints.
@@ -101,8 +101,8 @@ class ApiBase {
         if (is_wp_error($response)) {
             throw new RequestError($response->get_error_message(), 0, null, array('url' => $url, 'query' => $query));
         }
-        $code = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        $body = (string) wp_remote_retrieve_body( $response );
         if ($code < 200 || $code >= 300) {
             Logger::log_action('api/get', 'http_error', array(), array(
                 'msg'   => 'Non-2xx response',
@@ -113,7 +113,7 @@ class ApiBase {
             ));
             return false;
         }
-        $json = json_decode($body, true);
+        $json = json_decode( $body, true );
         return $json !== null ? $json : $body;
     }
     /**
@@ -172,9 +172,12 @@ class ApiBase {
      * @return array The response body.
      * @throws RequestError If the response is not a 2xx response.
      */
-    protected function resolve_response($response) {
-        $code = wp_remote_retrieve_response_code($response);
-        $resp_body = wp_remote_retrieve_body($response);
+	/**
+	 * @return mixed Decoded JSON (array/scalar) or raw response body string.
+	 */
+	protected function resolve_response( $response ) {
+        $code = (int) wp_remote_retrieve_response_code( $response );
+        $resp_body = (string) wp_remote_retrieve_body( $response );
         if ($code < 200 || $code >= 300) {
             Logger::log_action('api/post', 'http_error', array(), array(
                 'msg'   => 'Non-2xx response',
@@ -184,7 +187,7 @@ class ApiBase {
             ));
             throw new RequestError('Non-2xx response', $code, null, array('code' => $code, 'body' => $resp_body, 'url' => $this->endpoint));
         }
-        $json = json_decode($resp_body, true);
+        $json = json_decode( $resp_body, true );
         return $json !== null ? $json : $resp_body;
     }
 
@@ -194,10 +197,11 @@ class ApiBase {
      * @return bool True if authenticated, false otherwise.
      * @throws Exception If the site is not authenticated.
      */
-    private function check_auth() {
-        if ( empty( $this->site_secret ) ) {
-            throw new AuthenticationError( 'Not authenticated: site_secret' );
-        }
-        return true;
-    }
+	private function check_auth(): bool {
+		if ( $this->site_secret === '' ) {
+			throw new AuthenticationError( 'Not authenticated: site_secret' );
+		}
+
+		return true;
+	}
 }

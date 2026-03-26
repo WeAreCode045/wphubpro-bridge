@@ -275,7 +275,7 @@ class Connect extends ApiBase {
 	 * @return WP_REST_Response
 	 */
 	public function get_redirect_settings() {
-		$current = get_option( Config::OPTION_REDIRECT_BASE_URL, '' );
+		$current = (string) get_option( Config::OPTION_REDIRECT_BASE_URL, '' );
 		$default = Config::DEFAULT_REDIRECT_BASE_URL;
 		$use_default = ( $current === '' || $current === $default );
 		return rest_ensure_response( array(
@@ -292,7 +292,7 @@ class Connect extends ApiBase {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function save_redirect_settings( $request ) {
-		$use_default = $request->get_param( 'use_default' );
+		$use_default = (bool) $request->get_param( 'use_default' );
 		if ( $use_default ) {
 			delete_option( Config::OPTION_REDIRECT_BASE_URL );
 			return rest_ensure_response( array(

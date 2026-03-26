@@ -24,10 +24,11 @@ class Heartbeat extends ApiBase {
 
 	private static $instance = null;
 
-	public static function instance() {
+	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
+
 		return self::$instance;
 	}
 
@@ -43,7 +44,7 @@ class Heartbeat extends ApiBase {
 	 *
 	 * @return bool True on success, false on failure.
 	 */
-	public static function send_heartbeat() {
+	public static function send_heartbeat(): bool {
 		try {
 			self::instance()->post( 'site-heartbeat');
 		} catch ( \Exception $e ) {
@@ -53,7 +54,7 @@ class Heartbeat extends ApiBase {
 			return false;
 		}
 
-		update_option( Config::OPTION_LAST_HEARTBEAT_AT, current_time( 'c' ) );
+		update_option( Config::OPTION_LAST_HEARTBEAT_AT, (string) current_time( 'c' ) );
 		update_option( Config::OPTION_STATUS, 'connected' );
 		return true;
 	}

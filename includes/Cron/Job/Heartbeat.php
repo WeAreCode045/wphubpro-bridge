@@ -25,11 +25,11 @@ class Heartbeat implements JobInterface {
 	}
 
 	public static function get_schedule_slug(): string {
-		return 'wphubpro_minute';
+		return Scheduler::JOB_SLUG_MINUTE;
 	}
 
 	public static function get_interval_seconds(): int {
-		return 60;
+		return Scheduler::JOB_INTERVAL_MINUTE;
 	}
 
 	public static function get_schedule_label(): string {

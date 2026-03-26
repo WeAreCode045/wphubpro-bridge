@@ -66,8 +66,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_base_url() {
-		return get_option( self::OPTION_BASE_URL, '' );
+	public static function get_base_url() : string {
+		return (string) get_option( self::OPTION_BASE_URL, '' );
 	}
 
 	/**
@@ -75,8 +75,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_api_base_url() {
-		return get_option( self::OPTION_API_BASE_URL, 'https://api.wphub.pro/v1' );
+	public static function get_api_base_url() : string {
+		return (string) get_option( self::OPTION_API_BASE_URL, 'https://api.wphub.pro/v1' );
 	}
 
 	/**
@@ -84,8 +84,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_project_id() {
-		return get_option( self::OPTION_PROJECT_ID, '' );
+	public static function get_project_id() : string {
+		return (string) get_option( self::OPTION_PROJECT_ID, '' );
 	}
 
 	/**
@@ -94,7 +94,7 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_api_key() {
+	public static function get_api_key() : string {
 		return Crypto::retrieve_and_decrypt( self::OPTION_API_KEY );
 	}
 
@@ -103,7 +103,7 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_site_secret() {
+	public static function get_site_secret() : string {
 		$site_secret = Crypto::retrieve_and_decrypt( self::OPTION_SITE_SECRET );
 		if ( ! empty( $site_secret ) ) {
 			return $site_secret;
@@ -116,8 +116,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_site_id() {
-		return get_option( self::OPTION_SITE_ID, '' );
+	public static function get_site_id() : string {
+		return (string) get_option( self::OPTION_SITE_ID, '' );
 	}
 
 	/**
@@ -125,8 +125,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_user_jwt() {
-		return get_option( self::OPTION_USER_JWT, '' );
+	public static function get_user_jwt() : string {
+		return (string) get_option( self::OPTION_USER_JWT, '' );
 	}
 
 	/**
@@ -134,8 +134,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_heartbeat_url() {
-		return get_option( self::OPTION_HEARTBEAT_URL, '' );
+	public static function get_heartbeat_url() : string {
+		return (string) get_option( self::OPTION_HEARTBEAT_URL, '' );
 	}
 
 	/**
@@ -143,8 +143,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_last_heartbeat_at() {
-		return get_option( self::OPTION_LAST_HEARTBEAT_AT, '' );
+	public static function get_last_heartbeat_at() : string {
+		return (string) get_option( self::OPTION_LAST_HEARTBEAT_AT, '' );
 	}
 
 	/**
@@ -152,8 +152,9 @@ class Config {
 	 *
 	 * @return array
 	 */
-	public static function get_log() {
+	public static function get_log() : array {
 		$log = get_option( self::OPTION_LOG, array() );
+
 		return is_array( $log ) ? $log : array();
 	}
 
@@ -162,8 +163,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_status() {
-		return get_option( self::OPTION_STATUS, self::DEFAULT_STATUS );
+	public static function get_status() : string {
+		return (string) get_option( self::OPTION_STATUS, self::DEFAULT_STATUS );
 	}
 
 	/**
@@ -171,8 +172,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_redirect_base_url() {
-		return get_option( self::OPTION_REDIRECT_BASE_URL, self::DEFAULT_REDIRECT_BASE_URL );
+	public static function get_redirect_base_url() : string {
+		return (string) get_option( self::OPTION_REDIRECT_BASE_URL, self::DEFAULT_REDIRECT_BASE_URL );
 	}
 
 	/**
@@ -180,8 +181,8 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_recovery_agent_version() {
-		return get_option( self::OPTION_RECOVERY_AGENT_VERSION, '' );
+	public static function get_recovery_agent_version() : string {
+		return (string) get_option( self::OPTION_RECOVERY_AGENT_VERSION, '' );
 	}
 
 	/**
@@ -189,8 +190,13 @@ class Config {
 	 *
 	 * @return string|null
 	 */
-	public static function get_last_update() {
-		return get_option( self::OPTION_LAST_UPDATE, null );
+	public static function get_last_update() : ?string {
+		$v = get_option( self::OPTION_LAST_UPDATE, null );
+		if ( $v === null || $v === false || $v === '' ) {
+			return null;
+		}
+
+		return (string) $v;
 	}
 
 	/**
@@ -199,20 +205,21 @@ class Config {
 	 *
 	 * @return array{installed: string, latest: string}
 	 */
-	public static function get_bridge_plugin_data() {
-		$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '';
+	public static function get_bridge_plugin_data() : array {
+		$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? (string) WPHUBPRO_BRIDGE_VERSION : '';
 		$raw       = get_option( self::OPTION_BRIDGE_PLUGIN, '' );
 		if ( is_string( $raw ) && $raw !== '' ) {
 			$decoded = json_decode( $raw, true );
 			if ( is_array( $decoded ) && ! empty( $decoded['installed'] ) ) {
-				$installed = $decoded['installed'];
+				$installed = (string) $decoded['installed'];
 			}
 		} else {
 			$legacy = get_option( 'bridge_version', '' );
-			if ( $legacy ) {
-				$installed = $legacy;
+			if ( $legacy !== '' && $legacy !== false ) {
+				$installed = (string) $legacy;
 			}
 		}
+
 		return array( 'installed' => $installed, 'latest' => $installed );
 	}
 
@@ -221,7 +228,7 @@ class Config {
 	 *
 	 * @return string
 	 */
-	public static function get_bridge_version() {
+	public static function get_bridge_version() : string {
 		$data = self::get_bridge_plugin_data();
 		return $data['installed'];
 	}
@@ -231,7 +238,7 @@ class Config {
 	 *
 	 * @return array
 	 */
-	public static function get_active_plugins() {
+	public static function get_active_plugins() : array {
 		$active = get_option( 'active_plugins', array() );
 		return is_array( $active ) ? $active : array();
 	}
@@ -239,7 +246,7 @@ class Config {
 	/**
 	 * 
 	 */
-	public static function remove_options() {
+	public static function remove_options() : void {
 		delete_option( Config::OPTION_API_KEY );
 		delete_option( Config::OPTION_SITE_SECRET );
 		delete_option( Config::OPTION_USER_JWT );

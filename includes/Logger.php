@@ -30,7 +30,7 @@ class Logger {
 	 * @param array  $request  Request data.
 	 * @param mixed  $response Response/result.
 	 */
-	public static function log_action($action, $endpoint, $request, $response ) {
+	public static function log_action( $action, $endpoint, $request, $response ): void {
 		$log_req = is_array( $request ) ? $request : array();
 		$log_res = is_array( $response ) ? $response : ( is_object( $response ) ? (array) $response : array() );
 		$log_req_copy = json_decode( wp_json_encode( $log_req ), true ) ?: array();
@@ -38,8 +38,8 @@ class Logger {
 		self::strip_sensitive_data( $log_req_copy );
 		self::strip_sensitive_data( $log_res_copy );
 		error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
-			'action'   => $action,
-			'endpoint' => $endpoint,
+			'action'   => (string) $action,
+			'endpoint' => (string) $endpoint,
 			'request'  => $log_req_copy,
 			'response' => $log_res_copy,
 		) ) );
@@ -60,8 +60,8 @@ class Logger {
 	 * @param WP_REST_Request $request  Request object.
 	 * @param WP_REST_Response|WP_Error $response Response or error.
 	 */
-	public static function push_api_log( $request, $response ) {
-		$route = $request->get_route();
+	public static function push_api_log( $request, $response ): void {
+		$route = (string) $request->get_route();
 		if ( !$route || strpos( $route, 'wphubpro/v1' ) === false || strpos( $route, '/logs' ) !== false ) {
 			return;
 		}
@@ -79,7 +79,7 @@ class Logger {
 			$code     = (int) $response->get_error_data( 'status' );
 			$res_data = array( 'error' => $response->get_error_message() );
 		} else {
-			$code     = $response->get_status();
+			$code     = (int) $response->get_status();
 			$res_data = $response->get_data();
 			$res_data = is_array( $res_data ) ? $res_data : array();
 		}
@@ -92,7 +92,7 @@ class Logger {
 			'time'     => gmdate( 'c' ),
 			'endpoint' => $route,
 			'type'     => $request->get_method(),
-			'code'     => $code ? $code : 500,
+			'code'     => $code > 0 ? $code : 500,
 			'request'  => $req_data,
 			'response' => $res_data,
 		);
@@ -135,7 +135,7 @@ class Logger {
 		if ( ! is_array( $value ) ) {
 			return;
 		}
-		$n = count( $value );
+		$n = (int) count( $value );
 		if ( $n > 30 ) {
 			$value = array(
 				'_summary' => 'array',
