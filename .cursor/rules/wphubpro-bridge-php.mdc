@@ -1,0 +1,50 @@
+---
+description: PSR-4/PSR-12 and Autoloader conventions for wphubpro-bridge includes/
+globs: includes/**/*.php
+alwaysApply: false
+---
+
+# WPHubPro Bridge — PHP (`includes/`)
+
+## Autoloader (do not bypass)
+
+- Registration lives in `src/Autoloader.php`: prefix `WPHubPro\`, base path `includes/`.
+- **PSR-4 mapping**: `WPHubPro\{SubNamespace}\{Class}` → `includes/{SubNamespace/...}/{Class}.php` (namespace segments = directory segments, one class per file, filename = class name + `.php`).
+- New classes: add the file under `includes/` matching the namespace; **do not** `require`/`require_once` those classes from other plugin files — rely on `Autoloader::register()` (already bootstrapped from `wphubpro-bridge.php`).
+- `Autoloader` itself stays in `src/Autoloader.php` (namespace `WPHubPro`), loaded explicitly before registration.
+
+## PSR-12 and WordPress safety
+
+- Follow [PSR-12](https://www.php-fig.org/psr/psr-12/): `<?php` opening, `declare` if used, `namespace` then `use`, then code; braces and indentation consistent with existing files.
+- Keep the standard guard at the top of includable classes:
+
+```php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+```
+
+- Prefer `use` imports for class references; match naming and docblock style (`@package WPHubPro`) used in sibling files.
+
+## Current layout (preserve when extending)
+
+Place new code in the same area as related features:
+
+| Area | Path | Namespace examples |
+|------|------|-------------------|
+| Core / root services | `includes/*.php` | `WPHubPro\` — e.g. `Bridge`, `Config`, `Helper`, `Logger` |
+| Admin UI | `includes/Admin/` | `WPHubPro\Admin\` |
+| Hub HTTP / REST | `includes/Api/` | `WPHubPro\Api\` |
+| Auth / crypto | `includes/Auth/` | `WPHubPro\Auth\` |
+| WP-Cron | `includes/Cron/`, `includes/Cron/Job/` | `WPHubPro\Cron\`, `WPHubPro\Cron\Job\` |
+| Typed errors | `includes/Error/` | `WPHubPro\Error\` |
+| Site health checks | `includes/Health/` | `WPHubPro\Health\` |
+| Plugins / updates | `includes/Plugin/` | `WPHubPro\Plugin\` |
+| Themes / updates | `includes/Theme/` | `WPHubPro\Theme\` |
+
+- **Subnamespaces** mirror subfolders (e.g. `Cron\Job\Health` → `includes/Cron/Job/Health.php`).
+- `includes/**/index.php` files are stubs/security entry points, not autoloaded PSR-4 classes unless they define a real class matching the path (avoid adding class definitions there).
+
+## Debugging
+
+- Use `WPHubPro\Logger` and existing patterns in `includes/Logger.php` / API modules for diagnostics; use structured, grep-friendly messages.
