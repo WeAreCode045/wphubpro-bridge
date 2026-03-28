@@ -1,0 +1,11 @@
+{
+  "name": "wphubpro-bridge-build",
+  "private": true,
+  "scripts": {
+    "build:ubold": "node scripts/build-ubold-css.mjs"
+  },
+  "devDependencies": {
+    "postcss": "^8.4.49",
+    "postcss-prefixwrap": "^1.51.0"
+  }
+}

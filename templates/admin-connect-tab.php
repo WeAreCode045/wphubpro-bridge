@@ -13,43 +13,84 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bridge_version = $bridge_version ?? ( class_exists( Config::class ) ? Config::get_bridge_version() : '' );
-$redirect_settings_url = $redirect_settings_url ?? '';
-$check_update_url = $check_update_url ?? '';
-$install_update_url = $install_update_url ?? '';
+$bridge_version          = $bridge_version ?? ( class_exists( Config::class ) ? Config::get_bridge_version() : '' );
+$redirect_settings_url   = $redirect_settings_url ?? '';
+$check_update_url        = $check_update_url ?? '';
+$install_update_url      = $install_update_url ?? '';
 ?>
-<div class="wphubpro-tab-content" style="margin-top:1em">
-	<div id="wphubpro-update-notice" style="display:none" class="notice notice-info inline" role="alert">
-		<p><strong>Update beschikbaar:</strong> Er is een nieuwere versie van de WPHubPro Bridge beschikbaar (v<span id="wphubpro-latest-version"></span>).</p>
-		<p style="margin-top:8px">
-			<button type="button" id="wphubpro-install-update" class="button button-primary">Nu installeren</button>
-		</p>
+<div class="wphubpro-tab-content">
+	<div id="wphubpro-update-notice" style="display:none" class="alert alert-info mb-3" role="alert">
+		<p class="mb-2"><strong>Update beschikbaar:</strong> Er is een nieuwere versie van de WPHubPro Bridge beschikbaar (v<span id="wphubpro-latest-version"></span>).</p>
+		<button type="button" id="wphubpro-install-update" class="btn btn-primary btn-sm">Nu installeren</button>
 	</div>
-	<div id="wphubpro-not-connected" style="display:none">
-		<p>Verbind deze site met uw dashboard.</p>
-		<p style="color:#646970;font-size:13px">Geïnstalleerde bridge versie: <strong id="wphubpro-bridge-version-nc"><?php echo esc_html( $bridge_version ?: '—' ); ?></strong></p>
-		<button id="wphubpro-btn" class="button button-primary">Nu Koppelen</button>
-	</div>
-	<div id="wphubpro-connected-card" style="display:none" class="wphubpro-connection-card">
-		<h2>Verbindingsstatus</h2>
-		<div class="wphubpro-card" style="max-width:600px;border:1px solid #c3c4c7;border-radius:4px;padding:16px;margin:16px 0;box-shadow:0 1px 1px rgba(0,0,0,.04)">
-			<table class="widefat striped" style="margin-bottom:16px">
-				<tbody>
-					<tr><th style="width:180px">Site ID</th><td id="wphubpro-site-id"><code style="font-size:12px">—</code></td></tr>
-					<tr><th>Status</th><td id="wphubpro-status"><span id="wphubpro-heartbeat-bullet" class="wphubpro-ht-bullet" title="wphub_status" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle"></span><span id="wphubpro-status-text">—</span></td></tr>
-					<tr><th>Bridge versie</th><td><span id="wphubpro-bridge-version">—</span> <button type="button" id="wphubpro-check-update" class="button button-small" style="padding:0 6px;margin-left:6px;vertical-align:middle" title="Controleren op updates" aria-label="Controleren op updates"><span class="dashicons dashicons-update" style="font-size:16px;width:16px;height:16px"></span></button><span id="wphubpro-check-status" style="margin-left:6px;font-size:12px;color:#646970;display:none"></span></td></tr>
-					<tr><th>Laatste heartbeat</th><td id="wphubpro-last-heartbeat-text">—</td></tr>
-					<tr><th>Platform URL</th><td><span id="wphubpro-platform-url">—</span> <button type="button" id="wphubpro-edit-platform-url" class="button button-small" style="padding:0 6px;margin-left:6px;vertical-align:middle" title="Platform URL bewerken" aria-label="Platform URL bewerken"><span class="dashicons dashicons-edit" style="font-size:16px;width:16px;height:16px"></span></button></td></tr>
-				</tbody>
-			</table>
-			<p style="margin-top:16px">
-				<button type="button" id="wphubpro-reconnect" class="button button-primary">Opnieuw koppelen</button>
-				<button type="button" id="wphubpro-remove" class="button">Verwijderen van hub</button>
-			</p>
+
+	<div id="wphubpro-not-connected" style="display:none" class="card mb-3">
+		<div class="card-body">
+			<p class="mb-2">Verbind deze site met uw dashboard.</p>
+			<p class="text-muted small mb-3">Geïnstalleerde bridge versie: <strong id="wphubpro-bridge-version-nc"><?php echo esc_html( $bridge_version ?: '—' ); ?></strong></p>
+			<button type="button" id="wphubpro-btn" class="btn btn-primary">Nu Koppelen</button>
 		</div>
 	</div>
-	<div id="wphubpro-status-error" style="display:none" class="notice notice-warning inline"><p><span id="wphubpro-status-error-msg"></span></p></div>
-	<div id="wphubpro-status-loading" style="margin-top:1em"><p>Status laden…</p></div>
+
+	<div id="wphubpro-connected-card" style="display:none" class="card mb-3 wphubpro-connection-card">
+		<div class="card-header border-bottom py-3">
+			<h5 class="card-title mb-0">Verbindingsstatus</h5>
+		</div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table table-striped table-bordered table-hover mb-0 align-middle">
+					<tbody>
+						<tr>
+							<th scope="row" class="text-nowrap" style="width:11rem">Site ID</th>
+							<td id="wphubpro-site-id"><code class="small">—</code></td>
+						</tr>
+						<tr>
+							<th scope="row">Status</th>
+							<td id="wphubpro-status">
+								<span id="wphubpro-heartbeat-bullet" class="wphubpro-ht-bullet rounded-circle d-inline-block align-middle me-1" title="wphub_status" style="width:10px;height:10px"></span>
+								<span id="wphubpro-status-text">—</span>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">Bridge versie</th>
+							<td>
+								<span id="wphubpro-bridge-version">—</span>
+								<button type="button" id="wphubpro-check-update" class="btn btn-sm btn-light border ms-2 align-middle" title="Controleren op updates" aria-label="Controleren op updates">
+									<span class="dashicons dashicons-update" style="font-size:16px;width:16px;height:16px;line-height:1"></span>
+								</button>
+								<span id="wphubpro-check-status" class="ms-2 small text-muted" style="display:none"></span>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">Laatste heartbeat</th>
+							<td id="wphubpro-last-heartbeat-text">—</td>
+						</tr>
+						<tr>
+							<th scope="row">Platform URL</th>
+							<td>
+								<span id="wphubpro-platform-url">—</span>
+								<button type="button" id="wphubpro-edit-platform-url" class="btn btn-sm btn-light border ms-2 align-middle" title="Platform URL bewerken" aria-label="Platform URL bewerken">
+									<span class="dashicons dashicons-edit" style="font-size:16px;width:16px;height:16px;line-height:1"></span>
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="mt-3 d-flex flex-wrap gap-2">
+				<button type="button" id="wphubpro-reconnect" class="btn btn-primary">Opnieuw koppelen</button>
+				<button type="button" id="wphubpro-remove" class="btn btn-secondary">Verwijderen van hub</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="wphubpro-status-error" style="display:none" class="alert alert-warning mb-3" role="alert">
+		<p class="mb-0"><span id="wphubpro-status-error-msg"></span></p>
+	</div>
+
+	<div id="wphubpro-status-loading" class="text-muted py-2">
+		<p class="mb-0">Status laden…</p>
+	</div>
 </div>
 <script>
 (function(){
@@ -66,7 +107,7 @@ $install_update_url = $install_update_url ?? '';
 	ld.style.display='block';nc.style.display='none';card.style.display='none';err.style.display='none';
 	req(statusUrl).then(function(d){ld.style.display='none';
 	if(d.site_id){card.style.display='block';
-	document.getElementById('wphubpro-site-id').innerHTML='<code style="font-size:12px">'+(d.site_id||'—').replace(/</g,'&lt;')+'</code>';
+	document.getElementById('wphubpro-site-id').innerHTML='<code class="small">'+(d.site_id||'—').replace(/</g,'&lt;')+'</code>';
 	var bullet=document.getElementById('wphubpro-heartbeat-bullet'),statusTxt=document.getElementById('wphubpro-status-text'),heartbeatTxt=document.getElementById('wphubpro-last-heartbeat-text'),versionEl=document.getElementById('wphubpro-bridge-version'),updateNotice=document.getElementById('wphubpro-update-notice'),latestVerEl=document.getElementById('wphubpro-latest-version');
 	bullet.style.backgroundColor=d.connected?'#22c55e':'#ef4444';
 	bullet.title=d.connected?'Verbonden':'Losgekoppeld';
