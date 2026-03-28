@@ -25,7 +25,9 @@ $bridge_docs_url         = 'https://docs.wphub.pro';
 		<button type="button" id="wphubpro-install-update" class="btn btn-primary btn-sm">Nu installeren</button>
 	</div>
 
-	<div id="wphubpro-not-connected" style="display:none" class="card mb-3">
+	<div class="row g-3 align-items-stretch">
+		<div class="col-12 col-lg-7 d-flex flex-column gap-3">
+	<div id="wphubpro-not-connected" style="display:none" class="card mb-0">
 		<div class="card-body">
 			<p class="mb-2">Verbind deze site met uw dashboard.</p>
 			<p class="text-muted small mb-3">Geïnstalleerde bridge versie: <strong id="wphubpro-bridge-version-nc"><?php echo esc_html( $bridge_version ?: '—' ); ?></strong></p>
@@ -33,7 +35,7 @@ $bridge_docs_url         = 'https://docs.wphub.pro';
 		</div>
 	</div>
 
-	<div id="wphubpro-connected-card" style="display:none" class="card mb-3 wphubpro-connection-card">
+	<div id="wphubpro-connected-card" style="display:none" class="card mb-0 wphubpro-connection-card">
 		<div class="card-header border-bottom py-3">
 			<h5 class="card-title mb-0">Verbindingsstatus</h5>
 		</div>
@@ -85,27 +87,30 @@ $bridge_docs_url         = 'https://docs.wphub.pro';
 		</div>
 	</div>
 
-	<div id="wphubpro-status-error" style="display:none" class="alert alert-warning mb-3" role="alert">
+	<div id="wphubpro-status-error" style="display:none" class="alert alert-warning mb-0" role="alert">
 		<p class="mb-0"><span id="wphubpro-status-error-msg"></span></p>
 	</div>
 
-	<div id="wphubpro-status-loading" class="text-muted py-2">
+	<div id="wphubpro-status-loading" class="text-muted py-2 mb-0">
 		<p class="mb-0">Status laden…</p>
 	</div>
-
-	<div class="card mb-0 mt-3">
-		<div class="card-header border-bottom py-3">
-			<h5 class="card-title mb-0">Documentatie</h5>
 		</div>
-		<div class="card-body">
-			<p class="text-muted mb-3">
-				Op het WPHub.Pro-platform vindt u uitleg over de Bridge-plugin: installeren, koppelen met uw dashboard,
-				heartbeat en veelgestelde vragen. Raadpleeg de officiële documentatie voor de meest actuele stappen en technische details.
-			</p>
-			<a href="<?php echo esc_url( $bridge_docs_url ); ?>" class="btn btn-soft-primary btn-sm d-inline-flex align-items-center gap-1" target="_blank" rel="noopener noreferrer">
-				<i class="ti ti-external-link fs-lg" aria-hidden="true"></i>
-				<span>Documentatie op docs.wphub.pro</span>
-			</a>
+		<div class="col-12 col-lg-5 d-flex">
+			<div class="card mb-0 w-100 h-100">
+				<div class="card-header border-bottom py-3">
+					<h5 class="card-title mb-0">Documentatie</h5>
+				</div>
+				<div class="card-body d-flex flex-column">
+					<p class="text-muted mb-3 flex-grow-1">
+						Op het WPHub.Pro-platform vindt u uitleg over de Bridge-plugin: installeren, koppelen met uw dashboard,
+						heartbeat en veelgestelde vragen. Raadpleeg de officiële documentatie voor de meest actuele stappen en technische details.
+					</p>
+					<a href="<?php echo esc_url( $bridge_docs_url ); ?>" class="btn btn-soft-primary btn-sm d-inline-flex align-items-center gap-1 align-self-start" target="_blank" rel="noopener noreferrer">
+						<i class="ti ti-external-link fs-lg" aria-hidden="true"></i>
+						<span>Documentatie op docs.wphub.pro</span>
+					</a>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
