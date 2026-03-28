@@ -1,8 +1,6 @@
 <?php
 /**
- * Admin page template – main wrapper with tab navigation.
- *
- * Expects: $tab, $base_url
+ * Admin page template – Bridge dashboard shell.
  *
  * @package WPHubPro
  */
@@ -31,29 +29,10 @@ $template_dir = WPHUBPRO_BRIDGE_ABSPATH . 'templates/';
 				</div>
 			</div>
 
-			<ul class="nav nav-tabs nav-bordered mb-3" role="tablist">
-				<li class="nav-item" role="presentation">
-					<a
-						href="<?php echo esc_url( $base_url ); ?>"
-						class="nav-link <?php echo $tab === 'connect' ? 'active' : ''; ?>"
-						<?php echo $tab === 'connect' ? 'aria-current="page"' : ''; ?>
-					>Overzicht</a>
-				</li>
-			</ul>
-
-			<?php if ( $tab === 'connect' ) : ?>
-				<?php
-				$connect_url           = get_rest_url( null, 'wphubpro/v1/connect' );
-				$status_url            = get_rest_url( null, 'wphubpro/v1/connection-status' );
-				$disconnect_url        = get_rest_url( null, 'wphubpro/v1/disconnect' );
-				$redirect_settings_url = get_rest_url( null, 'wphubpro/v1/connect/redirect-settings' );
-				$check_update_url      = get_rest_url( null, 'wphubpro/v1/bridge/check-update' );
-				$install_update_url    = get_rest_url( null, 'wphubpro/v1/bridge/install-update' );
-				$nonce                 = wp_create_nonce( 'wp_rest' );
-				$bridge_version        = Config::get_bridge_version();
-				include $template_dir . 'admin-connect-tab.php';
-				?>
-			<?php endif; ?>
+			<?php
+			$bridge_version = Config::get_bridge_version();
+			include $template_dir . 'admin-dashboard.php';
+			?>
 		</div>
 	</div>
 </div>

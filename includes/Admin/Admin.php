@@ -122,16 +122,46 @@ class Admin {
 			return;
 		}
 
-		$base_url   = untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) );
-		$admin_js   = WPHUBPRO_BRIDGE_ABSPATH . 'assets/js/admin.js';
-		$admin_ver  = is_readable( $admin_js ) ? (string) filemtime( $admin_js ) : WPHUBPRO_BRIDGE_VERSION;
+		$base_url  = untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) );
+		$admin_js  = WPHUBPRO_BRIDGE_ABSPATH . 'assets/js/admin.js';
+		$admin_ver = is_readable( $admin_js ) ? (string) filemtime( $admin_js ) : WPHUBPRO_BRIDGE_VERSION;
 
 		wp_enqueue_script(
 			'wphubpro-bridge-admin',
 			$base_url . '/assets/js/admin.js',
-			array( 'jquery' ),
+			array(),
 			$admin_ver,
-			false
+			true
+		);
+
+		wp_localize_script(
+			'wphubpro-bridge-admin',
+			'wphubproBridgeAdmin',
+			array(
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+				'urls'  => array(
+					'connect'           => get_rest_url( null, 'wphubpro/v1/connect' ),
+					'status'            => get_rest_url( null, 'wphubpro/v1/connection-status' ),
+					'disconnect'        => get_rest_url( null, 'wphubpro/v1/disconnect' ),
+					'redirectSettings'  => get_rest_url( null, 'wphubpro/v1/connect/redirect-settings' ),
+					'checkUpdate'       => get_rest_url( null, 'wphubpro/v1/bridge/check-update' ),
+					'installUpdate'     => get_rest_url( null, 'wphubpro/v1/bridge/install-update' ),
+				),
+				'i18n'  => array(
+					'confirmDisconnect' => __( 'Weet je zeker dat je deze site wilt verwijderen van de hub?', 'wphubpro-bridge' ),
+					'installButton'     => __( 'Nu installeren', 'wphubpro-bridge' ),
+					'installing'        => __( 'Installeren…', 'wphubpro-bridge' ),
+					'installFailed'     => __( 'Installatie mislukt', 'wphubpro-bridge' ),
+					'checking'          => __( 'Controleren…', 'wphubpro-bridge' ),
+					'readyVersion'      => __( 'Gereed. v', 'wphubpro-bridge' ),
+					'errorShort'        => __( 'Fout', 'wphubpro-bridge' ),
+					'errorWithMessage'  => __( 'Fout: ', 'wphubpro-bridge' ),
+					'unknown'           => __( 'Onbekend', 'wphubpro-bridge' ),
+					'urlMustHttps'      => __( 'URL moet met https:// beginnen.', 'wphubpro-bridge' ),
+					'promptPlatformUrl' => __( 'Platform URL (redirect na koppelen):', 'wphubpro-bridge' ),
+					'promptLeaveEmpty'  => __( 'Leeg laten voor standaard (%s).', 'wphubpro-bridge' ),
+				),
+			)
 		);
 	}
 
@@ -151,11 +181,9 @@ class Admin {
 	}
 
 	/**
-	 * Render the connect admin page with tabs.
+	 * Render the Bridge admin dashboard.
 	 */
 	public function render_admin_page() {
-		$tab      = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'connect';
-		$base_url = admin_url( 'admin.php?page=wphubpro-bridge' );
 		include WPHUBPRO_BRIDGE_ABSPATH . 'templates/admin-page.php';
 	}
 }
