@@ -35,7 +35,7 @@ class UpgraderHelper {
 		self::load_upgrader_dependencies();
 		$skin     = new \Automatic_Upgrader_Skin();
 		$upgrader = new \Theme_Upgrader( $skin );
-		return $upgrader->update( $slug );
+		return $upgrader->upgrade( $slug );
 	}
 
 	/**
