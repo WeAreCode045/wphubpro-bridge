@@ -17,6 +17,7 @@ $bridge_version          = $bridge_version ?? ( class_exists( Config::class ) ? 
 $redirect_settings_url   = $redirect_settings_url ?? '';
 $check_update_url        = $check_update_url ?? '';
 $install_update_url      = $install_update_url ?? '';
+$bridge_docs_url         = 'https://docs.wphub.pro';
 ?>
 <div class="wphubpro-tab-content">
 	<div id="wphubpro-update-notice" style="display:none" class="alert alert-info mb-3" role="alert">
@@ -79,7 +80,7 @@ $install_update_url      = $install_update_url ?? '';
 			</div>
 			<div class="mt-3 d-flex flex-wrap gap-2">
 				<button type="button" id="wphubpro-reconnect" class="btn btn-primary">Opnieuw koppelen</button>
-				<button type="button" id="wphubpro-remove" class="btn btn-secondary">Verwijderen van hub</button>
+				<button type="button" id="wphubpro-remove" class="btn btn-soft-danger">Verwijderen van hub</button>
 			</div>
 		</div>
 	</div>
@@ -90,6 +91,22 @@ $install_update_url      = $install_update_url ?? '';
 
 	<div id="wphubpro-status-loading" class="text-muted py-2">
 		<p class="mb-0">Status laden…</p>
+	</div>
+
+	<div class="card mb-0 mt-3">
+		<div class="card-header border-bottom py-3">
+			<h5 class="card-title mb-0">Documentatie</h5>
+		</div>
+		<div class="card-body">
+			<p class="text-muted mb-3">
+				Op het WPHub.Pro-platform vindt u uitleg over de Bridge-plugin: installeren, koppelen met uw dashboard,
+				heartbeat en veelgestelde vragen. Raadpleeg de officiële documentatie voor de meest actuele stappen en technische details.
+			</p>
+			<a href="<?php echo esc_url( $bridge_docs_url ); ?>" class="btn btn-soft-primary btn-sm d-inline-flex align-items-center gap-1" target="_blank" rel="noopener noreferrer">
+				<i class="ti ti-external-link fs-lg" aria-hidden="true"></i>
+				<span>Documentatie op docs.wphub.pro</span>
+			</a>
+		</div>
 	</div>
 </div>
 <script>
