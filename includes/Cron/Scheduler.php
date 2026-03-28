@@ -20,30 +20,30 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Scheduler {
 	/** @var int */
-	const int JOB_INTERVAL_MINUTE = 60;
+	const JOB_INTERVAL_MINUTE = 60;
 	/** @var int */
-	const int JOB_INTERVAL_HOUR = 3600;
+	const JOB_INTERVAL_HOUR = 3600;
 	/** @var int */
-	const int JOB_INTERVAL_DAY = 86400;
+	const JOB_INTERVAL_DAY = 86400;
 	/** @var int */
-	const int JOB_INTERVAL_WEEK = 604800;
+	const JOB_INTERVAL_WEEK = 604800;
 	/** @var int */
-	const int JOB_INTERVAL_MONTH = 2592000;
+	const JOB_INTERVAL_MONTH = 2592000;
 	/** @var int */
-	const int JOB_INTERVAL_YEAR = 31536000;
+	const JOB_INTERVAL_YEAR = 31536000;
 
 	/** @var string */
-	const string JOB_SLUG_MINUTE = 'wphubpro_minute';
+	const JOB_SLUG_MINUTE = 'wphubpro_minute';
 	/** @var string */
-	const string JOB_SLUG_HOUR = 'wphubpro_hour';
+	const JOB_SLUG_HOUR = 'wphubpro_hour';
 	/** @var string */
-	const string JOB_SLUG_DAY = 'wphubpro_day';
+	const JOB_SLUG_DAY = 'wphubpro_day';
 	/** @var string */
-	const string JOB_SLUG_WEEK = 'wphubpro_week';
+	const JOB_SLUG_WEEK = 'wphubpro_week';
 	/** @var string */
-	const string JOB_SLUG_MONTH = 'wphubpro_month';
+	const JOB_SLUG_MONTH = 'wphubpro_month';
 	/** @var string */
-	const string JOB_SLUG_YEAR = 'wphubpro_year';
+	const JOB_SLUG_YEAR = 'wphubpro_year';
 
 	/**
 	 * @var string[]
