@@ -17,6 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Bootstrap: init() runs on WordPress {@see 'init'} (see wphubpro-bridge.php) so menus register at the correct time.
  */
 class Admin {
+
+	const MENU_HOOK = 'toplevel_page_wphubpro-bridge';
+
 	/**
 	 * Instance of the class.
 	 *
@@ -55,24 +58,111 @@ class Admin {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_filter( 'admin_body_class', array( $this, 'admin_body_class' ) );
 	}
 
 	/**
-	 * Register the stylesheets for the admin area.s
+	 * Body class on the Bridge admin screen for scoped layout tweaks.
+	 *
+	 * @param string $classes Space-separated classes.
+	 * @return string
+	 */
+	public function admin_body_class( string $classes ) : string {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return $classes;
+		}
+		$screen = get_current_screen();
+		if ( $screen && self::MENU_HOOK === $screen->id ) {
+			$classes .= ' wphubpro-bridge-admin';
+		}
+		return $classes;
+	}
+
+	/**
+	 * Register the stylesheets for the admin area.
 	 *
 	 * @since    1.0.0
+	 * @param string $hook_suffix Current admin screen hook.
 	 */
-	public function enqueue_styles() {
-		wp_enqueue_style( 'wphubpro-bridge-admin', untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) ) . '/assets/css/admin.css', array(), '1.0.0', 'all' );
+	public function enqueue_styles( string $hook_suffix ) {
+		if ( self::MENU_HOOK !== $hook_suffix ) {
+			return;
+		}
+
+		$base_url = untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) );
+		$ubold_path = WPHUBPRO_BRIDGE_ABSPATH . 'assets/ubold/ubold.bridge.scoped.css';
+		$admin_css  = WPHUBPRO_BRIDGE_ABSPATH . 'assets/css/admin.css';
+		$ubold_ver  = is_readable( $ubold_path ) ? (string) filemtime( $ubold_path ) : WPHUBPRO_BRIDGE_VERSION;
+		$admin_ver  = is_readable( $admin_css ) ? (string) filemtime( $admin_css ) : WPHUBPRO_BRIDGE_VERSION;
+
+		wp_enqueue_style(
+			'wphubpro-bridge-ubold',
+			$base_url . '/assets/ubold/ubold.bridge.scoped.css',
+			array(),
+			$ubold_ver,
+			'all'
+		);
+		wp_enqueue_style(
+			'wphubpro-bridge-admin',
+			$base_url . '/assets/css/admin.css',
+			array( 'wphubpro-bridge-ubold' ),
+			$admin_ver,
+			'all'
+		);
 	}
 
 	/**
 	 * Register the JavaScript for the admin area.
 	 *
 	 * @since    1.0.0
+	 * @param string $hook_suffix Current admin screen hook.
 	 */
-	public function enqueue_scripts() {
-		wp_enqueue_script( 'wphubpro-bridge-admin', untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) ) . '/assets/js/admin.js', array( 'jquery' ), '1.0.0', false );
+	public function enqueue_scripts( string $hook_suffix ) {
+		if ( self::MENU_HOOK !== $hook_suffix ) {
+			return;
+		}
+
+		$base_url  = untrailingslashit( plugins_url( '/', WPHUBPRO_BRIDGE_PLUGIN_FILE ) );
+		$admin_js  = WPHUBPRO_BRIDGE_ABSPATH . 'assets/js/admin.js';
+		$admin_ver = is_readable( $admin_js ) ? (string) filemtime( $admin_js ) : WPHUBPRO_BRIDGE_VERSION;
+
+		wp_enqueue_script(
+			'wphubpro-bridge-admin',
+			$base_url . '/assets/js/admin.js',
+			array(),
+			$admin_ver,
+			true
+		);
+
+		wp_localize_script(
+			'wphubpro-bridge-admin',
+			'wphubproBridgeAdmin',
+			array(
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+				'urls'  => array(
+					'connect'           => get_rest_url( null, 'wphubpro/v1/connect' ),
+					'status'            => get_rest_url( null, 'wphubpro/v1/connection-status' ),
+					'disconnect'        => get_rest_url( null, 'wphubpro/v1/disconnect' ),
+					'redirectSettings'  => get_rest_url( null, 'wphubpro/v1/connect/redirect-settings' ),
+					'checkUpdate'       => get_rest_url( null, 'wphubpro/v1/bridge/check-update' ),
+					'installUpdate'     => get_rest_url( null, 'wphubpro/v1/bridge/install-update' ),
+				),
+				'i18n'  => array(
+					'confirmDisconnect' => __( 'Weet je zeker dat je deze site wilt verwijderen van de hub?', 'wphubpro-bridge' ),
+					'installButton'     => __( 'Nu installeren', 'wphubpro-bridge' ),
+					'installing'        => __( 'Installeren…', 'wphubpro-bridge' ),
+					'installFailed'     => __( 'Installatie mislukt', 'wphubpro-bridge' ),
+					'checking'          => __( 'Controleren…', 'wphubpro-bridge' ),
+					'readyVersion'      => __( 'Gereed. v', 'wphubpro-bridge' ),
+					'errorShort'        => __( 'Fout', 'wphubpro-bridge' ),
+					'errorWithMessage'  => __( 'Fout: ', 'wphubpro-bridge' ),
+					'unknown'           => __( 'Onbekend', 'wphubpro-bridge' ),
+					'urlMustHttps'      => __( 'URL moet met https:// beginnen.', 'wphubpro-bridge' ),
+					'promptPlatformUrl' => __( 'Platform URL (redirect na koppelen):', 'wphubpro-bridge' ),
+					'promptLeaveEmpty'  => __( 'Leeg laten voor standaard (%s).', 'wphubpro-bridge' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -91,11 +181,9 @@ class Admin {
 	}
 
 	/**
-	 * Render the connect admin page with tabs.
+	 * Render the Bridge admin dashboard.
 	 */
 	public function render_admin_page() {
-		$tab      = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'connect';
-		$base_url = admin_url( 'admin.php?page=wphubpro-bridge' );
 		include WPHUBPRO_BRIDGE_ABSPATH . 'templates/admin-page.php';
 	}
 }
