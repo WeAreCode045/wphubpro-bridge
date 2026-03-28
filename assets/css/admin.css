@@ -193,3 +193,12 @@
 	white-space: normal;
 	max-width: 100%;
 }
+
+/* UBold shell: let the dashboard column use full width under scoped theme CSS */
+body.wphubpro-bridge-admin #wpbody-content .wrap.wphubpro-admin-wrap {
+	max-width: none;
+}
+
+#wpbody-content #wphubpro-bridge-app {
+	box-sizing: border-box;
+}

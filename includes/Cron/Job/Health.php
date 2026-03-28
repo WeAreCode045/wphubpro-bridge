@@ -4,6 +4,7 @@ namespace WPHubPro\Cron\Job;
 use WPHubPro\Api\Health as ApiHealth;
 use WPHubPro\Config;
 use WPHubPro\Cron\JobInterface;
+use WPHubPro\Cron\Scheduler;
 
 /**
  * WP-Cron job: push site health payload to the platform.
@@ -25,11 +26,11 @@ class Health implements JobInterface {
 	}
 
 	public static function get_schedule_slug(): string {
-		return 'wphubpro_minute';
+		return Scheduler::JOB_SLUG_DAY;
 	}
-
+	
 	public static function get_interval_seconds(): int {
-		return 60;
+		return Scheduler::JOB_INTERVAL_DAY;
 	}
 
 	public static function get_schedule_label(): string {

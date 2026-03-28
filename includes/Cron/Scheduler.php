@@ -19,6 +19,31 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Central scheduler for {@see JobInterface} implementations.
  */
 class Scheduler {
+	/** @var int */
+	const int JOB_INTERVAL_MINUTE = 60;
+	/** @var int */
+	const int JOB_INTERVAL_HOUR = 3600;
+	/** @var int */
+	const int JOB_INTERVAL_DAY = 86400;
+	/** @var int */
+	const int JOB_INTERVAL_WEEK = 604800;
+	/** @var int */
+	const int JOB_INTERVAL_MONTH = 2592000;
+	/** @var int */
+	const int JOB_INTERVAL_YEAR = 31536000;
+
+	/** @var string */
+	const string JOB_SLUG_MINUTE = 'wphubpro_minute';
+	/** @var string */
+	const string JOB_SLUG_HOUR = 'wphubpro_hour';
+	/** @var string */
+	const string JOB_SLUG_DAY = 'wphubpro_day';
+	/** @var string */
+	const string JOB_SLUG_WEEK = 'wphubpro_week';
+	/** @var string */
+	const string JOB_SLUG_MONTH = 'wphubpro_month';
+	/** @var string */
+	const string JOB_SLUG_YEAR = 'wphubpro_year';
 
 	/**
 	 * @var string[]
@@ -64,7 +89,7 @@ class Scheduler {
 	/**
 	 * @param string $job_class Class name.
 	 */
-	public static function register( $job_class ) {
+	public static function register( $job_class ): void {
 		if ( ! self::is_valid_job( $job_class ) ) {
 			return;
 		}
@@ -123,7 +148,7 @@ class Scheduler {
 	/**
 	 * @param string $job_class Class name.
 	 */
-	public static function schedule_with_immediate_run( $job_class ) {
+	public static function schedule_with_immediate_run( $job_class ): void {
 		if ( ! self::is_valid_job( $job_class ) ) {
 			return;
 		}
@@ -138,7 +163,7 @@ class Scheduler {
 	/**
 	 * @param string $job_class Class name.
 	 */
-	public static function unschedule( $job_class ) {
+	public static function unschedule( $job_class ): void {
 		if ( ! self::is_valid_job( $job_class ) ) {
 			return;
 		}
@@ -149,7 +174,7 @@ class Scheduler {
 	 * @param string $job_class Class name.
 	 * @return bool
 	 */
-	private static function is_valid_job( $job_class ) {
+	private static function is_valid_job( $job_class ): bool {
 		return is_string( $job_class )
 			&& class_exists( $job_class )
 			&& in_array( JobInterface::class, class_implements( $job_class ), true );

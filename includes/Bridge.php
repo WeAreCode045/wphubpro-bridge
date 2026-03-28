@@ -31,6 +31,9 @@ class Bridge {
 
 	private static $instance = null;
 
+	/** @var ConnectionStatus */
+	private $connection_status;
+
 	/** @var Connect */
 	private $connect;
 
@@ -49,7 +52,7 @@ class Bridge {
 	/** @var Heartbeat */
 	private $heartbeat;
 
-	public static function instance() {
+	public static function instance() : self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
@@ -58,6 +61,7 @@ class Bridge {
 
 	private function __construct() {
 		$this->connect = Connect::instance();
+		$this->connection_status = ConnectionStatus::instance();
 		$this->updater = Updater::instance();
 		$this->plugins = new Plugins();
 		$this->themes  = new Themes();
@@ -78,7 +82,8 @@ class Bridge {
 	/**
 	 * Register all REST API routes.
 	 */
-	public function register_routes() {
+	public function register_routes() : void {
+		$this->connection_status->register_rest_routes();
 		$this->connect->register_rest_routes();
 		$this->updater->register_rest_routes();
 		
@@ -144,8 +149,8 @@ class Bridge {
 			$log_file = WP_CONTENT_DIR . '/debug.log';
 		}
 		if ( ! $log_file || ! is_readable( $log_file ) ) {
-			$php_log = ini_get( 'error_log' );
-			if ( $php_log && is_readable( $php_log ) ) {
+			$php_log = (string) ini_get( 'error_log' );
+			if ( $php_log !== '' && is_readable( $php_log ) ) {
 				$log_file = $php_log;
 			}
 		}

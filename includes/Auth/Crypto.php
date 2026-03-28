@@ -22,8 +22,9 @@ class Crypto {
 	 *
 	 * @return string Binary key (32 bytes).
 	 */
-	private static function get_derived_key() {
-		$salt = wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) . 'wphubpro_bridge_v1';
+	private static function get_derived_key(): string {
+		$salt = (string) wp_salt( 'auth' ) . (string) wp_salt( 'secure_auth' ) . 'wphubpro_bridge_v1';
+
 		return hash( 'sha256', $salt, true );
 	}
 
@@ -33,11 +34,12 @@ class Crypto {
 	 * @param string $value Stored value.
 	 * @return bool
 	 */
-	public static function is_encrypted( $value ) {
-		if ( ! is_string( $value ) || empty( $value ) ) {
+	public static function is_encrypted( $value ): bool {
+		if ( ! is_string( $value ) || $value === '' ) {
 			return false;
 		}
 		$parts = explode( ':', $value );
+
 		return count( $parts ) === 3
 			&& strlen( $parts[0] ) === 24
 			&& strlen( $parts[2] ) === 32
@@ -52,7 +54,7 @@ class Crypto {
 	 * @param string $plaintext Plaintext to encrypt.
 	 * @return string Encrypted value as iv_hex:encrypted_hex:tag_hex, or empty on failure.
 	 */
-	public static function encrypt( $plaintext ) {
+	public static function encrypt( $plaintext ): string {
 		if ( ! is_string( $plaintext ) || $plaintext === '' ) {
 			return '';
 		}
@@ -85,8 +87,8 @@ class Crypto {
 	 * @param string $encrypted Value in iv_hex:encrypted_hex:tag_hex format.
 	 * @return string Plaintext, or original value if decryption fails.
 	 */
-	public static function decrypt( $encrypted ) {
-		if ( ! is_string( $encrypted ) || empty( $encrypted ) ) {
+	public static function decrypt( $encrypted ): string {
+		if ( ! is_string( $encrypted ) || $encrypted === '' ) {
 			return '';
 		}
 		if ( ! self::is_encrypted( $encrypted ) ) {
@@ -109,7 +111,7 @@ class Crypto {
 			$iv,
 			$tag
 		);
-		return $decrypted !== false ? $decrypted : $encrypted;
+		return $decrypted !== false ? (string) $decrypted : $encrypted;
 	}
 
 	/**
@@ -118,9 +120,10 @@ class Crypto {
 	 * @param string $option Option name.
 	 * @param string $plaintext Plaintext to store.
 	 */
-	public static function encrypt_and_store( $option, $plaintext ) {
+	public static function encrypt_and_store( string $option, $plaintext ): void {
 		if ( ! is_string( $plaintext ) || $plaintext === '' ) {
 			delete_option( $option );
+
 			return;
 		}
 		$encrypted = self::encrypt( $plaintext );
@@ -133,11 +136,12 @@ class Crypto {
 	 * @param string $option Option name.
 	 * @return string Plaintext, or empty string.
 	 */
-	public static function retrieve_and_decrypt( $option ) {
+	public static function retrieve_and_decrypt( string $option ): string {
 		$value = get_option( $option, '' );
-		if ( $value === '' ) {
+		if ( $value === '' || $value === false || ! is_string( $value ) ) {
 			return '';
 		}
+
 		return self::is_encrypted( $value ) ? self::decrypt( $value ) : $value;
 	}
 }

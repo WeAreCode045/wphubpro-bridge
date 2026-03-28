@@ -44,7 +44,7 @@ class Auth {
 	 * @param WP_REST_Server   $server  Server instance.
 	 * @return bool
 	 */
-	public static function cors_headers_for_save_connection( $served, $result, $request, $server ) {
+	public static function cors_headers_for_save_connection( $served, $result, $request, $server ): bool {
 		$origin = $request->get_header( 'Origin' );
 		if ( $origin ) {
 			$origin = str_replace( array( "\r", "\n" ), '', $origin );
@@ -66,7 +66,7 @@ class Auth {
 	 *
 	 * @return bool
 	 */
-	public static function validate_api_key() {
+	public static function validate_api_key(): bool {
 		$stored_key   = Config::get_api_key();
 		$provided_key = isset( $_SERVER['HTTP_X_WPHUB_KEY'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_WPHUB_KEY'] ) ) : '';
 		if ( empty( $stored_key ) || empty( $provided_key ) ) {
@@ -93,7 +93,7 @@ class Auth {
 			'orderby' => 'ID',
 		) );
 		if ( ! empty( $admins ) ) {
-			wp_set_current_user( $admins[0]->ID );
+			wp_set_current_user( (int) $admins[0]->ID );
 		}
 	}
 
@@ -105,7 +105,7 @@ class Auth {
 	 * @param WP_REST_Request $request Request with connect_token query param.
 	 * @return bool
 	 */
-	public static function validate_exchange_token_permission( $request ) {
+	public static function validate_exchange_token_permission( $request ): bool {
 		$connect_token = $request->get_param( 'connect_token' );
 		if ( empty( $connect_token ) ) {
 			return false;
@@ -131,6 +131,7 @@ class Auth {
 			return new \WP_Error( 'invalid_token', 'Token expired or invalid', array( 'status' => 400 ) );
 		}
 		delete_transient( $transient_key );
-		return rest_ensure_response( array( 'bridge_secret' => $bridge_secret ) );
+
+		return rest_ensure_response( array( 'bridge_secret' => (string) $bridge_secret ) );
 	}
 }

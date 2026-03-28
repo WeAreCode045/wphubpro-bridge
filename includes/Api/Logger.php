@@ -20,10 +20,11 @@ class Logger extends ApiBase {
 
 	private static $instance = null;
 
-	public static function instance() {
+	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
+
 		return self::$instance;
 	}
 
@@ -46,8 +47,8 @@ class Logger extends ApiBase {
 		self::strip_sensitive_data( $log_req_copy );
 		self::strip_sensitive_data( $log_res_copy );
 		error_log( '[WPHubPro Bridge] send_log_action: ' . wp_json_encode( array(
-			'action'   => $action,
-			'endpoint' => $endpoint,
+			'action'   => (string) $action,
+			'endpoint' => (string) $endpoint,
 			'request'  => $log_req_copy,
 			'response' => $log_res_copy,
 		) ) );
@@ -59,8 +60,8 @@ class Logger extends ApiBase {
 
 		$entry = array(
 			'timestamp' => gmdate( 'c' ),
-			'action'    => $action,
-			'endpoint'  => $endpoint,
+			'action'    => (string) $action,
+			'endpoint'  => (string) $endpoint,
 			'request'   => $req_safe,
 			'response'  => $res_safe,
 		);
