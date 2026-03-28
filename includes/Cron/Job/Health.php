@@ -4,6 +4,7 @@ namespace WPHubPro\Cron\Job;
 use WPHubPro\Api\Health as ApiHealth;
 use WPHubPro\Config;
 use WPHubPro\Cron\JobInterface;
+use WPHubPro\Cron\Scheduler;
 
 /**
  * WP-Cron job: push site health payload to the platform.
