@@ -55,8 +55,8 @@ $install_update_url      = $install_update_url ?? '';
 							<th scope="row">Bridge versie</th>
 							<td>
 								<span id="wphubpro-bridge-version">—</span>
-								<button type="button" id="wphubpro-check-update" class="btn btn-sm btn-light border ms-2 align-middle" title="Controleren op updates" aria-label="Controleren op updates">
-									<span class="dashicons dashicons-update" style="font-size:16px;width:16px;height:16px;line-height:1"></span>
+								<button type="button" id="wphubpro-check-update" class="btn btn-soft-primary btn-icon btn-sm ms-2 align-middle" title="Controleren op updates" aria-label="Controleren op updates">
+									<i class="ti ti-refresh fs-lg" aria-hidden="true"></i>
 								</button>
 								<span id="wphubpro-check-status" class="ms-2 small text-muted" style="display:none"></span>
 							</td>
@@ -69,8 +69,8 @@ $install_update_url      = $install_update_url ?? '';
 							<th scope="row">Platform URL</th>
 							<td>
 								<span id="wphubpro-platform-url">—</span>
-								<button type="button" id="wphubpro-edit-platform-url" class="btn btn-sm btn-light border ms-2 align-middle" title="Platform URL bewerken" aria-label="Platform URL bewerken">
-									<span class="dashicons dashicons-edit" style="font-size:16px;width:16px;height:16px;line-height:1"></span>
+								<button type="button" id="wphubpro-edit-platform-url" class="btn btn-soft-primary btn-icon btn-sm ms-2 align-middle" title="Platform URL bewerken" aria-label="Platform URL bewerken">
+									<i class="ti ti-link-plus fs-lg" aria-hidden="true"></i>
 								</button>
 							</td>
 						</tr>
