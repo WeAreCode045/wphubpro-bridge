@@ -2,6 +2,7 @@
 namespace WPHubPro;
 
 use WPHubPro\Api\Health;
+use WPHubPro\Api\HubInvoke;
 use WPHubPro\Api\Updater;
 use WPHubPro\Auth\Auth;
 use WPHubPro\Plugin\Plugins;
@@ -98,6 +99,9 @@ class Bridge {
 			'callback'            => array( $this, 'push_health_status_to_hub' ),
 			'permission_callback' => $validate,
 		) );
+
+		// Named PHP handlers for Hub (registry via wphubpro_hub_invoke_handlers).
+		HubInvoke::register_rest_routes();
 
 		// Plugins (list + manage — single registration point).
 		$this->plugins->register_rest_routes();
