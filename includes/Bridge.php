@@ -92,6 +92,13 @@ class Bridge {
 
 		$this->heartbeat->register_rest_routes();
 
+		// Hub-triggered: push latest Site Health snapshot to the platform (site-health function).
+		register_rest_route( $namespace, '/health/push', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'push_health_status_to_hub' ),
+			'permission_callback' => $validate,
+		) );
+
 		// Plugins (list + manage — single registration point).
 		$this->plugins->register_rest_routes();
 
@@ -143,6 +150,29 @@ class Bridge {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response
 	 */
+	/**
+	 * Collect WordPress Site Health (and related modules) and POST to the Hub.
+	 *
+	 * Called via wp-proxy from the dashboard “Check health” action.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function push_health_status_to_hub( $request ) {
+		$result = Health::send_health_status();
+		if ( false === $result ) {
+			return new \WP_Error(
+				'wphubpro_health_push_failed',
+				__( 'Could not send health data to the hub. Check the connection or try again.', 'wphubpro-bridge' ),
+				array( 'status' => 502 )
+			);
+		}
+		return rest_ensure_response( array(
+			'success' => true,
+			'message' => __( 'Health report sent to the hub.', 'wphubpro-bridge' ),
+		) );
+	}
+
 	public function get_error_log( $request ) {
 		$log_file = null;
 		if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG && defined( 'WP_CONTENT_DIR' ) ) {

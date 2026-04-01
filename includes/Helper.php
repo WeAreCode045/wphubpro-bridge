@@ -37,6 +37,7 @@ class Helper {
 			'themes_count'       => $themes_count,
 			'php_version'        => PHP_VERSION,
 			'php_check'          => $php_info,
+			'bridge_version'     => Config::get_bridge_version(),
 		);
 	}
 
@@ -71,6 +72,7 @@ class Helper {
 			'themes_count'      => $themes_count,
 			'php_version'       => PHP_VERSION,
 			'php_check'         => $php_info,
+			'bridge_version'    => Config::get_bridge_version(),
 		);
 
 		Logger::log_action( 'get', 'details', array(), $response );
