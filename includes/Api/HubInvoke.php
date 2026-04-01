@@ -92,14 +92,18 @@ class HubInvoke {
 	}
 
 	/**
-	 * Built-in safe handlers (read-only / trivial).
+	 * Built-in handlers (diagnostics, cache/DB/comments/reading maintenance).
 	 *
 	 * @return array<string, callable|array{0: class-string|object, 1: string}>
 	 */
 	private static function default_handlers(): array {
 		return array(
-			'ping'         => array( __CLASS__, 'handler_ping' ),
-			'site_summary' => array( __CLASS__, 'handler_site_summary' ),
+			'ping'                              => array( __CLASS__, 'handler_ping' ),
+			'site_summary'                      => array( __CLASS__, 'handler_site_summary' ),
+			'maintenance_flush_caches'          => array( HubMaintenance::class, 'handler_flush_caches' ),
+			'maintenance_optimize_db'           => array( HubMaintenance::class, 'handler_optimize_db' ),
+			'maintenance_purge_spam_comments'   => array( HubMaintenance::class, 'handler_purge_spam_comments' ),
+			'reading_search_visibility'         => array( HubMaintenance::class, 'handler_reading_search_visibility' ),
 		);
 	}
 
