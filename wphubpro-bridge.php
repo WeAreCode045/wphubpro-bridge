@@ -25,7 +25,7 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_ABSPATH' ) ) {
 	define( 'WPHUBPRO_BRIDGE_ABSPATH', plugin_dir_path( __FILE__ ) );
 }
 if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
-	define( 'WPHUBPRO_BRIDGE_VERSION', '2.6.213' );
+	define( 'WPHUBPRO_BRIDGE_VERSION', '2.7.0' );
 }
 
 require_once WPHUBPRO_BRIDGE_ABSPATH . 'src/Autoloader.php';
@@ -59,7 +59,13 @@ register_deactivation_hook(__FILE__, function() {
  * Install WPHubPro Recovery Agent as mu-plugin on activation and when bridge is updated.
  */
 function wphubpro_bridge_ensure_recovery_agent() {
-	$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
+	$bridge_version = '';
+	if ( class_exists( Config::class ) ) {
+		$bridge_version = Config::get_bridge_version_from_plugin_file();
+	}
+	if ( $bridge_version === '' ) {
+		$bridge_version = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? WPHUBPRO_BRIDGE_VERSION : '2.1.0';
+	}
 	$data = array( 'installed' => $bridge_version );
 	update_option( Config::OPTION_BRIDGE_PLUGIN, wp_json_encode( $data ) );
 

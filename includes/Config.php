@@ -200,23 +200,48 @@ class Config {
 	}
 
 	/**
+	 * Installed bridge version from the main plugin file header (WordPress "Version:").
+	 * Prefer this over options: after a manual or ZIP update the option can stay stale until
+	 * something writes it again; the file on disk is always authoritative.
+	 *
+	 * @return string Empty if the file cannot be read or has no Version header.
+	 */
+	public static function get_bridge_version_from_plugin_file() : string {
+		if ( ! defined( 'WPHUBPRO_BRIDGE_PLUGIN_FILE' ) ) {
+			return '';
+		}
+		$file = WPHUBPRO_BRIDGE_PLUGIN_FILE;
+		if ( ! is_readable( $file ) ) {
+			return '';
+		}
+		$headers = get_file_data( $file, array( 'Version' => 'Version' ), 'plugin' );
+		$v       = isset( $headers['Version'] ) ? trim( (string) $headers['Version'] ) : '';
+		return $v;
+	}
+
+	/**
 	 * Bridge plugin version data. WP options store only installed version.
 	 * Latest version is fetched from WPHub when user clicks "Check for updates".
 	 *
 	 * @return array{installed: string, latest: string}
 	 */
 	public static function get_bridge_plugin_data() : array {
-		$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? (string) WPHUBPRO_BRIDGE_VERSION : '';
-		$raw       = get_option( self::OPTION_BRIDGE_PLUGIN, '' );
-		if ( is_string( $raw ) && $raw !== '' ) {
-			$decoded = json_decode( $raw, true );
-			if ( is_array( $decoded ) && ! empty( $decoded['installed'] ) ) {
-				$installed = (string) $decoded['installed'];
-			}
-		} else {
-			$legacy = get_option( 'bridge_version', '' );
-			if ( $legacy !== '' && $legacy !== false ) {
-				$installed = (string) $legacy;
+		$installed = self::get_bridge_version_from_plugin_file();
+		if ( $installed === '' ) {
+			$installed = defined( 'WPHUBPRO_BRIDGE_VERSION' ) ? (string) WPHUBPRO_BRIDGE_VERSION : '';
+		}
+		if ( $installed === '' ) {
+			$raw = get_option( self::OPTION_BRIDGE_PLUGIN, '' );
+			if ( is_string( $raw ) && $raw !== '' ) {
+				$decoded = json_decode( $raw, true );
+				if ( is_array( $decoded ) && ! empty( $decoded['installed'] ) ) {
+					$installed = (string) $decoded['installed'];
+				}
+			} else {
+				$legacy = get_option( 'bridge_version', '' );
+				if ( $legacy !== '' && $legacy !== false ) {
+					$installed = (string) $legacy;
+				}
 			}
 		}
 
