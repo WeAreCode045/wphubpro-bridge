@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class HealthCheckNormalizer {
 
 	/**
+	 * Create a hub check row from a WordPress Site Health test result.
 	 * @return array{id:string,slug:string,execution:string,label:string,severity:string,category:?string,message:string,meta:array}
 	 */
 	public static function make_item(
@@ -41,6 +42,7 @@ class HealthCheckNormalizer {
 	}
 
 	/**
+	 * Normalize a WordPress Site Health test result into a hub check row.
 	 * @param mixed $raw Result from WP_Site_Health::get_test_*().
 	 */
 	public static function normalize_wp_result(
@@ -75,6 +77,10 @@ class HealthCheckNormalizer {
 		);
 	}
 
+	/**
+	 * Create a hub check row for an unexpected response from Site Health.
+	 * @return array{id:string,slug:string,execution:string,label:string,severity:string,category:?string,message:string,meta:array}
+	 */
 	public static function unexpected_response_item(
 		string $module_id,
 		string $test_key,
@@ -95,6 +101,10 @@ class HealthCheckNormalizer {
 		);
 	}
 
+	/**
+	 * Map a WordPress Site Health status to a severity.
+	 * @return string
+	 */
 	public static function map_wp_status_to_severity( string $wp_status ): string {
 		switch ( $wp_status ) {
 			case 'good':
@@ -110,6 +120,10 @@ class HealthCheckNormalizer {
 		}
 	}
 
+	/**
+	 * Convert a HTML description to plain text.
+	 * @return string
+	 */
 	public static function description_to_plain_text( $html ): string {
 		if ( ! is_string( $html ) || $html === '' ) {
 			return '';
@@ -121,6 +135,10 @@ class HealthCheckNormalizer {
 		return is_string( $text ) ? trim( $text ) : '';
 	}
 
+	/**
+	 * Get the badge category from a WordPress Site Health test result.
+	 * @return ?string
+	 */
 	private static function badge_category( array $raw ): ?string {
 		if ( ! isset( $raw['badge'] ) || ! is_array( $raw['badge'] ) || ! isset( $raw['badge']['label'] ) ) {
 			return null;
@@ -129,6 +147,10 @@ class HealthCheckNormalizer {
 		return is_string( $raw['badge']['label'] ) ? $raw['badge']['label'] : null;
 	}
 
+	/**
+	 * Get the result meta from a WordPress Site Health test result.
+	 * @return array
+	 */
 	private static function result_meta( array $raw, string $wp_status ): array {
 		$color = null;
 		if ( isset( $raw['badge']['color'] ) && is_string( $raw['badge']['color'] ) ) {
