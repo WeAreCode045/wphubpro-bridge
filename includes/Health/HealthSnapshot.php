@@ -37,6 +37,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Append an external module to the snapshot.
 	 * @param array $payload From collect().
 	 * @param array $module  External module: id, label, optional description/source, checks[].
 	 * @return array
@@ -54,6 +55,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Finalize the snapshot by summarizing the modules and flattening the checks.
 	 * @param array<int, array> $modules
 	 * @return array
 	 */
@@ -72,6 +74,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Summarize the overall health and counts of checks across all modules.
 	 * @param array<int, array{checks?:array}> $modules
 	 * @return array{overall:string,counts:array<string,int>,total_checks:int}
 	 */
@@ -87,6 +90,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Count the number of checks by severity.
 	 * @param array<int, array{checks?:array}> $modules
 	 * @return array<string, int>
 	 */
@@ -157,6 +161,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Normalize an external module into the snapshot envelope format.
 	 * @param array $module Raw module from integration code.
 	 * @return array{id:string,label:string,description?:string,source?:string,checks:array<int,array>}
 	 */
@@ -177,6 +182,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Create a shell for an external module.
 	 * @return array{id:string,label:string,description?:string,source?:string,checks:array}
 	 */
 	private static function external_module_shell( string $id, array $module ): array {
@@ -196,6 +202,7 @@ class HealthSnapshot {
 	}
 
 	/**
+	 * Normalize an external check row into the snapshot envelope format.
 	 * @param mixed $check
 	 * @return array<string, mixed>|null
 	 */
