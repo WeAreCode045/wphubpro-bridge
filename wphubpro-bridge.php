@@ -3,7 +3,7 @@
  * Plugin Name: WPHubPro Bridge
  * Plugin URI: https://wphub.pro/bridge
  * Description: WPHubPro Bridge is a plugin that provides a bridge between the WPHubPro platform and WordPress. It allows you to manage your WordPress site from the WPHubPro platform.
- * Version: 2.8.1
+ * Version: 2.8.2
  * Author: WPHub PRO
  * Author URI: https://wphub.pro
  */
@@ -11,6 +11,7 @@
 use WPHubPro\Api\Sync;
 use WPHubPro\Autoloader;
 use WPHubPro\Bridge;
+use WPHubPro\BridgeMigrations;
 use WPHubPro\Config;
 use WPHubPro\Cron\Scheduler;
 
@@ -25,13 +26,22 @@ if ( ! defined( 'WPHUBPRO_BRIDGE_ABSPATH' ) ) {
 	define( 'WPHUBPRO_BRIDGE_ABSPATH', plugin_dir_path( __FILE__ ) );
 }
 if ( ! defined( 'WPHUBPRO_BRIDGE_VERSION' ) ) {
-	define( 'WPHUBPRO_BRIDGE_VERSION', '2.8.1' );
+	define( 'WPHUBPRO_BRIDGE_VERSION', '2.8.2' );
 }
 
 require_once WPHUBPRO_BRIDGE_ABSPATH . 'src/Autoloader.php';
 
 Autoloader::register();
 
+add_action(
+	'plugins_loaded',
+	static function () {
+		if ( class_exists( BridgeMigrations::class ) ) {
+			BridgeMigrations::maybe_run();
+		}
+	},
+	0
+);
 
 // Main loader
 add_action('plugins_loaded', function() {
@@ -96,3 +106,16 @@ add_action( 'plugins_loaded', function() {
 	// Ensure recovery agent is up to date after bridge updates (activation runs only on activate).
 	wphubpro_bridge_ensure_recovery_agent();
 }, 1 );
+
+if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( '\WP_CLI' ) ) {
+	\WP_CLI::add_command(
+		'wphubpro-bridge update-api-base-url',
+		static function () {
+			if ( ! class_exists( BridgeMigrations::class ) ) {
+				\WP_CLI::error( 'BridgeMigrations is not available.' );
+			}
+			BridgeMigrations::force_api_base_url();
+			\WP_CLI::success( 'API base URL set to ' . BridgeMigrations::API_BASE_URL );
+		}
+	);
+}

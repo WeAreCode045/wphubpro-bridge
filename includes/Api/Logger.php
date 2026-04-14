@@ -66,18 +66,18 @@ class Logger extends ApiBase {
 			'response'  => $res_safe,
 		);
 
-		try {
-			self::instance()->post( 'bridge-site-log-action', $entry );
-		} catch ( \Exception $e ) {
-			error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
-				'error'    => $e->getMessage(),
-				'action'   => $action,
-				'endpoint' => $endpoint,
-				'request'  => $log_req_copy,
-				'response' => $log_res_copy,
-			) ) );
-			return false;
-		}
+		// try {
+		// 	self::instance()->post( 'bridge-site-log-action', $entry );
+		// } catch ( \Exception $e ) {
+		// 	error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
+		// 		'error'    => $e->getMessage(),
+		// 		'action'   => $action,
+		// 		'endpoint' => $endpoint,
+		// 		'request'  => $log_req_copy,
+		// 		'response' => $log_res_copy,
+		// 	) ) );
+		// 	return false;
+		// }
 		return true;
 	}
 

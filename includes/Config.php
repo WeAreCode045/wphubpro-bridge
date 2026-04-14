@@ -50,6 +50,8 @@ class Config {
 	const OPTION_LAST_UPDATE = 'wphubpro_last_update';
 	/** Option: Bridge plugin installed version (JSON: { installed }). */
 	const OPTION_BRIDGE_PLUGIN = 'bridge_plugin';
+	/** Option: Internal schema version for one-time migrations (integer). */
+	const OPTION_DB_VERSION = 'wphubpro_bridge_db_version';
 
 	const DEFAULT_REDIRECT_BASE_URL = 'https://app.wphub.pro';
 	const DEFAULT_STATUS = 'disconnected';
@@ -76,7 +78,7 @@ class Config {
 	 * @return string
 	 */
 	public static function get_api_base_url() : string {
-		return (string) get_option( self::OPTION_API_BASE_URL, 'https://api.wphub.pro/v1' );
+		return (string) get_option( self::OPTION_API_BASE_URL, 'https://appwrite.wphub.pro/v1' );
 	}
 
 	/**
