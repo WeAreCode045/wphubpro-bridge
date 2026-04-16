@@ -26,15 +26,15 @@ class Health implements JobInterface {
 	}
 
 	public static function get_schedule_slug(): string {
-		return Scheduler::JOB_SLUG_DAY;
+		return Scheduler::JOB_SLUG_HOUR;
 	}
-	
+
 	public static function get_interval_seconds(): int {
-		return Scheduler::JOB_INTERVAL_DAY;
+		return Scheduler::JOB_INTERVAL_HOUR;
 	}
 
 	public static function get_schedule_label(): string {
-		return __( 'Every minute', 'wphubpro-bridge' );
+		return __( 'Every hour', 'wphubpro-bridge' );
 	}
 
 	public static function should_schedule(): bool {

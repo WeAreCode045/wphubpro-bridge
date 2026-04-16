@@ -56,6 +56,22 @@ class Scheduler {
 	/** @var bool */
 	private static $init_done = false;
 
+	/** @var int Bump when default cron behaviour changes so existing events are cleared and rescheduled. */
+	const CRON_SCHEMA_VERSION = 2;
+
+	/**
+	 * One-time: clear legacy heartbeat + health cron events when interval/policy changes.
+	 */
+	private static function maybe_migrate_cron_schema(): void {
+		$stored = (int) get_option( 'wphubpro_bridge_cron_schema', 0 );
+		if ( $stored >= self::CRON_SCHEMA_VERSION ) {
+			return;
+		}
+		wp_clear_scheduled_hook( Heartbeat::get_hook_name() );
+		wp_clear_scheduled_hook( Health::get_hook_name() );
+		update_option( 'wphubpro_bridge_cron_schema', self::CRON_SCHEMA_VERSION, false );
+	}
+
 	/**
 	 * Load default jobs, apply filter, register, and bootstrap hooks.
 	 *
@@ -81,6 +97,8 @@ class Scheduler {
 		foreach ( $jobs as $class ) {
 			self::register( $class );
 		}
+
+		self::maybe_migrate_cron_schema();
 
 		self::bootstrap();
 	}
