@@ -68,7 +68,6 @@ class Scheduler {
 		self::$init_done = true;
 
 		$default_jobs = array(
-			Heartbeat::class,
 			Health::class,
 		);
 

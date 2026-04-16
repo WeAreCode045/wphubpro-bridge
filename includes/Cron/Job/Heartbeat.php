@@ -6,7 +6,7 @@ use WPHubPro\Config;
 use WPHubPro\Cron\JobInterface;
 use WPHubPro\Cron\Scheduler;
 /**
- * WP-Cron job: send bridge heartbeat to the platform.
+ * WP-Cron job (disabled by default): send bridge heartbeat to the platform.
  *
  * @package WPHubPro
  */

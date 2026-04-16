@@ -7,7 +7,7 @@ use WPHubPro\Cron\Scheduler;
 use WPHubPro\Logger;
 
 /**
- * Heartbeat: Bridge sends heartbeat to Appwrite every minute.
+ * Heartbeat: HTTP heartbeat to the platform (WP-Cron job disabled; hub may poke via REST).
  * Updates sites.heartbeat_updated_at and bridge_status. On success: wphub_status=connected. On failure: wphub_status=disconnected.
  *
  * @package WPHubPro
