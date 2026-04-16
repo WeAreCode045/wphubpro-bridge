@@ -32,10 +32,6 @@ class Config {
 	const OPTION_SITE_SECRET = 'wphubpro_site_secret';
 	/** Option: Site ID from platform. */
 	const OPTION_SITE_ID = 'wphubpro_site_id';
-	/** Option: User JWT for Appwrite. */
-	const OPTION_USER_JWT = 'wphubpro_user_jwt';
-	/** Option: Heartbeat URL. */
-	const OPTION_HEARTBEAT_URL = 'wphubpro_heartbeat_url';
 	/** Option: Last heartbeat timestamp. */
 	const OPTION_LAST_HEARTBEAT_AT = 'wphubpro_last_heartbeat_at';
 	/** Option: API request log (last N entries). */
@@ -120,24 +116,6 @@ class Config {
 	 */
 	public static function get_site_id() : string {
 		return (string) get_option( self::OPTION_SITE_ID, '' );
-	}
-
-	/**
-	 * User JWT for Appwrite.
-	 *
-	 * @return string
-	 */
-	public static function get_user_jwt() : string {
-		return (string) get_option( self::OPTION_USER_JWT, '' );
-	}
-
-	/**
-	 * Heartbeat URL.
-	 *
-	 * @return string
-	 */
-	public static function get_heartbeat_url() : string {
-		return (string) get_option( self::OPTION_HEARTBEAT_URL, '' );
 	}
 
 	/**
@@ -276,11 +254,9 @@ class Config {
 	public static function remove_options() : void {
 		delete_option( Config::OPTION_API_KEY );
 		delete_option( Config::OPTION_SITE_SECRET );
-		delete_option( Config::OPTION_USER_JWT );
 		delete_option( Config::OPTION_BASE_URL );
 		delete_option( Config::OPTION_PROJECT_ID );
 		delete_option( Config::OPTION_SITE_ID );
-		delete_option( Config::OPTION_HEARTBEAT_URL );
 		delete_option( Config::OPTION_API_BASE_URL );
 		delete_option( Config::OPTION_LAST_HEARTBEAT_AT );
 		update_option( Config::OPTION_STATUS, 'disconnected' );
