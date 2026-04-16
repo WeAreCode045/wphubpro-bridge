@@ -95,11 +95,29 @@
 		var btn = document.getElementById( 'wphubpro-btn' );
 		if ( btn ) {
 			btn.onclick = function () {
-				req( connectUrl ).then( function ( d ) {
-					if ( d.redirect ) {
-						window.location.href = d.redirect;
-					}
-				} );
+				var tab = window.open( 'about:blank', '_blank' );
+				if ( tab ) {
+					tab.opener = null;
+				}
+				req( connectUrl )
+					.then( function ( d ) {
+						if ( ! d.redirect ) {
+							if ( tab ) {
+								tab.close();
+							}
+							return;
+						}
+						if ( tab ) {
+							tab.location = d.redirect;
+						} else {
+							window.location.href = d.redirect;
+						}
+					} )
+					.catch( function () {
+						if ( tab ) {
+							tab.close();
+						}
+					} );
 			};
 		}
 
