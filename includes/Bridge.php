@@ -1,6 +1,7 @@
 <?php
 namespace WPHubPro;
 
+use WPHubPro\Api\Connect\Connect;
 use WPHubPro\Api\Health;
 use WPHubPro\Api\HubInvoke;
 use WPHubPro\Api\Updater;

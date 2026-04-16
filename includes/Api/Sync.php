@@ -58,7 +58,7 @@ class Sync extends ApiBase {
 
 	/**
 	 * Schedule sync to run at shutdown. Idempotent: only one shutdown hook per request.
-	 * Call from Connect, Plugins, Themes, or on_plugin_or_theme_change.
+	 * Call from {@see \WPHubPro\Api\Connect\ConnectionService} (save-connection), Plugins, Themes, or on_plugin_or_theme_change.
 	 */
 	public static function schedule_sync() {
 		if ( self::$sync_scheduled ) {

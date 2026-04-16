@@ -2,7 +2,6 @@
 namespace WPHubPro\Auth;
 
 use WPHubPro\Config;
-use WPHubPro\Connect;
 
 /**
  * REST authentication for WPHubPro Bridge (X-WPHub-Key, connect-token exchange, CORS).
@@ -17,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Hub→Bridge REST auth, one-time connect token exchange, and CORS for those routes.
  *
- * Static-only: call init() once (e.g. from Connect::register_rest_routes).
+ * Static-only: call init() once (e.g. from {@see \WPHubPro\Api\Connect\Connect::register_rest_routes()}).
  */
 class Auth {
 
