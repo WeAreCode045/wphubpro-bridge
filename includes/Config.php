@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Config {
 
-	/** Option: Base URL. */
+	/** Option: Hub app base URL (connect redirect / dashboard URL). */
 	const OPTION_BASE_URL = 'wphubpro_base_url';
 	/** Option: Base URL. */
 	const OPTION_API_BASE_URL = 'wphubpro_api_base_url';
@@ -38,8 +38,6 @@ class Config {
 	const OPTION_LOG = 'wphubpro_log';
 	/** Option: Connection status (connected|disconnected). */
 	const OPTION_STATUS = 'wphub_status';
-	/** Option: Redirect base URL for connect flow. */
-	const OPTION_REDIRECT_BASE_URL = 'wphubpro_redirect_base_url';
 	/** Option: Recovery agent installed version. */
 	const OPTION_RECOVERY_AGENT_VERSION = 'wphubpro_recovery_agent_version';
 	/** Option: Last bridge update timestamp. */
@@ -58,15 +56,6 @@ class Config {
 
 	/** REST namespace for bridge routes. */
 	const REST_NAMESPACE = 'wphubpro/v1';
-
-	/**
-	 * Appwrite Base URL.
-	 *
-	 * @return string
-	 */
-	public static function get_base_url() : string {
-		return (string) get_option( self::OPTION_BASE_URL, '' );
-	}
 
 	/**
 	 * Appwrite Base URL.
@@ -148,12 +137,26 @@ class Config {
 	}
 
 	/**
-	 * Redirect base URL for connect flow.
+	 * Hub app base URL for the connect redirect flow.
+	 *
+	 * Migrates legacy option `wphubpro_redirect_base_url` into {@see self::OPTION_BASE_URL} when present.
 	 *
 	 * @return string
 	 */
-	public static function get_redirect_base_url() : string {
-		return (string) get_option( self::OPTION_REDIRECT_BASE_URL, self::DEFAULT_REDIRECT_BASE_URL );
+	public static function get_base_url() : string {
+		$stored = get_option( self::OPTION_BASE_URL, '' );
+		if ( $stored !== '' && $stored !== false ) {
+			return (string) $stored;
+		}
+		$legacy = get_option( 'wphubpro_redirect_base_url', '' );
+		if ( $legacy !== '' && $legacy !== false ) {
+			update_option( self::OPTION_BASE_URL, $legacy );
+			delete_option( 'wphubpro_redirect_base_url' );
+
+			return (string) $legacy;
+		}
+
+		return self::DEFAULT_REDIRECT_BASE_URL;
 	}
 
 	/**
@@ -255,6 +258,7 @@ class Config {
 		delete_option( Config::OPTION_API_KEY );
 		delete_option( Config::OPTION_SITE_SECRET );
 		delete_option( Config::OPTION_BASE_URL );
+		delete_option( 'wphubpro_redirect_base_url' );
 		delete_option( Config::OPTION_PROJECT_ID );
 		delete_option( Config::OPTION_SITE_ID );
 		delete_option( Config::OPTION_API_BASE_URL );

@@ -101,7 +101,7 @@ class ConnectionService {
 			'user_login'    => wp_get_current_user()->user_login,
 			'connect_token' => $connect_token,
 		);
-		$base     = Config::get_redirect_base_url();
+		$base     = Config::get_base_url();
 		$base     = untrailingslashit( $base );
 		$redirect = $base . add_query_arg( $params, '/connect-success' );
 
@@ -114,7 +114,8 @@ class ConnectionService {
 	 * @return \WP_REST_Response
 	 */
 	public static function get_redirect_settings_response(): \WP_REST_Response {
-		$current     = (string) get_option( Config::OPTION_REDIRECT_BASE_URL, '' );
+		Config::get_base_url();
+		$current     = (string) get_option( Config::OPTION_BASE_URL, '' );
 		$default     = Config::DEFAULT_REDIRECT_BASE_URL;
 		$use_default = ( $current === '' || $current === $default );
 
@@ -136,7 +137,8 @@ class ConnectionService {
 	public static function save_redirect_settings_from_request( \WP_REST_Request $request ) {
 		$use_default = (bool) $request->get_param( 'use_default' );
 		if ( $use_default ) {
-			delete_option( Config::OPTION_REDIRECT_BASE_URL );
+			delete_option( Config::OPTION_BASE_URL );
+			delete_option( 'wphubpro_redirect_base_url' );
 
 			return rest_ensure_response(
 				array(
@@ -154,7 +156,7 @@ class ConnectionService {
 			return new \WP_Error( 'invalid_url', 'Custom URL must be a valid HTTPS URL.', array( 'status' => 400 ) );
 		}
 
-		update_option( Config::OPTION_REDIRECT_BASE_URL, $custom_url );
+		update_option( Config::OPTION_BASE_URL, $custom_url );
 
 		return rest_ensure_response(
 			array(
