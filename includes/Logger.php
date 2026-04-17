@@ -6,7 +6,7 @@ use WPHubPro\Api\Logger as ApiLogger;
 /**
  * Appwrite action logger for WPHubPro Bridge.
  *
- * Uses WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+ * Uses endpoint and project ID when remote logging is enabled.
  *
  * @package WPHubPro
  */
@@ -23,7 +23,7 @@ class Logger {
 	/**
 	 * Log an action to the site's action_log in Appwrite.
 	 *
-	 * Uses JWT and Appwrite SDK. Requires WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+	 * Remote Appwrite logging is currently disabled; logs to PHP error_log only.
 	 *
 	 * @param string $action   Action name (e.g. activate, deactivate, update, list).
 	 * @param string $endpoint REST endpoint (e.g. plugins/manage, plugins).
@@ -37,19 +37,20 @@ class Logger {
 		$log_res_copy = json_decode( wp_json_encode( $log_res ), true ) ?: array();
 		self::strip_sensitive_data( $log_req_copy );
 		self::strip_sensitive_data( $log_res_copy );
-		error_log( '[WPHubPro Bridge] log_action: ' . wp_json_encode( array(
+		error_log( '[WPHubPro Bridge] action: ' . wp_json_encode( array(
 			'action'   => (string) $action,
 			'endpoint' => (string) $endpoint,
 			'request'  => $log_req_copy,
 			'response' => $log_res_copy,
 		) ) );
 		
-		try {
-			// Send log action to Platform.
-			ApiLogger::instance()->send_log_action( $action, $endpoint, $request, $response );
-		} catch ( \Exception $e ) {
-			error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
-		}
+		// Logger API disabled for now.
+		// try {
+		// 	// Send log action to Platform.
+		// 	ApiLogger::instance()->send_log_action( $action, $endpoint, $request, $response );
+		// } catch ( \Exception $e ) {
+		// 	error_log( '[WPHubPro Bridge] send_log_action failed: ' . $e->getMessage() );
+		// }
 	}
 
 	/**

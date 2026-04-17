@@ -4,7 +4,7 @@ namespace WPHubPro\Api;
 /**
  * Appwrite action logger for WPHubPro Bridge.
  *
- * Uses WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+ * Uses Hub API base URL and project ID when remote logging is enabled.
  *
  * @package WPHubPro
  */
@@ -20,6 +20,11 @@ class Logger extends ApiBase {
 
 	private static $instance = null;
 
+	/**
+	 * Singleton for the API logger client.
+	 *
+	 * @deprecated 2.8.2 Unused; remote log POST is disabled and nothing instantiates this class.
+	 */
 	public static function instance(): self {
 		if ( self::$instance === null ) {
 			self::$instance = new self();
@@ -32,7 +37,9 @@ class Logger extends ApiBase {
 	/**
 	 * Log an action to the site's action_log in Appwrite.
 	 *
-	 * Uses JWT and Appwrite SDK. Requires WPHUBPRO_ENDPOINT, WPHUBPRO_PROJECT_ID, WPHUBPRO_USER_JWT.
+	 * Remote POST to Hub is commented out; currently logs to PHP error_log only.
+	 *
+	 * @deprecated 2.8.2 Unused; {@see \WPHubPro\Logger::log_action()} does not call this.
 	 *
 	 * @param string $action   Action name (e.g. activate, deactivate, update, list).
 	 * @param string $endpoint REST endpoint (e.g. plugins/manage, plugins).
@@ -107,6 +114,8 @@ class Logger extends ApiBase {
 	/**
 	 * Cap size of logged value to avoid huge options (e.g. full plugin list).
 	 *
+	 * @deprecated 2.8.2 Dead code; never called from this class.
+	 *
 	 * @param mixed $value Value to cap in place (array/object by reference).
 	 */
 	private static function cap_size( &$value ) {
@@ -126,6 +135,8 @@ class Logger extends ApiBase {
 	/**
 	 * Log each wphubpro/v1 request to WPHUBPRO_LOG option (last 20).
 	 * Excludes /logs to avoid logging the logs request itself.
+	 *
+	 * @deprecated 2.8.2 Unused; not attached to `rest_pre_serve_request` (or any hook).
 	 *
 	 * @param WP_REST_Response|WP_Error $response Result to send.
 	 * @param WP_REST_Server            $server   Server instance.
