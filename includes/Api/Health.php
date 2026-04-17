@@ -156,6 +156,9 @@ class Health extends ApiBase {
     }
    
 
+    /**
+     * @deprecated 2.8.2 Dead code; only referenced from commented-out legacy health payload.
+     */
     private static function summarize_backups(string $base_dir, int $max_slugs = 10): array {
         if ( ! is_dir( $base_dir ) ) {
             return array( 'present' => false, 'base' => $base_dir, 'slugs' => array() );
