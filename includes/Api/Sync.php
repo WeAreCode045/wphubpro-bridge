@@ -97,8 +97,8 @@ class Sync extends ApiBase {
 	 * @return bool True on success, false on failure (logged).
 	 */
 	public function sync_meta_to_appwrite() {
-		$plugins_meta = self::get_plugins_meta();
-		$themes_meta  = self::get_themes_meta();
+		$plugins_meta = Helper::get_plugins_meta();
+		$themes_meta  = Helper::get_themes_meta();
 		$wp_meta      = Helper::get_wp_meta_array();
 
 		$payload = array(
@@ -119,69 +119,5 @@ class Sync extends ApiBase {
 		return true;
 	}
 
-	/**
-	 * Get plugins list in meta format (file, name, version, active, update).
-	 *
-	 * @return array
-	 */
-	private static function get_plugins_meta() {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		$all_plugins   = get_plugins();
-		$active_plugins = Config::get_active_plugins();
-		if ( function_exists( 'wp_update_plugins' ) ) {
-			wp_update_plugins();
-		}
-		$updates = get_site_transient( 'update_plugins' );
-		$updates_response = ( is_object( $updates ) && isset( $updates->response ) && is_array( $updates->response ) ) ? $updates->response : array();
-
-		$meta = array();
-		foreach ( $all_plugins as $file => $data ) {
-			$update_version = isset( $updates_response[ $file ] ) && ! empty( $updates_response[ $file ]->new_version )
-				? $updates_response[ $file ]->new_version
-				: null;
-			$meta[] = array(
-				'file'    => (string) $file,
-				'name'    => isset( $data['Name'] ) ? (string) $data['Name'] : '',
-				'version' => isset( $data['Version'] ) ? (string) $data['Version'] : '',
-				'active'  => in_array( $file, (array) $active_plugins, true ),
-				'update'  => null !== $update_version ? (string) $update_version : null,
-			);
-		}
-		return $meta;
-	}
-
-	/**
-	 * Get themes list in meta format (stylesheet, name, version, active, update).
-	 *
-	 * @return array
-	 */
-	private static function get_themes_meta() {
-		$all_themes = wp_get_themes();
-		$current    = get_stylesheet();
-		if ( function_exists( 'wp_update_themes' ) ) {
-			wp_update_themes();
-		}
-		$updates = get_site_transient( 'update_themes' );
-		$meta    = array();
-		$resp    = ( is_object( $updates ) && isset( $updates->response ) && is_array( $updates->response ) )
-			? $updates->response
-			: array();
-
-		foreach ( $all_themes as $slug => $theme ) {
-			$upd = null;
-			if ( isset( $resp[ $slug ]['new_version'] ) ) {
-				$upd = (string) $resp[ $slug ]['new_version'];
-			}
-			$meta[] = array(
-				'stylesheet' => (string) $slug,
-				'name'       => (string) $theme->get( 'Name' ),
-				'version'    => (string) $theme->get( 'Version' ),
-				'active'     => ( (string) $slug === (string) $current ),
-				'update'     => $upd,
-			);
-		}
-		return $meta;
-	}
+	
 }
