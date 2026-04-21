@@ -7,6 +7,9 @@ use WPHubPro\Config;
 /**
  * REST API routes for site connect, disconnect, save-connection, and redirect settings.
  *
+ * `POST …/save-connection` follows the same JSON contract as `manage-sites` `connect_site`
+ * (Hub→WordPress): merged fields + `api_key` + optional `username`; `X-WPHub-Key` auth.
+ *
  * @package WPHubPro
  */
 
@@ -153,6 +156,20 @@ class ConnectController {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					'username'          => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'heartbeat_url'     => array(
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'esc_url_raw',
+					),
+					'body'              => array(
+						'required' => false,
+						'type'     => 'object',
+					),
 				),
 			)
 		);
@@ -173,7 +190,7 @@ class ConnectController {
 	}
 
 	/**
-	 * @param \WP_REST_Request $request Request with api_key/bridge_secret, site_secret, endpoint, project_id, site_id.
+	 * @param \WP_REST_Request $request Request body aligned with manage-sites `connect_site` (see {@see ConnectionService::save_connection_from_request()}).
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handle_save_connection( \WP_REST_Request $request ) {

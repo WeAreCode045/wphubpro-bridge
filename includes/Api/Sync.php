@@ -9,7 +9,7 @@ use WPHubPro\Logger;
  * Sync plugins_meta, themes_meta, and wp_meta to Appwrite sites collection.
  *
  * Called after plugin/theme/core changes (activate, deactivate, update, install, uninstall, WP version update).
- * Pushes data to sync-site-meta Appwrite Function. Bridge uses site_secret for auth (Bridge→Hub).
+ * Pushes data via manage-sites (`sync_site_meta`). Bridge uses site_secret for auth (Bridge→Hub).
  *
  * @package WPHubPro
  */
@@ -92,7 +92,7 @@ class Sync extends ApiBase {
 	/**
 	 * Sync plugins_meta and themes_meta to Appwrite.
 	 *
-	 * Fetches current plugins and themes, formats them, and POSTs to sync-site-meta function.
+	 * Fetches current plugins and themes, formats them, and POSTs to the manage-sites function.
 	 *
 	 * @return bool True on success, false on failure (logged).
 	 */
@@ -108,7 +108,10 @@ class Sync extends ApiBase {
 		);
 
 		try {
-			$this->post( 'sync-site-meta', $payload );
+			$this->post(
+				Config::MANAGE_SITES_FUNCTION_ID,
+				array_merge( $payload, array( 'action' => 'sync_site_meta' ) )
+			);
 		} catch ( \Exception $e ) {
 			Logger::log_action( 'sync', 'meta', array(), array( 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return false;

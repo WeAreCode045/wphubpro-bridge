@@ -120,31 +120,36 @@ class ApiBase {
      * Send a POST request to the API.
      *
      * @param string $endpoint The endpoint to send the request to.
-     * @param array $body The body of the request.
+     * @param array  $body     Inner JSON payload (merged with site_id + secret).
+     * @param array  $query    Optional query args (e.g. `action` for `manage-sites`).
      * @return array The response from the API.
      * @throws Exception If the endpoint is missing or the request fails.
      */
-    protected function post(string $endpoint, array $body = []) {
+    protected function post( string $endpoint, array $body = [], array $query = array() ) {
         $this->refresh_config();
         $this->endpoint = $endpoint;
-        if (empty($this->endpoint)) {
-            Logger::log_action($endpoint, 'error', array(), array(
+        if ( empty( $this->endpoint ) ) {
+            Logger::log_action( $endpoint, 'error', array(), array(
                 'msg'      => 'Missing endpoint.',
                 'endpoint' => $endpoint,
-            ));
-            throw new Exception('Missing endpoint.');
+            ) );
+            throw new Exception( 'Missing endpoint.' );
         }
-        
+
         $this->check_auth();
 
-        $payload = array_merge($body, array( 'site_id' => $this->site_id, 'secret' => $this->site_secret ));
-        $request_body = wp_json_encode(array(
-            'body'    => is_string($payload) ? $payload : wp_json_encode($payload),
+        $payload = array_merge( $body, array( 'site_id' => $this->site_id, 'secret' => $this->site_secret ) );
+        $request_body = wp_json_encode( array(
+            'body' => is_string( $payload ) ? $payload : wp_json_encode( $payload ),
 
-        ));
+        ) );
 
-        $url = $this->get_url($endpoint);
+        $url = $this->get_url( $endpoint );
+        if ( ! empty( $query ) && is_array( $query ) ) {
+            $url = add_query_arg( $query, $url );
+        }
 
+        
         $response = wp_remote_post(
             $url,
             array(
@@ -154,6 +159,7 @@ class ApiBase {
             )
         );
         if (is_wp_error($response)) {
+            error_log($url . ' - Error: ' . $response->get_error_message());
             Logger::log_action($url, 'error', array(), array(
                 'msg'    => $response->get_error_message(),
                 'url'    => $url,
@@ -161,7 +167,7 @@ class ApiBase {
             ));
             throw new Exception('Error: ' . $response->get_error_message());
         }
-        
+        error_log($url . ' - Response: ' . wp_remote_retrieve_body($response));
         return $this->resolve_response($response);
     }
 

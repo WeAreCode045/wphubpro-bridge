@@ -132,7 +132,10 @@ class Health extends ApiBase {
      */
 	public static function send_health_status(): array|bool {
         try {
-            return self::instance()->post( 'site-health', Core::get_health_status() );
+            return self::instance()->post(
+                Config::MANAGE_SITES_FUNCTION_ID,
+                array_merge( Core::get_health_status(), array( 'action' => 'push_site_health' ) )
+            );
         } catch ( \Exception $e ) {
             Logger::log_action( 'health', 'error', array(), array(
                 'msg' => $e->getMessage(),

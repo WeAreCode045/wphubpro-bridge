@@ -10,6 +10,10 @@ use WPHubPro\Config;
 /**
  * Persists Hub→Bridge connection data, connect-flow redirect URL settings, and local disconnect.
  *
+ * `POST …/save-connection` mirrors the Hub `manage-sites` handler `connect_site`: flat JSON after merging
+ * optional nested `body` with top-level fields, plus `api_key` (and optional `username`);
+ * `X-WPHub-Key` must match the bridge secret.
+ *
  * @package WPHubPro
  */
 
@@ -23,6 +27,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class ConnectionService {
 
 	private const TRANSIENT_PREFIX = 'wphubpro_connect_';
+
+	/** @var bool Avoid duplicate shutdown hooks when save-connection runs more than once per request. */
+	private static bool $connect_site_execution_scheduled = false;
+
+	/** Keys accepted on save-connection (aligned with manage-sites connect_site + Hub SPA). */
+	private const SAVE_CONNECTION_KEYS = array(
+		'api_key',
+		'bridge_secret',
+		'site_secret',
+		'endpoint',
+		'project_id',
+		'site_id',
+		'username',
+		'heartbeat_url',
+		'encrypted_api_key',
+	);
 
 	/**
 	 * Remove API key and connection options, and unschedule jobs.
@@ -40,39 +60,131 @@ class ConnectionService {
 	/**
 	 * Apply save-connection payload from the Hub (X-WPHub-Key validated by REST layer).
 	 *
-	 * @param \WP_REST_Request $request Request with bridge/site secrets, endpoint, ids.
+	 * @param \WP_REST_Request $request Same shape as manage-sites `connect_site` POST body to WordPress.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public static function save_connection_from_request( \WP_REST_Request $request ) {
-		$api_key           = $request->get_param( 'api_key' );
-		$bridge_secret     = $request->get_param( 'bridge_secret' );
-		$site_secret       = $request->get_param( 'site_secret' );
-		$endpoint          = $request->get_param( 'endpoint' );
-		$project_id        = $request->get_param( 'project_id' );
-		$site_id           = $request->get_param( 'site_id' );
+		$params = self::collect_save_connection_params( $request );
+		$skip_relay = strtolower( (string) $request->get_header( 'x_wphub_execution' ) ) === 'manage-sites';
 
-		$bridge_secret_to_store = $bridge_secret ? $bridge_secret : $api_key;
-		if ( empty( $bridge_secret_to_store ) ) {
+		$response = self::apply_save_connection_payload( $params );
+
+		if ( ! $skip_relay && ! ( $response instanceof \WP_Error ) ) {
+			self::schedule_connect_site_execution_after_save();
+		}
+
+		return $response;
+	}
+
+	/**
+	 * After browser-originated save-connection, relay through Hub manage-sites `connect_site` (skipped when
+	 * the request is already from that execution — header {@see handleConnectSite} sets X-WPHub-Execution).
+	 */
+	private static function schedule_connect_site_execution_after_save(): void {
+		if ( self::$connect_site_execution_scheduled ) {
+			return;
+		}
+		self::$connect_site_execution_scheduled = true;
+
+		add_action(
+			'shutdown',
+			static function () {
+				( new ConnectExecution() )->invoke_connect_site();
+			},
+			20
+		);
+	}
+
+	/**
+	 * Normalize request into one associative array (nested `body` merged first, top-level wins — same order as connectSite.js).
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return array<string, mixed>
+	 */
+	private static function collect_save_connection_params( \WP_REST_Request $request ): array {
+		$json = $request->get_json_params();
+		if ( ! is_array( $json ) ) {
+			$json = array();
+		}
+
+		foreach ( self::SAVE_CONNECTION_KEYS as $key ) {
+			if ( array_key_exists( $key, $json ) ) {
+				continue;
+			}
+			$v = $request->get_param( $key );
+			if ( null !== $v && '' !== $v ) {
+				$json[ $key ] = $v;
+			}
+		}
+
+		$inner = array();
+		if ( isset( $json['body'] ) && is_array( $json['body'] ) ) {
+			$inner = $json['body'];
+			unset( $json['body'] );
+		}
+
+		return array_merge( $inner, $json );
+	}
+
+	/**
+	 * Persist options from merged payload (connect_site sends `api_key`; browser flow may send `bridge_secret`).
+	 *
+	 * @param array<string, mixed> $input Flat params after merge.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	private static function apply_save_connection_payload( array $input ) {
+		$api_key       = isset( $input['api_key'] ) ? trim( (string) $input['api_key'] ) : '';
+		$bridge_secret = isset( $input['bridge_secret'] ) ? trim( (string) $input['bridge_secret'] ) : '';
+
+		$bridge_secret_to_store = $api_key !== '' ? $api_key : $bridge_secret;
+		if ( $bridge_secret_to_store === '' ) {
 			return new \WP_Error( 'missing_api_key', 'api_key or bridge_secret is required', array( 'status' => 400 ) );
 		}
 
-		$bridge_secret_to_store = sanitize_text_field( (string) $bridge_secret_to_store );
+		$bridge_secret_to_store = sanitize_text_field( $bridge_secret_to_store );
 		self::store_plain_secret_option( Config::OPTION_API_KEY, $bridge_secret_to_store );
 
-		if ( ! empty( $site_secret ) ) {
-			self::store_plain_secret_option( Config::OPTION_SITE_SECRET, sanitize_text_field( (string) $site_secret ) );
+		$site_secret = isset( $input['site_secret'] ) ? trim( (string) $input['site_secret'] ) : '';
+		if ( $site_secret !== '' ) {
+			self::store_plain_secret_option( Config::OPTION_SITE_SECRET, sanitize_text_field( $site_secret ) );
 		} else {
 			delete_option( Config::OPTION_SITE_SECRET );
 		}
 
-		if ( ! empty( $endpoint ) ) {
-			update_option( Config::OPTION_API_BASE_URL, untrailingslashit( (string) $endpoint ) );
+		$endpoint = isset( $input['endpoint'] ) ? trim( (string) $input['endpoint'] ) : '';
+		if ( $endpoint !== '' ) {
+			update_option( Config::OPTION_API_BASE_URL, untrailingslashit( esc_url_raw( $endpoint ) ) );
 		}
-		if ( ! empty( $project_id ) ) {
-			update_option( Config::OPTION_PROJECT_ID, (string) $project_id );
+
+		$project_id = isset( $input['project_id'] ) ? trim( (string) $input['project_id'] ) : '';
+		if ( $project_id !== '' ) {
+			update_option( Config::OPTION_PROJECT_ID, sanitize_text_field( $project_id ) );
 		}
-		if ( ! empty( $site_id ) ) {
-			update_option( Config::OPTION_SITE_ID, sanitize_text_field( (string) $site_id ) );
+
+		$site_id = isset( $input['site_id'] ) ? trim( (string) $input['site_id'] ) : '';
+		if ( $site_id !== '' ) {
+			update_option( Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
+		}
+
+		$username = isset( $input['username'] ) ? trim( (string) $input['username'] ) : '';
+		if ( $username !== '' ) {
+			update_option( Config::OPTION_WP_ADMIN_USERNAME, sanitize_text_field( $username ) );
+		} else {
+			delete_option( Config::OPTION_WP_ADMIN_USERNAME );
+		}
+
+		$heartbeat_url = isset( $input['heartbeat_url'] ) ? trim( (string) $input['heartbeat_url'] ) : '';
+		if ( $heartbeat_url !== '' ) {
+			update_option( Config::OPTION_HEARTBEAT_URL, esc_url_raw( $heartbeat_url ) );
+		} else {
+			delete_option( Config::OPTION_HEARTBEAT_URL );
+		}
+
+		$encrypted_api_key = isset( $input['encrypted_api_key'] ) ? trim( (string) $input['encrypted_api_key'] ) : '';
+		if ( $encrypted_api_key !== '' ) {
+			update_option( Config::OPTION_ENCRYPTED_API_KEY, $encrypted_api_key );
+		} else {
+			delete_option( Config::OPTION_ENCRYPTED_API_KEY );
 		}
 
 		update_option( Config::OPTION_STATUS, 'connected' );

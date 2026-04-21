@@ -58,6 +58,12 @@ class Config {
 	const REST_NAMESPACE = 'wphubpro/v1';
 
 	/**
+	 * Appwrite function ID for unified site API (sync meta, push health, connect proxy, etc.).
+	 * Replaces legacy standalone `sync-site-meta` / `site-health` calls from the bridge.
+	 */
+	const MANAGE_SITES_FUNCTION_ID = 'manage-sites';
+
+	/**
 	 * Appwrite Base URL.
 	 *
 	 * @return string
