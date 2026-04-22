@@ -86,6 +86,8 @@ $bridge_docs_url = 'https://docs.wphub.pro';
 				</table>
 			</div>
 			<div class="mt-3 d-flex flex-wrap gap-2">
+				<button type="button" id="wphubpro-push-health" class="btn btn-soft-primary"><?php esc_html_e( 'Gezondheid naar hub sturen', 'wphubpro-bridge' ); ?></button>
+				<span id="wphubpro-push-health-status" class="align-self-center small text-muted" style="display:none" aria-live="polite"></span>
 				<button type="button" id="wphubpro-reconnect" class="btn btn-primary">Opnieuw koppelen</button>
 				<button type="button" id="wphubpro-remove" class="btn btn-soft-danger">Verwijderen van hub</button>
 			</div>

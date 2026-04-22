@@ -144,6 +144,47 @@
 			};
 		}
 
+		var pushHealthUrl = urls.pushHealth;
+		if ( pushHealthUrl ) {
+			var pushHealthBtn = document.getElementById( 'wphubpro-push-health' );
+			var pushHealthStatus = document.getElementById( 'wphubpro-push-health-status' );
+			if ( pushHealthBtn && pushHealthStatus ) {
+				pushHealthBtn.onclick = function () {
+					pushHealthBtn.disabled = true;
+					pushHealthStatus.style.display = 'inline';
+					pushHealthStatus.textContent = cfg.i18n.pushHealthSending;
+					fetch( pushHealthUrl, {
+						method: 'POST',
+						headers: {
+							'X-WP-Nonce': nonce,
+							'Content-Type': 'application/json'
+						},
+						credentials: 'same-origin',
+						body: '{}'
+					} )
+						.then( function ( r ) {
+							return r.json().then( function ( d ) {
+								return { ok: r.ok, d: d };
+							} );
+						} )
+						.then( function ( res ) {
+							pushHealthBtn.disabled = false;
+							if ( res.ok && res.d && res.d.success ) {
+								pushHealthStatus.textContent =
+									res.d.message || cfg.i18n.pushHealthOk;
+							} else {
+								pushHealthStatus.textContent =
+									( res.d && res.d.message ) || cfg.i18n.errorShort;
+							}
+						} )
+						.catch( function () {
+							pushHealthBtn.disabled = false;
+							pushHealthStatus.textContent = cfg.i18n.errorShort;
+						} );
+				};
+			}
+		}
+
 		if ( checkUpdateUrl ) {
 			var checkBtn = document.getElementById( 'wphubpro-check-update' );
 			var checkStatus = document.getElementById( 'wphubpro-check-status' );

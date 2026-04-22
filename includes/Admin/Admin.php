@@ -146,6 +146,7 @@ class Admin {
 					'redirectSettings'  => get_rest_url( null, 'wphubpro/v1/connect/redirect-settings' ),
 					'checkUpdate'       => get_rest_url( null, 'wphubpro/v1/bridge/check-update' ),
 					'installUpdate'     => get_rest_url( null, 'wphubpro/v1/bridge/install-update' ),
+					'pushHealth'        => get_rest_url( null, 'wphubpro/v1/admin/push-health' ),
 				),
 				'i18n'  => array(
 					'confirmDisconnect' => __( 'Weet je zeker dat je deze site wilt verwijderen van de hub?', 'wphubpro-bridge' ),
@@ -160,6 +161,9 @@ class Admin {
 					'urlMustHttps'      => __( 'URL moet met https:// beginnen.', 'wphubpro-bridge' ),
 					'promptPlatformUrl' => __( 'Platform URL (redirect na koppelen):', 'wphubpro-bridge' ),
 					'promptLeaveEmpty'  => __( 'Leeg laten voor standaard (%s).', 'wphubpro-bridge' ),
+					'pushHealth'        => __( 'Gezondheid naar hub sturen', 'wphubpro-bridge' ),
+					'pushHealthSending' => __( 'Verzenden…', 'wphubpro-bridge' ),
+					'pushHealthOk'      => __( 'Gezondheidsrapport naar de hub verzonden.', 'wphubpro-bridge' ),
 				),
 			)
 		);

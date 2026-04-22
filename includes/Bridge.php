@@ -101,6 +101,15 @@ class Bridge {
 			'permission_callback' => $validate,
 		) );
 
+		// wp-admin: same payload as /health/push, authenticated as logged-in admin (REST nonce).
+		register_rest_route( $namespace, '/admin/push-health', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'push_health_status_to_hub' ),
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+		) );
+
 		// Named PHP handlers for Hub (registry via wphubpro_hub_invoke_handlers).
 		HubInvoke::register_rest_routes();
 
