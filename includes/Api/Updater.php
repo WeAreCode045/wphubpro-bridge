@@ -60,10 +60,20 @@ class Updater extends ApiBase {
 	 */
 	public static function handle_update_check() {
 		try {
-			$response = self::instance()->post( 'bridge-download-url');
+			$response = self::instance()->post( 
+				Config::BRIDGE_FUNCTION_ID, 
+				array( 'action' => 'get_download_url' ) 
+			);
+			
+            // Get the latest version from the response.
 			$latest_version = self::get_latest_version($response);
+
+			// Get the installed version.
 			$installed_version = Config::get_bridge_version();
+
+			// Check if the installed version is older than the latest version.
 			$update_available = ! empty( $installed_version ) && version_compare( $latest_version, $installed_version, '>' );
+			
 			return rest_ensure_response( array(
 				'success'          => true,
 				'latest_version'   => $latest_version,
@@ -85,14 +95,23 @@ class Updater extends ApiBase {
 	 */
 	public static function handle_update_install() {
 		try {
-			$response = self::instance()->post( 'bridge-download-url');
+			// Get the download URL from the API.
+			$response = self::instance()->post( 
+				Config::BRIDGE_FUNCTION_ID, 
+				array( 'action' => 'get_download_url' ) 
+			);
+			// Get the latest version from the response.
 			$latest_version = self::get_latest_version($response);
+			
+			// Get the download URL from the response.
 			$download_url = self::get_download_url($response);
 			
 			// Install the bridge from the download URL.
 			$request = new \WP_REST_Request( 'POST', '/wphubpro/v1/plugins/manage/install-from-zip' );
 			$request->set_param( 'zip_url', $download_url );
 			$request->set_param( 'plugin', 'wphubpro-bridge/wphubpro-bridge.php' );
+
+			// Install the plugin from the download URL.
 			$plugins = new Plugins();
 			$result  = $plugins->install_plugin_from_zip_url( $request );
 			if ( is_wp_error( $result ) ) {

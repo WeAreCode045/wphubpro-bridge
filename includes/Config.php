@@ -64,6 +64,11 @@ class Config {
 	const MANAGE_SITES_FUNCTION_ID = 'manage-sites';
 
 	/**
+	 * Appwrite function ID for bridge release: download URL + version state.
+	 */
+	const BRIDGE_FUNCTION_ID = 'bridge';
+
+	/**
 	 * Appwrite Base URL.
 	 *
 	 * @return string

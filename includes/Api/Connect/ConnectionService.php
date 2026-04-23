@@ -166,26 +166,26 @@ class ConnectionService {
 			update_option( Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
 		}
 
-		$username = isset( $input['username'] ) ? trim( (string) $input['username'] ) : '';
-		if ( $username !== '' ) {
-			update_option( Config::OPTION_WP_ADMIN_USERNAME, sanitize_text_field( $username ) );
-		} else {
-			delete_option( Config::OPTION_WP_ADMIN_USERNAME );
+		// $username = isset( $input['username'] ) ? trim( (string) $input['username'] ) : '';
+		// if ( $username !== '' ) {
+		// 	update_option( Config::OPTION_WP_ADMIN_USERNAME, sanitize_text_field( $username ) );
+		// } else {
+		// 	delete_option( Config::OPTION_WP_ADMIN_USERNAME );
+		// }
+
+		// $heartbeat_url = isset( $input['heartbeat_url'] ) ? trim( (string) $input['heartbeat_url'] ) : '';
+		// if ( $heartbeat_url !== '' ) {
+		// 	update_option( Config::OPTION_HEARTBEAT_URL, esc_url_raw( $heartbeat_url ) );
+		// } else {
+		// 	delete_option( Config::OPTION_HEARTBEAT_URL );
 		}
 
-		$heartbeat_url = isset( $input['heartbeat_url'] ) ? trim( (string) $input['heartbeat_url'] ) : '';
-		if ( $heartbeat_url !== '' ) {
-			update_option( Config::OPTION_HEARTBEAT_URL, esc_url_raw( $heartbeat_url ) );
-		} else {
-			delete_option( Config::OPTION_HEARTBEAT_URL );
-		}
-
-		$encrypted_api_key = isset( $input['encrypted_api_key'] ) ? trim( (string) $input['encrypted_api_key'] ) : '';
-		if ( $encrypted_api_key !== '' ) {
-			update_option( Config::OPTION_ENCRYPTED_API_KEY, $encrypted_api_key );
-		} else {
-			delete_option( Config::OPTION_ENCRYPTED_API_KEY );
-		}
+		// $encrypted_api_key = isset( $input['encrypted_api_key'] ) ? trim( (string) $input['encrypted_api_key'] ) : '';
+		// if ( $encrypted_api_key !== '' ) {
+		// 	update_option( Config::OPTION_ENCRYPTED_API_KEY, $encrypted_api_key );
+		// } else {
+		// 	delete_option( Config::OPTION_ENCRYPTED_API_KEY );
+		// }
 
 		update_option( Config::OPTION_STATUS, 'connected' );
 
