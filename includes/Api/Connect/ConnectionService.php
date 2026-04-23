@@ -148,22 +148,22 @@ class ConnectionService {
 		if ( $site_secret !== '' ) {
 			self::store_plain_secret_option( Config::OPTION_SITE_SECRET, sanitize_text_field( $site_secret ) );
 		} else {
-			delete_option( Config::OPTION_SITE_SECRET );
+			\delete_option( Config::OPTION_SITE_SECRET );
 		}
 
 		$endpoint = isset( $input['endpoint'] ) ? trim( (string) $input['endpoint'] ) : '';
 		if ( $endpoint !== '' ) {
-			update_option( Config::OPTION_API_BASE_URL, untrailingslashit( esc_url_raw( $endpoint ) ) );
+			\update_option( Config::OPTION_API_BASE_URL, untrailingslashit( esc_url_raw( $endpoint ) ) );
 		}
 
 		$project_id = isset( $input['project_id'] ) ? trim( (string) $input['project_id'] ) : '';
 		if ( $project_id !== '' ) {
-			update_option( Config::OPTION_PROJECT_ID, sanitize_text_field( $project_id ) );
+			\update_option( Config::OPTION_PROJECT_ID, sanitize_text_field( $project_id ) );
 		}
 
 		$site_id = isset( $input['site_id'] ) ? trim( (string) $input['site_id'] ) : '';
 		if ( $site_id !== '' ) {
-			update_option( Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
+			\update_option( Config::OPTION_SITE_ID, sanitize_text_field( $site_id ) );
 		}
 
 		// $username = isset( $input['username'] ) ? trim( (string) $input['username'] ) : '';
@@ -187,7 +187,7 @@ class ConnectionService {
 		// 	delete_option( Config::OPTION_ENCRYPTED_API_KEY );
 		// }
 
-		update_option( Config::OPTION_STATUS, 'connected' );
+		\update_option( Config::OPTION_STATUS, 'connected' );
 
 		if ( class_exists( Sync::class ) ) {
 			Sync::schedule_sync();

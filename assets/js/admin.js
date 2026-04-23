@@ -39,6 +39,7 @@
 		var nc = document.getElementById( 'wphubpro-not-connected' );
 		var card = document.getElementById( 'wphubpro-connected-card' );
 		var err = document.getElementById( 'wphubpro-status-error' );
+		var versionEl = document.getElementById( 'wphubpro-bridge-version' );
 		if ( ! ld || ! nc || ! card || ! err ) {
 			return;
 		}
@@ -56,14 +57,15 @@
 					var bullet = document.getElementById( 'wphubpro-heartbeat-bullet' );
 					var statusTxt = document.getElementById( 'wphubpro-status-text' );
 					var heartbeatTxt = document.getElementById( 'wphubpro-last-heartbeat-text' );
-					var versionEl = document.getElementById( 'wphubpro-bridge-version' );
 					var updateNotice = document.getElementById( 'wphubpro-update-notice' );
 					var latestVerEl = document.getElementById( 'wphubpro-latest-version' );
 					bullet.style.backgroundColor = d.connected ? '#22c55e' : '#ef4444';
 					bullet.title = d.connected ? 'Verbonden' : 'Losgekoppeld';
 					statusTxt.textContent = d.connected ? 'Verbonden' : 'Losgekoppeld';
 					heartbeatTxt.textContent = fmt( d.last_heartbeat_at ) || '—';
-					versionEl.textContent = d.bridge_version || '—';
+					if ( versionEl ) {
+						versionEl.textContent = d.bridge_version || '—';
+					}
 					if ( d.update_available && d.latest_version ) {
 						updateNotice.style.display = 'block';
 						latestVerEl.textContent = d.latest_version || '';
@@ -72,9 +74,8 @@
 					}
 				} else {
 					nc.style.display = 'block';
-					var ncVer = document.getElementById( 'wphubpro-bridge-version-nc' );
-					if ( ncVer ) {
-						ncVer.textContent = d.bridge_version || '—';
+					if ( versionEl ) {
+						versionEl.textContent = d.bridge_version || '—';
 					}
 					document.getElementById( 'wphubpro-update-notice' ).style.display = 'none';
 				}

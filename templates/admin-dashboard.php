@@ -1,6 +1,6 @@
 <?php
 /**
- * Bridge admin dashboard content (connection status, docs).
+ * Bridge admin dashboard content (connection status, platform redirect URL, docs).
  *
  * Expects: $bridge_version (optional; defaults via Config).
  *
@@ -24,27 +24,9 @@ $bridge_docs_url = 'https://docs.wphub.pro';
 
 	<div class="row g-3 align-items-stretch">
 		<div class="col-12 col-lg-7 d-flex flex-column gap-3">
-	<div class="card mb-0">
-		<div class="card-header border-bottom py-3">
-			<h5 class="card-title mb-0">Platform redirect-URL</h5>
-		</div>
-		<div class="card-body">
-			<p class="text-muted small mb-2">
-				Basis-URL van het WPHub-dashboard waarnaar wordt doorgestuurd na &ldquo;Nu koppelen&rdquo;. Leeg laten in het bewerkvenster zet dit terug naar de standaard (<code class="small"><?php echo esc_html( Config::DEFAULT_REDIRECT_BASE_URL ); ?></code>).
-			</p>
-			<div class="d-flex flex-wrap align-items-center gap-2">
-				<code id="wphubpro-platform-url" class="small user-select-all mb-0"><?php echo esc_html( Config::get_base_url() ); ?></code>
-				<button type="button" id="wphubpro-edit-platform-url" class="btn btn-soft-primary btn-icon btn-sm align-middle" title="Platform redirect-URL bewerken" aria-label="Platform redirect-URL bewerken">
-					<i class="ti ti-link-plus fs-lg" aria-hidden="true"></i>
-				</button>
-			</div>
-		</div>
-	</div>
-
 	<div id="wphubpro-not-connected" style="display:none" class="card mb-0">
 		<div class="card-body">
 			<p class="mb-2">Verbind deze site met uw dashboard.</p>
-			<p class="text-muted small mb-3">Geïnstalleerde bridge versie: <strong id="wphubpro-bridge-version-nc"><?php echo esc_html( $bridge_version ?: '—' ); ?></strong></p>
 			<button type="button" id="wphubpro-btn" class="btn btn-primary">Nu Koppelen</button>
 		</div>
 	</div>
@@ -66,16 +48,6 @@ $bridge_docs_url = 'https://docs.wphub.pro';
 							<td id="wphubpro-status">
 								<span id="wphubpro-heartbeat-bullet" class="wphubpro-ht-bullet rounded-circle d-inline-block align-middle me-1" title="wphub_status" style="width:10px;height:10px"></span>
 								<span id="wphubpro-status-text">—</span>
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">Bridge versie</th>
-							<td>
-								<span id="wphubpro-bridge-version">—</span>
-								<button type="button" id="wphubpro-check-update" class="btn btn-soft-primary btn-icon btn-sm ms-2 align-middle" title="Controleren op updates" aria-label="Controleren op updates">
-									<i class="ti ti-refresh fs-lg" aria-hidden="true"></i>
-								</button>
-								<span id="wphubpro-check-status" class="ms-2 small text-muted" style="display:none"></span>
 							</td>
 						</tr>
 						<tr>
@@ -102,8 +74,38 @@ $bridge_docs_url = 'https://docs.wphub.pro';
 		<p class="mb-0">Status laden…</p>
 	</div>
 		</div>
-		<div class="col-12 col-lg-5 d-flex">
-			<div class="card mb-0 w-100 h-100">
+		<div class="col-12 col-lg-5 d-flex flex-column gap-3">
+			<div class="card mb-0 w-100">
+				<div class="card-header border-bottom py-3">
+					<h5 class="card-title mb-0">Platform redirect-URL</h5>
+				</div>
+				<div class="card-body">
+					<p class="text-muted small mb-2">
+						Basis-URL van het WPHub-dashboard waarnaar wordt doorgestuurd na &ldquo;Nu koppelen&rdquo;. Leeg laten in het bewerkvenster zet dit terug naar de standaard (<code class="small"><?php echo esc_html( Config::DEFAULT_REDIRECT_BASE_URL ); ?></code>).
+					</p>
+					<div class="d-flex flex-wrap align-items-center gap-2">
+						<code id="wphubpro-platform-url" class="small user-select-all mb-0"><?php echo esc_html( Config::get_base_url() ); ?></code>
+						<button type="button" id="wphubpro-edit-platform-url" class="btn btn-soft-primary btn-icon btn-sm align-middle" title="Platform redirect-URL bewerken" aria-label="Platform redirect-URL bewerken">
+							<i class="ti ti-link-plus fs-lg" aria-hidden="true"></i>
+						</button>
+					</div>
+
+					<hr class="my-3" />
+
+					<dl class="row mb-0 small">
+						<dt class="col-5">Bridge versie</dt>
+						<dd class="col-7 mb-0">
+							<span id="wphubpro-bridge-version"><?php echo esc_html( $bridge_version ?: '—' ); ?></span>
+							<button type="button" id="wphubpro-check-update" class="btn btn-soft-primary btn-icon btn-sm ms-2 align-middle" title="Controleren op updates" aria-label="Controleren op updates">
+								<i class="ti ti-refresh fs-lg" aria-hidden="true"></i>
+							</button>
+							<span id="wphubpro-check-status" class="ms-2 small text-muted" style="display:none"></span>
+						</dd>
+					</dl>
+				</div>
+			</div>
+
+			<div class="card mb-0 w-100">
 				<div class="card-header border-bottom py-3">
 					<h5 class="card-title mb-0">Documentatie</h5>
 				</div>
